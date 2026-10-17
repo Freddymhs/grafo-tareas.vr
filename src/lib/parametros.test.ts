@@ -12,6 +12,7 @@ describe('leerParametros', () => {
       reordenar: false,
       radio: RADIO_PANORAMA,
       etiquetas: ModoEtiquetas.TODAS,
+      pagina: 0,
     })
   })
 
@@ -23,6 +24,7 @@ describe('leerParametros', () => {
       reordenar: false,
       radio: RADIO_PANORAMA,
       etiquetas: ModoEtiquetas.CERCANAS,
+      pagina: 0,
     })
     expect(leerParametros('?sintetico').fuente).toBe(FuenteGrafo.SINTETICO)
   })
@@ -49,5 +51,11 @@ describe('leerParametros', () => {
     expect(leerParametros('?etiquetas=cercanas').etiquetas).toBe(ModoEtiquetas.CERCANAS)
     expect(leerParametros('?nodos=100&etiquetas=todas').etiquetas).toBe(ModoEtiquetas.TODAS)
     expect(leerParametros('?etiquetas=otra').etiquetas).toBe(ModoEtiquetas.TODAS)
+  })
+
+  it('`?pagina=` abre directo en esa página (FASE 15); si no es un número válido, la primera', () => {
+    expect(leerParametros('?pagina=2').pagina).toBe(2)
+    expect(leerParametros('?pagina=-1').pagina).toBe(0)
+    expect(leerParametros('?pagina=x').pagina).toBe(0)
   })
 })

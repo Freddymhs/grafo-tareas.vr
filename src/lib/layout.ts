@@ -39,6 +39,12 @@ const GRADO = Math.PI / 180
 const HUECO = 10 * GRADO
 const ARCO_SUELTAS_MINIMO = 30 * GRADO
 const ARCO_SUELTAS_MAXIMO = 120 * GRADO
+export const VUELTA = 2 * Math.PI
+/** Una página (una HU) usa la media pantalla de adelante; si no le alcanza, se ensancha hasta tres cuartos. */
+const ABERTURA_PAGINA_MINIMA = Math.PI
+const ABERTURA_PAGINA_MAXIMA = 1.5 * Math.PI
+/** Qué parte de la pantalla ocupan las celdas: el resto es el aire que deja leer. */
+const LLENADO = 0.6
 
 /** Un punto de la pantalla: `angulo` 0 es el frente (−z), positivo hacia la derecha. */
 export function enCilindro(angulo: number, altura: number, radio: number): Posicion {
@@ -58,7 +64,7 @@ const radioDeCelda = (tipo: TipoNodo | undefined) =>
   (tipo === TipoNodo.HISTORIA ? CELDA_HU.ancho : CELDA.ancho) / 2
 
 /**
- * Lo conectado, enrollado en `arco` centrado al frente. La simulación corre en la pantalla desenrollada: `x` en metros
+ * Lo conectado, enrollado en `arco` centrado en el ángulo `centro`. La simulación corre en la pantalla desenrollada: `x` en metros
  * a lo largo del arco y `y` en metros de altura × ASPECTO, para que la celda (ancha y baja) sea un círculo.
  */
 function ubicarConectadas(
@@ -67,6 +73,7 @@ function ubicarConectadas(
   arco: number,
   radio: number,
   ticks: number,
+  centro: number,
 ): ReadonlyArray<readonly [string, Posicion]> {
   const tipoDe = new Map(grafo.nodos.map(({ id, tipo }) => [id, tipo]))
   const grado = new Map<string, number>()
@@ -118,15 +125,16 @@ function ubicarConectadas(
     .tick(ticks)
   return nodosSimulacion.map(({ id, x = 0, y = 0 }) => {
     const altura = ALTURA_OJOS + y / ASPECTO
-    return [id, enCilindro(x / radio, altura, radio)] as const
+    return [id, enCilindro(centro + x / radio, altura, radio)] as const
   })
 }
 
-/** Las sueltas en una grilla detrás, ordenadas por título: se leen como una lista. */
+/** Las sueltas en una grilla centrada en `centro`, ordenadas por título: se leen como una lista. */
 function ubicarSueltas(
   sueltas: readonly Nodo[],
   arco: number,
   radio: number,
+  centro: number,
 ): ReadonlyArray<readonly [string, Posicion]> {
   const columnas = Math.max(1, Math.floor((arco * radio) / CELDA.ancho))
   const filas = Math.ceil(sueltas.length / columnas)
@@ -136,7 +144,7 @@ function ubicarSueltas(
   return ordenadas.map(({ id }, i) => {
     const columna = i % columnas
     const fila = Math.floor(i / columnas)
-    const angulo = Math.PI - arco / 2 + (arco * (columna + 0.5)) / columnas
+    const angulo = centro - arco / 2 + (arco * (columna + 0.5)) / columnas
     const altura = ALTURA_OJOS + ALTO_MEDIO - (2 * ALTO_MEDIO * (fila + 0.5)) / filas
     return [id, enCilindro(angulo, altura, radio)] as const
   })
@@ -144,25 +152,45 @@ function ubicarSueltas(
 
 const FILAS_EN_LA_BANDA = Math.floor((2 * ALTO_MEDIO) / CELDA.alto)
 
-/** Cuánto del círculo ocupan las sueltas: lo que su grilla necesita, acotado (ni un hilo ni media pantalla). */
-function arcoDeSueltas(sueltas: number, total: number, radio: number): number {
+/** Cuánto ocupan las sueltas: lo que su grilla necesita, acotado (ni un hilo ni la mitad de la abertura). */
+function arcoDeSueltas(sueltas: number, total: number, radio: number, abertura: number): number {
   if (sueltas === 0) return 0
-  if (sueltas === total) return 2 * Math.PI - HUECO
+  if (sueltas === total) return abertura - HUECO
   const necesario = (Math.ceil(sueltas / FILAS_EN_LA_BANDA) * CELDA.ancho) / radio
-  return Math.min(ARCO_SUELTAS_MAXIMO, Math.max(ARCO_SUELTAS_MINIMO, necesario))
+  const maximo = Math.min(ARCO_SUELTAS_MAXIMO, abertura / 2)
+  return Math.min(maximo, Math.max(ARCO_SUELTAS_MINIMO, necesario))
 }
 
+/** La abertura de una página: lo que sus celdas necesitan con aire, entre 180° y 270°. */
+export function aberturaPara(nodos: number, radio: number): number {
+  const area = (nodos * CELDA.ancho * CELDA.alto) / LLENADO
+  const necesaria = area / (2 * ALTO_MEDIO) / radio
+  return Math.min(ABERTURA_PAGINA_MAXIMA, Math.max(ABERTURA_PAGINA_MINIMA, necesaria))
+}
+
+/**
+ * `abertura` 2π: el grafo entero alrededor, lo conectado al frente y las sueltas detrás. Menos (una página, FASE 15):
+ * centrada al frente, lo conectado a la izquierda y las sueltas al extremo derecho.
+ */
 export function calcularLayout(
   grafo: Grafo,
   radio: number = RADIO_PANORAMA,
+  abertura: number = VUELTA,
   ticks: number = TICKS_LAYOUT,
 ): ReadonlyMap<string, Posicion> {
   const conectadas = conConexion(grafo)
   const sueltas = grafo.nodos.filter(({ id }) => !conectadas.has(id))
-  const arcoSueltas = arcoDeSueltas(sueltas.length, grafo.nodos.length, radio)
-  const huecos = sueltas.length > 0 ? 2 * HUECO : HUECO
-  const arcoConectadas = 2 * Math.PI - arcoSueltas - huecos
+  const vueltaCompleta = abertura >= VUELTA
+  const arcoSueltas = arcoDeSueltas(sueltas.length, grafo.nodos.length, radio, abertura)
+  const huecosDeLaVuelta = sueltas.length > 0 ? 2 * HUECO : HUECO
+  const huecosDeLaPagina = sueltas.length > 0 ? HUECO : 0
+  const huecos = vueltaCompleta ? huecosDeLaVuelta : huecosDeLaPagina
+  const arcoConectadas = abertura - arcoSueltas - huecos
+  const centroConectadas = vueltaCompleta ? 0 : -abertura / 2 + arcoConectadas / 2
+  const centroSueltas = vueltaCompleta ? Math.PI : abertura / 2 - arcoSueltas / 2
   const ubicadas =
-    conectadas.size > 0 ? ubicarConectadas(grafo, conectadas, arcoConectadas, radio, ticks) : []
-  return new Map([...ubicadas, ...ubicarSueltas(sueltas, arcoSueltas, radio)])
+    conectadas.size > 0
+      ? ubicarConectadas(grafo, conectadas, arcoConectadas, radio, ticks, centroConectadas)
+      : []
+  return new Map([...ubicadas, ...ubicarSueltas(sueltas, arcoSueltas, radio, centroSueltas)])
 }

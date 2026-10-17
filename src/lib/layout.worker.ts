@@ -9,9 +9,11 @@ export type RespuestaLayout = ReadonlyArray<readonly [string, Posicion]>
 export interface PedidoLayout {
   readonly grafo: Grafo
   readonly radio: number
+  /** 2π el grafo entero; menos, una página (FASE 15). */
+  readonly abertura: number
 }
 
 self.onmessage = ({ data }: MessageEvent<PedidoLayout>) => {
-  const respuesta: RespuestaLayout = [...calcularLayout(data.grafo, data.radio)]
+  const respuesta: RespuestaLayout = [...calcularLayout(data.grafo, data.radio, data.abertura)]
   self.postMessage(respuesta)
 }

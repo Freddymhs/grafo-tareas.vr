@@ -41,6 +41,13 @@ describe('ubicarFaltantes — sobre la pantalla curva (FASE 15)', () => {
     expect(p.z).toBeGreaterThan(0)
   })
 
+  it('en una página, uno sin vecinos va a donde la página pone sus sueltas (FASE 15)', () => {
+    const enPagina = ubicarFaltantes(grafo, guardadas, Math.PI / 2).nuevas.get('nuevo-solo')
+    expect(Math.abs(anguloDe(enPagina ?? { x: 0, y: 0, z: -1 }) - Math.PI / 2)).toBeLessThan(
+      Math.PI / 6,
+    )
+  })
+
   it('todo queda en la pantalla del mapa guardado: su radio y la banda de los ojos', () => {
     nuevas.forEach((p) => {
       expect(horizontal(p)).toBeCloseTo(RADIO_GUARDADO, 9)

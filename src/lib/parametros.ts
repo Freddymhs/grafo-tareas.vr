@@ -34,6 +34,8 @@ export interface ParametrosPrueba {
   readonly radio: number
   /** Por defecto: el grafo real, todas; la medición de FPS, las cercanas (la de la FASE 1). */
   readonly etiquetas: ModoEtiquetas
+  /** En qué página arranca (FASE 15): el índice en `GET /derivado/paginas`. */
+  readonly pagina: number
 }
 
 function entero(valor: string | null, porDefecto: number): number {
@@ -74,5 +76,6 @@ export function leerParametros(busqueda: string): ParametrosPrueba {
       : esPrueba
         ? ModoEtiquetas.CERCANAS
         : ModoEtiquetas.TODAS,
+    pagina: Math.max(0, entero(query.get('pagina'), 0)),
   }
 }

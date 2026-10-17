@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { TEXTO } from './constants/etiquetas'
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
 import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Posicion } from './dominio'
-import { ALTO_MEDIO, ALTURA_OJOS, RADIO_PANORAMA, anguloDe, calcularLayout } from './layout'
+import {
+  ALTO_MEDIO,
+  ALTURA_OJOS,
+  RADIO_PANORAMA,
+  aberturaPara,
+  anguloDe,
+  calcularLayout,
+} from './layout'
 import { generarGrafo } from './sintetico'
 
 const grafo = generarGrafo({ nodos: NODOS_PRUEBA, semilla: SEMILLA_PRUEBA })
@@ -127,5 +134,26 @@ describe('calcularLayout — la pantalla curva (FASE 15)', () => {
     const ids = mediano.nodos.map(({ id }) => id)
     const cualquiera = media(ids.map((id, i) => distancia(id, ids[(i * 7 + 13) % ids.length])))
     expect(enlazadas).toBeLessThan(cualquiera / 2)
+  })
+
+  it('una página (FASE 15) ocupa la media pantalla de adelante, con sus sueltas al extremo derecho', () => {
+    const pagina = calcularLayout(conSueltas, RADIO_PANORAMA, Math.PI)
+    const angulos = [...pagina.values()].map(anguloDe)
+    angulos.forEach((a) => expect(Math.abs(a)).toBeLessThanOrEqual(Math.PI / 2 + TOLERANCIA))
+    const conectadas = grafo.nodos.map(({ id }) =>
+      anguloDe(pagina.get(id) ?? { x: 0, y: 0, z: -1 }),
+    )
+    const sueltas = SUELTAS.map((id) => anguloDe(pagina.get(id) ?? { x: 0, y: 0, z: -1 }))
+    expect(Math.min(...sueltas)).toBeGreaterThan(Math.max(...conectadas))
+  })
+})
+
+describe('aberturaPara — cuánta pantalla necesita una página', () => {
+  it('la media pantalla de adelante (180°) si cabe; más ancha si no; nunca toda la vuelta', () => {
+    expect(aberturaPara(20, RADIO_PANORAMA)).toBe(Math.PI)
+    const grande = aberturaPara(200, RADIO_PANORAMA)
+    expect(grande).toBeGreaterThan(Math.PI)
+    expect(grande).toBeLessThanOrEqual(1.5 * Math.PI)
+    expect(aberturaPara(100, RADIO_PANORAMA)).toBeLessThanOrEqual(grande)
   })
 })

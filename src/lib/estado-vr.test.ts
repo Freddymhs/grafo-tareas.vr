@@ -36,7 +36,13 @@ describe('decidirToque', () => {
 
 describe('useEstadoVr', () => {
   beforeEach(() => {
-    useEstadoVr.setState({ seleccionado: null, modo: NORMAL, resaltados: new Set(), aviso: null })
+    useEstadoVr.setState({
+      seleccionado: null,
+      modo: NORMAL,
+      resaltados: new Set(),
+      aviso: null,
+      pagina: 0,
+    })
   })
 
   it('empezar a conectar pide un nodo seleccionado; tocar otro vuelve a normal con el origen seleccionado', () => {
@@ -58,5 +64,15 @@ describe('useEstadoVr', () => {
     expect(useEstadoVr.getState().resaltados.size).toBe(2)
     useEstadoVr.getState().tocar('a')
     expect(useEstadoVr.getState().resaltados.size).toBe(0)
+  })
+
+  it('cambiar de página avanza dando la vuelta y suelta la selección: el nodo puede no estar en la otra', () => {
+    useEstadoVr.getState().tocar('a')
+    useEstadoVr.getState().cambiarPagina(1, 2)
+    expect(useEstadoVr.getState()).toMatchObject({ pagina: 1, seleccionado: null })
+    useEstadoVr.getState().cambiarPagina(1, 2)
+    expect(useEstadoVr.getState().pagina).toBe(0)
+    useEstadoVr.getState().irAPagina(1)
+    expect(useEstadoVr.getState().pagina).toBe(1)
   })
 })

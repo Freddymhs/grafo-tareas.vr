@@ -2,6 +2,7 @@
 // Zustand por la practice-wishlist; el estado del SERVIDOR sigue en TanStack Query, acá solo lo de la escena.
 import { create } from 'zustand'
 import { TipoConexion } from './dominio'
+import { paginaVecina } from './paginas'
 
 /** Las conexiones que se crean apuntando: las que frenan trabajo. PERTENECE_A y EN_DAILY_DE se hacen en la PWA. */
 export const CONEXIONES_DESDE_VR = [
@@ -32,15 +33,21 @@ interface EstadoVr {
   /** Lo que se liberó al cerrar el último nodo (`GET /nodos/:id/libera`). */
   readonly resaltados: ReadonlySet<string>
   readonly aviso: string | null
+  /** La página que se ve (FASE 15): el índice en `GET /derivado/paginas`. */
+  readonly pagina: number
   tocar: (id: string) => Toque
   empezarConexion: (conexion: ConexionDesdeVr) => void
   cancelar: () => void
   resaltar: (ids: readonly string[]) => void
   avisar: (aviso: string | null) => void
+  /** X / Y del control izquierdo, o girar la pelota: la siguiente o la anterior, dando la vuelta. */
+  cambiarPagina: (paso: 1 | -1, total: number) => void
+  irAPagina: (indice: number) => void
 }
 
 const NORMAL: Modo = { tipo: 'normal' }
 const NADA: ReadonlySet<string> = new Set()
+const SIN_SELECCION = { seleccionado: null, modo: NORMAL, resaltados: NADA, aviso: null } as const
 
 /** La regla de un toque, pura: conectando → el tocado es el destino; si no, alterna la selección. */
 export function decidirToque(estado: Pick<EstadoVr, 'seleccionado' | 'modo'>, id: string): Toque {
@@ -57,6 +64,7 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   modo: NORMAL,
   resaltados: NADA,
   aviso: null,
+  pagina: 0,
   tocar: (id) => {
     const toque = decidirToque(get(), id)
     if (toque.accion === 'conectar')
@@ -73,4 +81,8 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   cancelar: () => set({ modo: NORMAL, aviso: null }),
   resaltar: (ids) => set({ resaltados: new Set(ids) }),
   avisar: (aviso) => set({ aviso }),
+  // Lo seleccionado puede no existir en la otra página (regla §7): se suelta al cambiar.
+  cambiarPagina: (paso, total) =>
+    set({ pagina: paginaVecina(get().pagina, paso, total), ...SIN_SELECCION }),
+  irAPagina: (indice) => set({ pagina: indice, ...SIN_SELECCION }),
 }))

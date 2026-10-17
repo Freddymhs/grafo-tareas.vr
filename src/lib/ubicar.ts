@@ -41,9 +41,14 @@ const enLaBanda = (altura: number) =>
 /** Un número en [−1, 1), fijo por id y sal. */
 const desvio = (id: string, sal: string) => 2 * hashUnitario(id, sal) - 1
 
-function ubicarNuevo(id: string, ubicados: readonly Posicion[], radio: number): Posicion {
+function ubicarNuevo(
+  id: string,
+  ubicados: readonly Posicion[],
+  radio: number,
+  anguloSinVecinos: number,
+): Posicion {
   if (ubicados.length === 0) {
-    const angulo = Math.PI + (desvio(id, 'angulo') * ARCO_NUEVAS_SUELTAS) / 2
+    const angulo = anguloSinVecinos + (desvio(id, 'angulo') * ARCO_NUEVAS_SUELTAS) / 2
     return enCilindro(angulo, enLaBanda(ALTURA_OJOS + desvio(id, 'altura') * ALTO_MEDIO), radio)
   }
   const alturaMedia = ubicados.reduce((suma, { y }) => suma + y, 0) / ubicados.length
@@ -59,7 +64,12 @@ export interface Ubicacion {
   readonly nuevas: ReadonlyMap<string, Posicion>
 }
 
-export function ubicarFaltantes(grafo: Grafo, guardadas: ReadonlyMap<string, Posicion>): Ubicacion {
+/** `anguloSinVecinos`: dónde caen los nuevos sueltos — detrás en el grafo entero; en una página, su extremo derecho. */
+export function ubicarFaltantes(
+  grafo: Grafo,
+  guardadas: ReadonlyMap<string, Posicion>,
+  anguloSinVecinos: number = Math.PI,
+): Ubicacion {
   const vecinos = vecinosDe(grafo)
   const radio = radioDelMapa(guardadas)
   const nuevas = new Map(
@@ -69,7 +79,7 @@ export function ubicarFaltantes(grafo: Grafo, guardadas: ReadonlyMap<string, Pos
         const ubicados = (vecinos.get(id) ?? [])
           .map((vecino) => guardadas.get(vecino))
           .filter((p): p is Posicion => p !== undefined)
-        return [id, ubicarNuevo(id, ubicados, radio)] as const
+        return [id, ubicarNuevo(id, ubicados, radio, anguloSinVecinos)] as const
       }),
   )
   return { posiciones: new Map([...guardadas, ...nuevas]), nuevas }

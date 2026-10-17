@@ -10,6 +10,8 @@ const TAMANO_TEXTO = 0.032
 const COLOR_FONDO = '#1e293b'
 const COLOR_ENCIMA = '#334155'
 const COLOR_APAGADO = '#0f172a'
+/** La pestaña de la página que se ve (FASE 15). */
+const COLOR_RESALTADO = '#0369a1'
 const COLOR_TEXTO = '#f1f5f9'
 const COLOR_TEXTO_APAGADO = '#64748b'
 /** El texto apenas delante del fondo: sin esto parpadea (z-fighting). */
@@ -20,15 +22,17 @@ interface Props {
   readonly posicion: readonly [number, number, number]
   readonly onTocar: () => void
   readonly apagado?: boolean
+  readonly resaltado?: boolean
 }
 
-export function Boton3D({ texto, posicion, onTocar, apagado = false }: Props) {
+export function Boton3D({ texto, posicion, onTocar, apagado = false, resaltado = false }: Props) {
   const [encima, setEncima] = useState(false)
   const tocar = (evento: ThreeEvent<MouseEvent>) => {
     evento.stopPropagation()
     if (!apagado) onTocar()
   }
-  const fondo = apagado ? COLOR_APAGADO : encima ? COLOR_ENCIMA : COLOR_FONDO
+  const reposo = resaltado ? COLOR_RESALTADO : COLOR_FONDO
+  const fondo = apagado ? COLOR_APAGADO : encima ? COLOR_ENCIMA : reposo
   return (
     <group position={[...posicion]}>
       <mesh

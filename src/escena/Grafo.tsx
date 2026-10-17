@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { coloresPorNodo } from '../lib/colores'
 import { OPACIDAD_ARISTA, OPACIDAD_ESTRUCTURA, OPACIDAD_PERTENENCIA } from '../lib/constants/grafo'
 import { TipoConexion, TipoNodo, type Grafo as GrafoDominio, type Posicion } from '../lib/dominio'
 import { Aristas } from './Aristas'
@@ -19,10 +18,11 @@ interface Props {
   /** Con API: la selección pregunta qué bloquea al nodo y se puede editar (FASE 7). Sin API (sintético): solo el título. */
   readonly conApi: boolean
   readonly etiquetas: ModoEtiquetas
+  /** El color de cada nodo, calculado sobre el grafo ENTERO: en una página (FASE 15) no están las ramas. */
+  readonly colores: ReadonlyMap<string, string>
 }
 
-export function Grafo({ grafo, posiciones, conApi, etiquetas }: Props) {
-  const colores = useMemo(() => coloresPorNodo(grafo), [grafo])
+export function Grafo({ grafo, posiciones, conApi, etiquetas, colores }: Props) {
   // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
   // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
   const { aRamas, arbol, relaciones } = useMemo(() => {
