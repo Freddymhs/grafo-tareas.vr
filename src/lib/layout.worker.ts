@@ -6,7 +6,12 @@ import { calcularLayout } from './layout'
 
 export type RespuestaLayout = ReadonlyArray<readonly [string, Posicion]>
 
-self.onmessage = ({ data }: MessageEvent<Grafo>) => {
-  const respuesta: RespuestaLayout = [...calcularLayout(data)]
+export interface PedidoLayout {
+  readonly grafo: Grafo
+  readonly radio: number
+}
+
+self.onmessage = ({ data }: MessageEvent<PedidoLayout>) => {
+  const respuesta: RespuestaLayout = [...calcularLayout(data.grafo, data.radio)]
   self.postMessage(respuesta)
 }

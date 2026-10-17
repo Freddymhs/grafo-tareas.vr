@@ -1,7 +1,8 @@
 // El grafo real: lo pide a la API, decide las posiciones y guarda las que faltaban (FASE 6, tareas 1 y 2).
-// Primera vez (nada guardado) → layout de fuerzas en el Worker → PUT de todas. Después → las guardadas, y los
+// Primera vez (nada guardado) → la pantalla curva en el Worker (FASE 15) → PUT de todas. Después → las guardadas, y los
 // nodos nuevos junto a sus vecinos (`ubicarFaltantes`) → PUT solo de esos. El mapa no cambia de un día a otro.
-// `reordenar` (FASE 13): cuando el árbol cambió, el layout se rehace entero con las conexiones de hoy y se guarda.
+// `reordenar` (FASE 13): cuando el árbol cambió, el layout se rehace entero con las conexiones de hoy y se guarda;
+// `radio` (FASE 15) es la distancia de la pantalla en ese cálculo.
 import { useEffect, useMemo, useRef } from 'react'
 import { useConexionesControllerFindAll } from '../lib/api/generado/conexiones/conexiones'
 import {
@@ -11,6 +12,7 @@ import {
 import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
 import type { Grafo, Posicion } from '../lib/dominio'
+import { RADIO_PANORAMA } from '../lib/layout'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
 
@@ -25,7 +27,7 @@ export type EstadoMapa =
       readonly aviso: string | null
     }
 
-export function useMapaApi(reordenar = false): EstadoMapa {
+export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMapa {
   const nodos = useNodosControllerFindAll({ limit: LIMITE_GRAFO })
   const conexiones = useConexionesControllerFindAll()
   const guardar = useNodosControllerGuardarPosiciones()
@@ -40,7 +42,7 @@ export function useMapaApi(reordenar = false): EstadoMapa {
     [nodos.data],
   )
   const mapaVacio = grafo !== null && grafo.nodos.length > 0 && (guardadas.size === 0 || reordenar)
-  const layout = useLayout(mapaVacio ? grafo : null)
+  const layout = useLayout(mapaVacio ? grafo : null, radio)
   const ubicacion = useMemo(() => {
     if (!grafo) return null
     if (mapaVacio) return layout ? { posiciones: layout, nuevas: layout } : null

@@ -1,13 +1,14 @@
 // Dónde va un nodo que no tiene posición guardada, sin mover a los que sí tienen (FASE 6 tarea 2: "recargar dos
-// veces da el mismo mapa"). El layout de fuerzas corre solo la primera vez, con el mapa vacío; después cada nodo
-// nuevo cae junto a sus vecinos ya ubicados, o, si no tiene, en un punto fijo de la esfera. Determinista: el
+// veces da el mismo mapa"). El layout corre solo con el mapa vacío (o `?reordenar`); después cada nodo nuevo cae en
+// la pantalla curva (FASE 15) entre sus vecinos ya ubicados o, si no tiene, detrás con las sueltas. Determinista: el
 // lugar sale de un hash del id, nunca de Math.random.
 import type { Grafo, Posicion } from './dominio'
-import { ALTURA_OJOS, RADIO_LIBRE, RADIO_MUNDO } from './layout'
+import { ALTO_MEDIO, ALTURA_OJOS, RADIO_PANORAMA, anguloDe, enCilindro } from './layout'
 
 /** Cuánto se separa un nodo nuevo del centro de sus vecinos (m): lo justo para no taparlos. */
 export const SEPARACION_VECINO = 0.25
-const RADIO_SIN_VECINOS = (RADIO_LIBRE + RADIO_MUNDO) / 2
+/** Un nuevo sin vecinos cae en este arco detrás (rad), donde la pantalla agrupa las sueltas. */
+const ARCO_NUEVAS_SUELTAS = Math.PI / 6
 const FNV_BASE = 0x811c9dc5
 const FNV_PRIMO = 0x01000193
 const MAXIMO_32 = 0x1_0000_0000
@@ -19,24 +20,6 @@ export function hashUnitario(texto: string, sal = ''): number {
   return hash / MAXIMO_32
 }
 
-/** Una dirección de la esfera unidad, fija por id. */
-function direccion(id: string): Posicion {
-  const theta = 2 * Math.PI * hashUnitario(id, 'theta')
-  const cosPhi = 2 * hashUnitario(id, 'phi') - 1
-  const senPhi = Math.sqrt(1 - cosPhi * cosPhi)
-  return { x: senPhi * Math.cos(theta), y: cosPhi, z: senPhi * Math.sin(theta) }
-}
-
-/** Lleva un punto a la cáscara [RADIO_LIBRE, RADIO_MUNDO] alrededor de los ojos. */
-function dentroDelMundo({ x, y, z }: Posicion): Posicion {
-  const relativo = { x, y: y - ALTURA_OJOS, z }
-  const radio = Math.hypot(relativo.x, relativo.y, relativo.z)
-  if (radio === 0) return { x: 0, y: ALTURA_OJOS, z: -RADIO_LIBRE }
-  const acotado = Math.min(RADIO_MUNDO, Math.max(RADIO_LIBRE, radio))
-  const escala = acotado / radio
-  return { x: relativo.x * escala, y: relativo.y * escala + ALTURA_OJOS, z: relativo.z * escala }
-}
-
 function vecinosDe(grafo: Grafo): ReadonlyMap<string, readonly string[]> {
   const vecinos = new Map<string, string[]>()
   grafo.conexiones.forEach(({ origenId, destinoId }) => {
@@ -46,13 +29,36 @@ function vecinosDe(grafo: Grafo): ReadonlyMap<string, readonly string[]> {
   return vecinos
 }
 
-function centro(puntos: readonly Posicion[]): Posicion {
-  const suma = puntos.reduce((a, p) => ({ x: a.x + p.x, y: a.y + p.y, z: a.z + p.z }), {
-    x: 0,
-    y: 0,
-    z: 0,
-  })
-  return { x: suma.x / puntos.length, y: suma.y / puntos.length, z: suma.z / puntos.length }
+/** El radio de la pantalla guardada (la mediana: un nodo movido a mano no la cambia). */
+function radioDelMapa(guardadas: ReadonlyMap<string, Posicion>): number {
+  const radios = [...guardadas.values()]
+    .map(({ x, z }) => Math.hypot(x, z))
+    .toSorted((a, b) => a - b)
+  return radios.length === 0 ? RADIO_PANORAMA : radios[Math.floor(radios.length / 2)]
+}
+
+/** Ángulo medio de varios puntos de la pantalla: promedio de direcciones, sin el salto de ±π detrás. */
+function anguloMedio(puntos: readonly Posicion[]): number {
+  const seno = puntos.reduce((suma, p) => suma + Math.sin(anguloDe(p)), 0)
+  const coseno = puntos.reduce((suma, p) => suma + Math.cos(anguloDe(p)), 0)
+  return Math.atan2(seno, coseno)
+}
+
+const enLaBanda = (altura: number) =>
+  Math.min(ALTURA_OJOS + ALTO_MEDIO, Math.max(ALTURA_OJOS - ALTO_MEDIO, altura))
+
+/** Un número en [−1, 1), fijo por id y sal. */
+const desvio = (id: string, sal: string) => 2 * hashUnitario(id, sal) - 1
+
+function ubicarNuevo(id: string, ubicados: readonly Posicion[], radio: number): Posicion {
+  if (ubicados.length === 0) {
+    const angulo = Math.PI + (desvio(id, 'angulo') * ARCO_NUEVAS_SUELTAS) / 2
+    return enCilindro(angulo, enLaBanda(ALTURA_OJOS + desvio(id, 'altura') * ALTO_MEDIO), radio)
+  }
+  const alturaMedia = ubicados.reduce((suma, { y }) => suma + y, 0) / ubicados.length
+  const angulo = anguloMedio(ubicados) + (desvio(id, 'angulo') * SEPARACION_VECINO) / radio
+  const altura = enLaBanda(alturaMedia + desvio(id, 'altura') * SEPARACION_VECINO)
+  return enCilindro(angulo, altura, radio)
 }
 
 export interface Ubicacion {
@@ -64,30 +70,16 @@ export interface Ubicacion {
 
 export function ubicarFaltantes(grafo: Grafo, guardadas: ReadonlyMap<string, Posicion>): Ubicacion {
   const vecinos = vecinosDe(grafo)
-  const nuevas = new Map<string, Posicion>()
-  grafo.nodos
-    .filter(({ id }) => !guardadas.has(id))
-    .forEach(({ id }) => {
-      const ubicados = (vecinos.get(id) ?? [])
-        .map((vecino) => guardadas.get(vecino))
-        .filter((p): p is Posicion => p !== undefined)
-      const d = direccion(id)
-      const posicion =
-        ubicados.length > 0
-          ? (() => {
-              const c = centro(ubicados)
-              return {
-                x: c.x + d.x * SEPARACION_VECINO,
-                y: c.y + d.y * SEPARACION_VECINO,
-                z: c.z + d.z * SEPARACION_VECINO,
-              }
-            })()
-          : {
-              x: d.x * RADIO_SIN_VECINOS,
-              y: d.y * RADIO_SIN_VECINOS + ALTURA_OJOS,
-              z: d.z * RADIO_SIN_VECINOS,
-            }
-      nuevas.set(id, dentroDelMundo(posicion))
-    })
+  const radio = radioDelMapa(guardadas)
+  const nuevas = new Map(
+    grafo.nodos
+      .filter(({ id }) => !guardadas.has(id))
+      .map(({ id }) => {
+        const ubicados = (vecinos.get(id) ?? [])
+          .map((vecino) => guardadas.get(vecino))
+          .filter((p): p is Posicion => p !== undefined)
+        return [id, ubicarNuevo(id, ubicados, radio)] as const
+      }),
+  )
   return { posiciones: new Map([...guardadas, ...nuevas]), nuevas }
 }

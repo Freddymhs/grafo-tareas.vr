@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
-import { TipoConexion, TipoNodo } from './dominio'
-import { ALTURA_OJOS, RADIO_LIBRE, RADIO_MUNDO, calcularLayout } from './layout'
+import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Posicion } from './dominio'
+import { ALTO_MEDIO, ALTURA_OJOS, RADIO_PANORAMA, anguloDe, calcularLayout } from './layout'
 import { generarGrafo } from './sintetico'
 
 const grafo = generarGrafo({ nodos: NODOS_PRUEBA, semilla: SEMILLA_PRUEBA })
-const TOLERANCIA_RADIO = 1e-9
+const TOLERANCIA = 1e-9
 
 describe('generarGrafo', () => {
   it('da exactamente los nodos pedidos', () => {
@@ -46,19 +46,53 @@ describe('generarGrafo', () => {
   })
 })
 
-describe('calcularLayout', () => {
-  const posiciones = calcularLayout(grafo)
+describe('calcularLayout — la pantalla curva (FASE 15)', () => {
+  const SUELTAS = ['suelta-c', 'suelta-a', 'suelta-b']
+  const conSueltas: Grafo = {
+    nodos: [
+      ...grafo.nodos,
+      ...SUELTAS.map((id) => ({
+        id,
+        tipo: TipoNodo.TAREA,
+        titulo: id,
+        estado: EstadoNodo.ABIERTO,
+      })),
+    ],
+    conexiones: grafo.conexiones,
+  }
+  const posiciones = calcularLayout(conSueltas)
+  const todas = [...posiciones.values()]
+  const horizontal = ({ x, z }: Posicion) => Math.hypot(x, z)
+  const detras = (p: Posicion) => Math.abs(Math.abs(anguloDe(p)) - Math.PI) < Math.PI / 2
 
-  it('da una posición finita a cada nodo, dentro del radio del mundo', () => {
-    expect(posiciones.size).toBe(grafo.nodos.length)
-    const todas = [...posiciones.values()]
+  it('da una posición finita a cada nodo, todas a la misma distancia del usuario', () => {
+    expect(posiciones.size).toBe(conSueltas.nodos.length)
     expect(todas.every(({ x, y, z }) => [x, y, z].every(Number.isFinite))).toBe(true)
-    const radios = todas.map(({ x, y, z }) => Math.hypot(x, y - ALTURA_OJOS, z))
-    expect(Math.max(...radios)).toBeLessThanOrEqual(RADIO_MUNDO + TOLERANCIA_RADIO)
-    expect(Math.min(...radios)).toBeGreaterThanOrEqual(RADIO_LIBRE - TOLERANCIA_RADIO)
+    todas.forEach((p) => expect(horizontal(p)).toBeCloseTo(RADIO_PANORAMA, 9))
+  })
+
+  it('a la altura de los ojos: ni muy arriba ni muy abajo (sin subir ni bajar)', () => {
+    todas.forEach(({ y }) => {
+      expect(y).toBeGreaterThanOrEqual(ALTURA_OJOS - ALTO_MEDIO - TOLERANCIA)
+      expect(y).toBeLessThanOrEqual(ALTURA_OJOS + ALTO_MEDIO + TOLERANCIA)
+    })
+  })
+
+  it('lo conectado rodea al usuario; las sueltas van juntas detrás, no lanzadas al borde', () => {
+    SUELTAS.forEach((id) => expect(detras(posiciones.get(id) ?? { x: 0, y: 0, z: -1 })).toBe(true))
+    const conectadas = grafo.nodos.map(({ id }) => posiciones.get(id) ?? { x: 0, y: 0, z: 0 })
+    expect(conectadas.some((p) => p.z < 0)).toBe(true)
+    const derecha = conectadas.filter(({ x }) => x > RADIO_PANORAMA / 2).length
+    const izquierda = conectadas.filter(({ x }) => x < -RADIO_PANORAMA / 2).length
+    expect(derecha).toBeGreaterThan(0)
+    expect(izquierda).toBeGreaterThan(0)
+  })
+
+  it('el radio se puede calibrar', () => {
+    calcularLayout(conSueltas, 5).forEach((p) => expect(horizontal(p)).toBeCloseTo(5, 9))
   })
 
   it('es determinista: el mapa es el mismo cada vez', () => {
-    expect(calcularLayout(grafo)).toEqual(posiciones)
+    expect(calcularLayout(conSueltas)).toEqual(posiciones)
   })
 })

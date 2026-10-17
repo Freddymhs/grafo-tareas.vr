@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Grafo, Posicion } from '../lib/dominio'
-import type { RespuestaLayout } from '../lib/layout.worker'
+import { RADIO_PANORAMA } from '../lib/layout'
+import type { PedidoLayout, RespuestaLayout } from '../lib/layout.worker'
 
 interface Resultado {
   readonly grafo: Grafo
@@ -11,7 +12,10 @@ interface Resultado {
  * Las posiciones del grafo, calculadas en un Worker; `null` mientras se calculan o si no hay grafo que calcular
  * (`null` de entrada: el mapa ya está guardado y no hace falta el layout de fuerzas).
  */
-export function useLayout(grafo: Grafo | null): ReadonlyMap<string, Posicion> | null {
+export function useLayout(
+  grafo: Grafo | null,
+  radio: number = RADIO_PANORAMA,
+): ReadonlyMap<string, Posicion> | null {
   const [resultado, setResultado] = useState<Resultado | null>(null)
 
   useEffect(() => {
@@ -21,9 +25,10 @@ export function useLayout(grafo: Grafo | null): ReadonlyMap<string, Posicion> | 
     })
     worker.onmessage = ({ data }: MessageEvent<RespuestaLayout>) =>
       setResultado({ grafo, posiciones: new Map(data) })
-    worker.postMessage(grafo)
+    const pedido: PedidoLayout = { grafo, radio }
+    worker.postMessage(pedido)
     return () => worker.terminate()
-  }, [grafo])
+  }, [grafo, radio])
 
   // Un resultado de otro grafo (el anterior) no vale: se deriva, no se borra con un efecto.
   return resultado && resultado.grafo === grafo ? resultado.posiciones : null

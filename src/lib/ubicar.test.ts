@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Posicion } from './dominio'
-import { ALTURA_OJOS, RADIO_LIBRE, RADIO_MUNDO } from './layout'
+import { ALTO_MEDIO, ALTURA_OJOS, anguloDe, enCilindro } from './layout'
 import { SEPARACION_VECINO, hashUnitario, ubicarFaltantes } from './ubicar'
 
 const nodo = (id: string) => ({ id, tipo: TipoNodo.TAREA, titulo: id, estado: EstadoNodo.ABIERTO })
@@ -11,13 +11,15 @@ const grafo: Grafo = {
     { id: 'c2', origenId: 'nuevo-con-vecino', destinoId: 'b', tipo: TipoConexion.DEPENDE_DE },
   ],
 }
+/** Un mapa guardado de radio 2: a 30° a la izquierda y a la derecha del frente. */
+const RADIO_GUARDADO = 2
 const guardadas: ReadonlyMap<string, Posicion> = new Map([
-  ['a', { x: 2, y: ALTURA_OJOS, z: 0 }],
-  ['b', { x: 0, y: ALTURA_OJOS, z: 2 }],
+  ['a', enCilindro(-Math.PI / 6, ALTURA_OJOS, RADIO_GUARDADO)],
+  ['b', enCilindro(Math.PI / 6, ALTURA_OJOS, RADIO_GUARDADO)],
 ])
-const radio = ({ x, y, z }: Posicion) => Math.hypot(x, y - ALTURA_OJOS, z)
+const horizontal = ({ x, z }: Posicion) => Math.hypot(x, z)
 
-describe('ubicarFaltantes', () => {
+describe('ubicarFaltantes — sobre la pantalla curva (FASE 15)', () => {
   const { posiciones, nuevas } = ubicarFaltantes(grafo, guardadas)
 
   it('no mueve lo guardado y solo devuelve como nuevas las que faltaban', () => {
@@ -27,22 +29,21 @@ describe('ubicarFaltantes', () => {
     expect(posiciones.size).toBe(grafo.nodos.length)
   })
 
-  it('un nodo con vecinos ubicados cae junto al centro de ellos', () => {
-    const p = nuevas.get('nuevo-con-vecino')
-    const centro = { x: 1, y: ALTURA_OJOS, z: 1 }
-    expect(p).toBeDefined()
-    const distancia = Math.hypot(
-      (p?.x ?? 0) - centro.x,
-      (p?.y ?? 0) - centro.y,
-      (p?.z ?? 0) - centro.z,
-    )
-    expect(distancia).toBeLessThanOrEqual(SEPARACION_VECINO + 1e-9)
+  it('un nodo con vecinos ubicados cae entre ellos, en la misma pantalla', () => {
+    const p = nuevas.get('nuevo-con-vecino') ?? { x: 0, y: 0, z: 0 }
+    expect(Math.abs(anguloDe(p))).toBeLessThanOrEqual(SEPARACION_VECINO / RADIO_GUARDADO + 1e-9)
+    expect(Math.abs(p.y - ALTURA_OJOS)).toBeLessThanOrEqual(SEPARACION_VECINO + 1e-9)
   })
 
-  it('todo queda en la cáscara del mundo alrededor de los ojos', () => {
+  it('uno sin vecinos va detrás, con las sueltas', () => {
+    const p = nuevas.get('nuevo-solo') ?? { x: 0, y: 0, z: -1 }
+    expect(p.z).toBeGreaterThan(0)
+  })
+
+  it('todo queda en la pantalla del mapa guardado: su radio y la banda de los ojos', () => {
     nuevas.forEach((p) => {
-      expect(radio(p)).toBeGreaterThanOrEqual(RADIO_LIBRE - 1e-9)
-      expect(radio(p)).toBeLessThanOrEqual(RADIO_MUNDO + 1e-9)
+      expect(horizontal(p)).toBeCloseTo(RADIO_GUARDADO, 9)
+      expect(Math.abs(p.y - ALTURA_OJOS)).toBeLessThanOrEqual(ALTO_MEDIO + 1e-9)
     })
   })
 

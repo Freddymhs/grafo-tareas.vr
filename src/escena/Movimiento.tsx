@@ -8,7 +8,7 @@ import { XROrigin, useXR, useXRControllerLocomotion } from '@react-three/xr'
 import { useRef } from 'react'
 import type { Group } from 'three'
 
-/** m/s: el grafo ocupa una esfera de RADIO_MUNDO (4 m), se cruza en ~5 s. */
+/** m/s: la pantalla curva está a RADIO_PANORAMA (3 m): se llega a ella en ~2 s. */
 const TRASLACION = { speed: 1.5 } as const
 const GIRO = { type: 'snap', degrees: 30 } as const
 
