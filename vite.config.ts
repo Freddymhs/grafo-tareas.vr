@@ -16,9 +16,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Template React Vite',
-        short_name: 'ReactVite',
-        description: 'Template PWA local-first: Vite + React 19 + TypeScript',
+        name: 'grafo-tareas VR',
+        short_name: 'grafo VR',
+        description: 'El grafo de tareas alrededor, en el Meta Quest 3S (WebXR)',
         theme_color: PWA_THEME_COLOR,
         background_color: PWA_BACKGROUND_COLOR,
         display: 'standalone',
@@ -34,6 +34,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
+        // Los chunks del emulador IWER (y sus salas de muestra) solo sirven en desarrollo: fuera del precache.
+        globIgnores: ['**/emulate-*.js', '**/*_room-*.js', '**/office_*-*.js'],
       },
     }),
   ],

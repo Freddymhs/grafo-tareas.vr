@@ -1,13 +1,31 @@
-# template-react-vite
+# grafo-tareas.vr
 
-[![CI](https://github.com/Freddymhs/template-react-vite/actions/workflows/ci.yml/badge.svg)](https://github.com/Freddymhs/template-react-vite/actions/workflows/ci.yml)
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-latest-646CFF?logo=vite&logoColor=white)](https://vite.dev)
+El grafo de tareas de `grafo-tareas` alrededor de uno, en el Meta Quest 3S (WebXR). Nació de
+`Freddymhs/template-react-vite`; el plan vive en el orquestador: `../docs/_CONCEPTO.md` y
+`../docs/backlog/FASE_1_PRUEBA_VISOR.md`.
 
-Template starter para proyectos **PWA local-first** con Vite + React 19 + TypeScript estricto.
-Base genérica y lean: trae el tooling gold-standard listo (testing, lint, hooks, CI) y nada de
-librerías de dominio — esas se agregan por proyecto (ver seccion de abajo).
+**FASE 1 (en curso):** 500 nodos sintéticos con React Three Fiber + `@react-three/xr` + drei, layout `d3-force-3d`
+en un Web Worker. ¿Rinde a ≥ 72 FPS y se lee? Si no, se revisa la decisión del 3D antes de escribir la API.
+
+## Probar
+
+```bash
+npm run dev                          # PC: http://localhost:5173 — sin visor, el emulador IWER hace de Quest (src/lib/emulador.ts)
+../bin/probar-en-visor --abrir       # visor: build + preview + adb reverse + abre el Quest Browser (lo que se MIDE)
+../bin/probar-en-visor --dev         # visor con recarga en caliente (para iterar, no para medir)
+```
+
+WebXR exige contexto seguro: `adb reverse` deja el servidor del PC en el `localhost` del Quest, sin certificados.
+`?nodos=` va de 30 a 2000 y `?semilla=` cambia el grafo. El medidor de FPS va pegado a la vista (abajo a la
+izquierda): verde ≥ 72, rojo por debajo. Gatillo sobre un nodo = qué lo bloquea.
+
+**Una sola copia de `three`** (`overrides` en `package.json`): `@iwer/devui` traía la 0.165 y en VR emulado cada
+frame fallaba con `material.onBuild is not a function` (pantalla negra).
+
+| carpeta       | qué hay                                                                                                                                                        |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/`    | dominio, generador sintético (`sintetico.ts`), layout (`layout.ts` + `layout.worker.ts`), colores, bloqueo (este último se va en la FASE 4: lo calcula la API) |
+| `src/escena/` | `Grafo` (compone), `Nodos` (instanciados, 1 draw call), `Aristas` (1 geometría por capa), `Etiquetas` (solo las cercanas), `Seleccion`, `Medidor`              |
 
 ## Stack
 
@@ -42,20 +60,20 @@ npm run dev
 
 ### Scripts
 
-| Script                 | Que hace                                                                           |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| `npm run dev`          | Servidor de desarrollo con HMR                                                     |
-| `npm run build`        | Type-check (`tsc -b`) + build de produccion (`dist/`)                              |
-| `npm run preview`      | Sirve el build de produccion localmente                                            |
-| `npm run lint`         | ESLint sobre todo el proyecto                                                      |
-| `npm run lint:fix`     | ESLint con `--fix`                                                                 |
-| `npm run format`       | Prettier `--write` sobre todo el proyecto                                          |
-| `npm run format:check` | Prettier `--check` (usado en CI)                                                   |
-| `npm run type-check`   | `tsc -b` sin build de Vite                                                         |
-| `npm run test`         | Vitest en modo watch                                                               |
-| `npm run test:run`     | Vitest una sola pasada (usado en CI)                                               |
-| `npm run test:e2e`     | Playwright — requiere `npx playwright install --with-deps chromium` la primera vez |
-| `npm run prepare`      | Instala los hooks de Husky (se corre solo en `npm install`)                        |
+| Script                 | Que hace                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`          | Servidor de desarrollo con HMR                                                                                                       |
+| `npm run build`        | Type-check (`tsc -b`) + build de produccion (`dist/`)                                                                                |
+| `npm run preview`      | Sirve el build de produccion localmente                                                                                              |
+| `npm run lint`         | ESLint sobre todo el proyecto                                                                                                        |
+| `npm run lint:fix`     | ESLint con `--fix`                                                                                                                   |
+| `npm run format`       | Prettier `--write` sobre todo el proyecto                                                                                            |
+| `npm run format:check` | Prettier `--check` (usado en CI)                                                                                                     |
+| `npm run type-check`   | `tsc -b` sin build de Vite                                                                                                           |
+| `npm run test`         | Vitest en modo watch                                                                                                                 |
+| `npm run test:run`     | Vitest una sola pasada (usado en CI)                                                                                                 |
+| `npm run test:e2e`     | Playwright — requiere `npx playwright install --with-deps chromium` la primera vez (o el Chrome del sistema con `channel: 'chrome'`) |
+| `npm run prepare`      | Instala los hooks de Husky (se corre solo en `npm install`)                                                                          |
 
 ## Que agregar por proyecto
 
