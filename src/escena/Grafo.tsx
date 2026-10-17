@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { coloresPorNodo } from '../lib/colores'
-import { OPACIDAD_ARISTA, OPACIDAD_PERTENENCIA } from '../lib/constants/grafo'
-import { TipoConexion, type Grafo as GrafoDominio, type Posicion } from '../lib/dominio'
+import { OPACIDAD_ARISTA, OPACIDAD_ESTRUCTURA, OPACIDAD_PERTENENCIA } from '../lib/constants/grafo'
+import { TipoConexion, TipoNodo, type Grafo as GrafoDominio, type Posicion } from '../lib/dominio'
 import { Aristas } from './Aristas'
 import { Etiquetas } from './Etiquetas'
 import { Medidor } from './Medidor'
@@ -21,11 +21,17 @@ interface Props {
 
 export function Grafo({ grafo, posiciones, conApi }: Props) {
   const colores = useMemo(() => coloresPorNodo(grafo), [grafo])
-  const { pertenencias, relaciones } = useMemo(() => {
-    const esPertenencia = ({ tipo }: { tipo: TipoConexion }) => tipo === TipoConexion.PERTENECE_A
+  // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
+  // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
+  const { aRamas, arbol, relaciones } = useMemo(() => {
+    const tipoDe = new Map(grafo.nodos.map(({ id, tipo }) => [id, tipo]))
+    const pertenencias = grafo.conexiones.filter(({ tipo }) => tipo === TipoConexion.PERTENECE_A)
+    const esARama = ({ destinoId }: { destinoId: string }) =>
+      tipoDe.get(destinoId) === TipoNodo.RAMA
     return {
-      pertenencias: grafo.conexiones.filter(esPertenencia),
-      relaciones: grafo.conexiones.filter((c) => !esPertenencia(c)),
+      aRamas: pertenencias.filter(esARama),
+      arbol: pertenencias.filter((c) => !esARama(c)),
+      relaciones: grafo.conexiones.filter(({ tipo }) => tipo !== TipoConexion.PERTENECE_A),
     }
   }, [grafo])
   const seleccionado = useEstadoVr((estado) => estado.seleccionado)
@@ -55,11 +61,8 @@ export function Grafo({ grafo, posiciones, conApi }: Props) {
             onSeleccionar={tocarNodo}
           />
           <Aristas conexiones={relaciones} posiciones={posiciones} opacidad={OPACIDAD_ARISTA} />
-          <Aristas
-            conexiones={pertenencias}
-            posiciones={posiciones}
-            opacidad={OPACIDAD_PERTENENCIA}
-          />
+          <Aristas conexiones={arbol} posiciones={posiciones} opacidad={OPACIDAD_ESTRUCTURA} />
+          <Aristas conexiones={aRamas} posiciones={posiciones} opacidad={OPACIDAD_PERTENENCIA} />
           <Etiquetas nodos={grafo.nodos} posiciones={posiciones} excluir={seleccionado} />
           {nodoSeleccionado && posicionSeleccionado ? (
             conApi ? (

@@ -1,6 +1,7 @@
 // El grafo real: lo pide a la API, decide las posiciones y guarda las que faltaban (FASE 6, tareas 1 y 2).
 // Primera vez (nada guardado) → layout de fuerzas en el Worker → PUT de todas. Después → las guardadas, y los
 // nodos nuevos junto a sus vecinos (`ubicarFaltantes`) → PUT solo de esos. El mapa no cambia de un día a otro.
+// `reordenar` (FASE 13): cuando el árbol cambió, el layout se rehace entero con las conexiones de hoy y se guarda.
 import { useEffect, useMemo, useRef } from 'react'
 import { useConexionesControllerFindAll } from '../lib/api/generado/conexiones/conexiones'
 import {
@@ -24,7 +25,7 @@ export type EstadoMapa =
       readonly aviso: string | null
     }
 
-export function useMapaApi(): EstadoMapa {
+export function useMapaApi(reordenar = false): EstadoMapa {
   const nodos = useNodosControllerFindAll({ limit: LIMITE_GRAFO })
   const conexiones = useConexionesControllerFindAll()
   const guardar = useNodosControllerGuardarPosiciones()
@@ -38,7 +39,7 @@ export function useMapaApi(): EstadoMapa {
     () => (nodos.data ? posicionesGuardadas(nodos.data.data) : new Map<string, Posicion>()),
     [nodos.data],
   )
-  const mapaVacio = grafo !== null && guardadas.size === 0 && grafo.nodos.length > 0
+  const mapaVacio = grafo !== null && grafo.nodos.length > 0 && (guardadas.size === 0 || reordenar)
   const layout = useLayout(mapaVacio ? grafo : null)
   const ubicacion = useMemo(() => {
     if (!grafo) return null

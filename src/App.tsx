@@ -92,7 +92,7 @@ function VistaSintetica({ prueba }: { readonly prueba: ParametrosPrueba }) {
 
 /** El grafo real (FASE 6): de la API, con las posiciones guardadas. */
 function VistaApi() {
-  const mapa = useMapaApi()
+  const mapa = useMapaApi(parametros.reordenar)
   if (mapa.estado !== 'listo') {
     return (
       <Vista

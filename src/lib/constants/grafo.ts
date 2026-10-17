@@ -28,7 +28,12 @@ export const COLORES_RAMA = [
 export const COLOR_SIN_RAMA = '#94a3b8'
 export const COLOR_PERSONA = '#f8fafc'
 export const COLOR_DUDA = '#ef4444'
+/** El esqueleto del árbol (FASE 13): la HU es el centro de su racimo y la FASE el documento de una task. */
+export const COLOR_HISTORIA = '#fde68a'
+export const COLOR_FASE = '#c4b5fd'
 export const COLOR_ARISTA = '#64748b'
 export const OPACIDAD_ARISTA = 0.6
 /** PERTENECE_A es la mitad de las aristas y el color del nodo ya dice la rama: va tenue para no tapar los bloqueos. */
 export const OPACIDAD_PERTENENCIA = 0.08
+/** PERTENECE_A una FASE o una HU es el árbol (tarjeta → FASE → HU): se ve, a diferencia de la pertenencia a una rama. */
+export const OPACIDAD_ESTRUCTURA = 0.4

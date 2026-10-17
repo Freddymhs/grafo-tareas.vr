@@ -1,15 +1,17 @@
 // Etiquetas solo en los nodos más cercanos a la cabeza (FASE 1, D3): un `<Text>` por nodo no escala ni se lee.
+// Las HU siempre llevan la suya, más grande (FASE 13): son pocas y son las que orientan entre racimos.
 // Se recalcula unas pocas veces por segundo, no en cada frame, y solo re-renderiza si cambió el conjunto.
 
 import { Billboard, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef, useState } from 'react'
-import type { Nodo, Posicion } from '../lib/dominio'
+import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
 import { LARGO_ETIQUETA, textoVisible } from '../lib/texto-visible'
 
 export const ETIQUETAS_CERCANAS = 12
 const SEGUNDOS_ENTRE_CALCULOS = 0.25
 const TAMANO_TEXTO = 0.035
+const TAMANO_TEXTO_HU = 0.08
 const DESPLAZAMIENTO_Y = 0.09
 const COLOR_TEXTO = '#e2e8f0'
 
@@ -43,13 +45,21 @@ export function Etiquetas({ nodos, posiciones, excluir }: Props) {
   })
 
   const porId = new Map(nodos.map((nodo) => [nodo.id, nodo]))
+  const historias = nodos
+    .filter(({ tipo, id }) => tipo === TipoNodo.HISTORIA && id !== excluir)
+    .map(({ id }) => id)
+  const visibles = [...new Set([...historias, ...cercanos])]
   return (
     <>
-      {cercanos.map((id) => {
+      {visibles.map((id) => {
         const { x, y, z } = posiciones.get(id) ?? { x: 0, y: 0, z: 0 }
         return (
           <Billboard key={id} position={[x, y + DESPLAZAMIENTO_Y, z]}>
-            <Text fontSize={TAMANO_TEXTO} color={COLOR_TEXTO} anchorY="bottom">
+            <Text
+              fontSize={porId.get(id)?.tipo === TipoNodo.HISTORIA ? TAMANO_TEXTO_HU : TAMANO_TEXTO}
+              color={COLOR_TEXTO}
+              anchorY="bottom"
+            >
               {textoVisible(porId.get(id)?.titulo ?? id, LARGO_ETIQUETA)}
             </Text>
           </Billboard>

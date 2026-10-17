@@ -14,6 +14,8 @@ export interface ParametrosPrueba {
   readonly fuente: FuenteGrafo
   readonly nodos: number
   readonly semilla: number
+  /** Recalcula el layout entero e ignora las posiciones guardadas (y las reemplaza): el árbol cambió. */
+  readonly reordenar: boolean
 }
 
 function entero(valor: string | null, porDefecto: number): number {
@@ -34,5 +36,6 @@ export function leerParametros(busqueda: string): ParametrosPrueba {
     fuente: esPrueba ? FuenteGrafo.SINTETICO : FuenteGrafo.API,
     nodos: enRango ? nodos : NODOS_PRUEBA,
     semilla: entero(query.get('semilla'), SEMILLA_PRUEBA),
+    reordenar: query.has('reordenar'),
   }
 }
