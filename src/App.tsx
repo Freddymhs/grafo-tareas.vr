@@ -1,4 +1,3 @@
-import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore } from '@react-three/xr'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -10,6 +9,7 @@ import { FuenteGrafo, leerParametros, type ParametrosPrueba } from './lib/parame
 import { registrarError } from './lib/registro'
 import { generarGrafo } from './lib/sintetico'
 import { Grafo } from './escena/Grafo'
+import { Movimiento } from './escena/Movimiento'
 import { useLayout } from './escena/useLayout'
 import { useMapaApi } from './escena/useMapaApi'
 
@@ -76,8 +76,8 @@ function Vista({ grafo, posiciones, conApi, mensaje }: PropsVista) {
           <ambientLight intensity={LUZ_AMBIENTE} />
           <directionalLight position={POSICION_LUZ} intensity={LUZ_DIRECCIONAL} />
           <Grafo grafo={grafo} posiciones={posiciones} conApi={conApi} />
+          <Movimiento objetivoOrbita={OBJETIVO_ORBITA} />
         </XR>
-        <OrbitControls target={OBJETIVO_ORBITA} />
       </Canvas>
     </main>
   )
