@@ -5,6 +5,7 @@ import { Billboard, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import type { Nodo, Posicion } from '../lib/dominio'
+import { LARGO_ETIQUETA, textoVisible } from '../lib/texto-visible'
 
 export const ETIQUETAS_CERCANAS = 12
 const SEGUNDOS_ENTRE_CALCULOS = 0.25
@@ -49,7 +50,7 @@ export function Etiquetas({ nodos, posiciones, excluir }: Props) {
         return (
           <Billboard key={id} position={[x, y + DESPLAZAMIENTO_Y, z]}>
             <Text fontSize={TAMANO_TEXTO} color={COLOR_TEXTO} anchorY="bottom">
-              {porId.get(id)?.titulo ?? id}
+              {textoVisible(porId.get(id)?.titulo ?? id, LARGO_ETIQUETA)}
             </Text>
           </Billboard>
         )

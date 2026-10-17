@@ -1,5 +1,6 @@
-// El modelo de dominio de `docs/_CONCEPTO.md` § Modelo de dominio. En la FASE 4 lo reemplazan los tipos que
-// genera Orval desde el OpenAPI de la API; los nombres son los mismos a propósito.
+// El modelo que dibuja la escena: lo justo para el layout y los colores. Los datos reales llegan con los tipos que
+// genera Orval (src/lib/api/generado) y `desde-api.ts` los baja a esto; el sintético de la FASE 1 los produce
+// directo. Los nombres son los del OpenAPI a propósito. Qué bloquea a qué NO vive acá: lo calcula la API (C1).
 
 export const TipoNodo = {
   TAREA: 'TAREA',
@@ -27,13 +28,6 @@ export const EstadoNodo = {
   CERRADO: 'CERRADO',
 } as const
 export type EstadoNodo = (typeof EstadoNodo)[keyof typeof EstadoNodo]
-
-/** Las conexiones que bloquean a su origen mientras el destino siga ABIERTO. */
-export const CONEXIONES_BLOQUEANTES: ReadonlySet<TipoConexion> = new Set([
-  TipoConexion.DEPENDE_DE,
-  TipoConexion.BLOQUEADA_POR,
-  TipoConexion.ESPERA_RESPUESTA_DE,
-])
 
 export interface Posicion {
   readonly x: number

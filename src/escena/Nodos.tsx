@@ -9,6 +9,9 @@ const SEGMENTOS_ESFERA = 12
 const ESCALA_CERRADO = 0.5
 const ESCALA_BLOQUEANTE = 1.8
 const ESCALA_SELECCIONADO = 2.2
+/** Lo que se liberó al cerrar (FASE 7): más grande y en verde, para que se vea qué destrabó. */
+const ESCALA_RESALTADO = 1.9
+const COLOR_RESALTADO = '#4ade80'
 const BLOQUEANTES: ReadonlySet<string> = new Set([TipoNodo.PERSONA, TipoNodo.DUDA, TipoNodo.RAMA])
 
 interface Props {
@@ -16,16 +19,29 @@ interface Props {
   readonly posiciones: ReadonlyMap<string, Posicion>
   readonly colores: ReadonlyMap<string, string>
   readonly seleccionado: string | null
+  readonly resaltados: ReadonlySet<string>
   readonly onSeleccionar: (id: string) => void
 }
 
-function escalaDe(nodo: Nodo, seleccionado: string | null): number {
+function escalaDe(
+  nodo: Nodo,
+  seleccionado: string | null,
+  resaltados: ReadonlySet<string>,
+): number {
   if (nodo.id === seleccionado) return ESCALA_SELECCIONADO
+  if (resaltados.has(nodo.id)) return ESCALA_RESALTADO
   if (BLOQUEANTES.has(nodo.tipo)) return ESCALA_BLOQUEANTE
   return nodo.estado === EstadoNodo.CERRADO ? ESCALA_CERRADO : 1
 }
 
-export function Nodos({ nodos, posiciones, colores, seleccionado, onSeleccionar }: Props) {
+export function Nodos({
+  nodos,
+  posiciones,
+  colores,
+  seleccionado,
+  resaltados,
+  onSeleccionar,
+}: Props) {
   return (
     <Instances limit={nodos.length} range={nodos.length}>
       <sphereGeometry args={[RADIO_NODO, SEGMENTOS_ESFERA, SEGMENTOS_ESFERA]} />
@@ -40,8 +56,8 @@ export function Nodos({ nodos, posiciones, colores, seleccionado, onSeleccionar 
           <Instance
             key={nodo.id}
             position={[x, y, z]}
-            color={colores.get(nodo.id)}
-            scale={escalaDe(nodo, seleccionado)}
+            color={resaltados.has(nodo.id) ? COLOR_RESALTADO : colores.get(nodo.id)}
+            scale={escalaDe(nodo, seleccionado, resaltados)}
             onClick={seleccionar}
           />
         )

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { bloqueadoPor } from './bloqueo'
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
-import { EstadoNodo, TipoConexion, TipoNodo, type Grafo } from './dominio'
+import { TipoConexion, TipoNodo } from './dominio'
 import { ALTURA_OJOS, RADIO_LIBRE, RADIO_MUNDO, calcularLayout } from './layout'
 import { generarGrafo } from './sintetico'
 
@@ -44,27 +43,6 @@ describe('generarGrafo', () => {
     const dependencias = grafo.conexiones.filter(({ tipo }) => tipo === TipoConexion.DEPENDE_DE)
     expect(dependencias.length).toBeGreaterThan(0)
     expect(dependencias.every((c) => indice(c.destinoId) < indice(c.origenId))).toBe(true)
-  })
-})
-
-describe('bloqueadoPor', () => {
-  const chico: Grafo = {
-    nodos: [
-      { id: 'a', tipo: TipoNodo.TAREA, titulo: 'A', estado: EstadoNodo.ABIERTO },
-      { id: 'b', tipo: TipoNodo.TAREA, titulo: 'B', estado: EstadoNodo.ABIERTO },
-      { id: 'c', tipo: TipoNodo.TAREA, titulo: 'C', estado: EstadoNodo.CERRADO },
-      { id: 'r', tipo: TipoNodo.RAMA, titulo: 'R', estado: EstadoNodo.ABIERTO, color: '#fff' },
-    ],
-    conexiones: [
-      { id: '1', origenId: 'a', destinoId: 'b', tipo: TipoConexion.DEPENDE_DE },
-      { id: '2', origenId: 'a', destinoId: 'c', tipo: TipoConexion.DEPENDE_DE },
-      { id: '3', origenId: 'a', destinoId: 'r', tipo: TipoConexion.PERTENECE_A },
-    ],
-  }
-
-  it('cuenta solo lo bloqueante y abierto: ni la rama ni la dependencia cerrada', () => {
-    expect(bloqueadoPor(chico, 'a').map(({ id }) => id)).toEqual(['b'])
-    expect(bloqueadoPor(chico, 'b')).toEqual([])
   })
 })
 

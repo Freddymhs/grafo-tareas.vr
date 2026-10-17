@@ -9,7 +9,15 @@ vi.mock('@react-three/xr', () => ({
   createXRStore: () => ({ enterVR: vi.fn(() => Promise.reject(new Error('sin visor'))) }),
 }))
 
+// Sin API detrás: el fetch falla como falla un servidor apagado.
+vi.stubGlobal(
+  'fetch',
+  vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))),
+)
+
 const { default: App } = await import('./App')
+
+const ESPERA_REINTENTO_MS = 5000
 
 describe('App', () => {
   it('muestra el lienzo y el botón para entrar en VR', () => {
@@ -25,6 +33,21 @@ describe('App', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Entrar en VR' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo entrar en VR: sin visor')
+    expect(
+      await screen.findByText('No se pudo entrar en VR: sin visor', undefined, {
+        timeout: ESPERA_REINTENTO_MS,
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('sin API, lo dice en pantalla en vez de mostrar un mapa vacío', async () => {
+    render(<App />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Leyendo el grafo…')
+    expect(
+      await screen.findByText(/No se pudo leer la API/, undefined, {
+        timeout: ESPERA_REINTENTO_MS,
+      }),
+    ).toBeInTheDocument()
   })
 })

@@ -4,28 +4,37 @@ El grafo de tareas de `grafo-tareas` alrededor de uno, en el Meta Quest 3S (WebX
 `Freddymhs/template-react-vite`; el plan vive en el orquestador: `../docs/_CONCEPTO.md` y
 `../docs/backlog/FASE_1_PRUEBA_VISOR.md`.
 
-**FASE 1 (en curso):** 500 nodos sintéticos con React Three Fiber + `@react-three/xr` + drei, layout `d3-force-3d`
-en un Web Worker. ¿Rinde a ≥ 72 FPS y se lee? Si no, se revisa la decisión del 3D antes de escribir la API.
+**Estado (2026-10-17):** FASE 1 ✅ (500 nodos sintéticos a 72 FPS: React Three Fiber + `@react-three/xr` + drei,
+layout `d3-force-3d` en un Web Worker). FASE 6 ✅: el grafo real de la API, con las posiciones guardadas y el bloqueo
+que responde la API. FASE 7 ✅: cerrar un nodo y ver qué libera, y conectar apuntando con el rayo del control.
 
 ## Probar
 
 ```bash
-npm run dev                          # PC: http://localhost:5173 — sin visor, el emulador IWER hace de Quest (src/lib/emulador.ts)
-../bin/probar-en-visor --abrir       # visor: build + preview + adb reverse + abre el Quest Browser (lo que se MIDE)
-../bin/probar-en-visor --dev         # visor con recarga en caliente (para iterar, no para medir)
+npm run dev                              # PC: http://localhost:5173 — sin visor, el emulador IWER hace de Quest (src/lib/emulador.ts)
+../bin/probar-en-visor --api --abrir     # visor, el grafo REAL: build + preview + adb reverse (VR y API) + abre el Quest Browser
+../bin/probar-en-visor --abrir           # visor, la prueba de la FASE 1: 500 nodos sintéticos (lo que se MIDE)
+../bin/probar-en-visor --dev             # visor con recarga en caliente (para iterar, no para medir)
+npm run api:generar                      # regenera el cliente desde ../grafo-tareas.api/openapi.json (Orval)
 ```
 
 WebXR exige contexto seguro: `adb reverse` deja el servidor del PC en el `localhost` del Quest, sin certificados.
-`?nodos=` va de 30 a 2000 y `?semilla=` cambia el grafo. El medidor de FPS va pegado a la vista (abajo a la
-izquierda): verde ≥ 72, rojo por debajo. Gatillo sobre un nodo = qué lo bloquea.
+Sin query la escena lee la API (`VITE_API_URL`, default `http://localhost:3000`); `?nodos=` (30 a 2000) o
+`?sintetico` usan el generador de la FASE 1 y `?semilla=` lo cambia. El medidor de FPS va pegado a la vista
+(abajo a la izquierda): verde ≥ 72, rojo por debajo.
+
+**Con la API (FASE 6 y 7):** la primera vez el layout de fuerzas reparte los nodos y guarda las posiciones en la
+API; después el mapa es siempre el mismo y cada nodo nuevo cae junto a sus vecinos. Gatillo sobre un nodo = su
+título, qué lo bloquea (lo responde la API) y el panel: **Cerrar** (y en verde lo que se libera) o **Este depende
+de… / bloqueada por… / espera respuesta de…** y gatillo sobre el otro nodo para conectarlos.
 
 **Una sola copia de `three`** (`overrides` en `package.json`): `@iwer/devui` traía la 0.165 y en VR emulado cada
 frame fallaba con `material.onBuild is not a function` (pantalla negra).
 
-| carpeta       | qué hay                                                                                                                                                        |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/`    | dominio, generador sintético (`sintetico.ts`), layout (`layout.ts` + `layout.worker.ts`), colores, bloqueo (este último se va en la FASE 4: lo calcula la API) |
-| `src/escena/` | `Grafo` (compone), `Nodos` (instanciados, 1 draw call), `Aristas` (1 geometría por capa), `Etiquetas` (solo las cercanas), `Seleccion`, `Medidor`              |
+| carpeta       | qué hay                                                                                                                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/`    | dominio, cliente de la API (`api/`, generado por Orval), `desde-api.ts`, `ubicar.ts` (posiciones nuevas), `estado-vr.ts` (Zustand), `texto-visible.ts`, generador sintético, layout (`layout.ts` + `layout.worker.ts`), colores |
+| `src/escena/` | `Grafo` (compone), `Nodos` (instanciados, 1 draw call), `Aristas` (1 geometría por capa), `Etiquetas` (solo las cercanas), `Seleccion`, `PanelAcciones` + `Boton3D`, `Medidor`, `useMapaApi`, `useAccionesVr`                   |
 
 ## Stack
 
@@ -77,11 +86,13 @@ npm run dev
 
 ## Que agregar por proyecto
 
+Ya agregadas en este proyecto: **TanStack Query** + **Orval** (el cliente de la API, FASE 6) y **Zustand** (el estado
+de la escena, FASE 7).
+
 Este template es intencionalmente lean. Las siguientes librerias **no** vienen instaladas — se
 agregan segun lo que el proyecto concreto necesite:
 
 - **Dexie** — si el proyecto necesita persistencia local con IndexedDB (offline-first real, no solo cache de assets).
-- **Zustand** — si el estado global crece mas alla de lo que Context/props resuelve limpio.
 - **Recharts** — si el proyecto muestra graficos/dashboards.
 - **react-hook-form** — si hay formularios con validacion compleja.
 - **Zod** — si necesitas validar schemas en runtime (forms, respuestas de API, `localStorage`).
