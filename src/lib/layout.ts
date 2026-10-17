@@ -1,21 +1,34 @@
 // La pantalla curva (FASE 15, pedido de Freddy en el visor): el grafo rodea al usuario como una pantalla de 360° a
-// la altura de los ojos, todo a la misma distancia, sin subir ni bajar. Lo conectado va delante y a los lados (un
-// layout de fuerzas en 2D, enrollado en el cilindro); lo que no tiene ninguna conexión va junto, en una grilla detrás:
-// en un layout de fuerzas lo suelto sale despedido al borde y, como el más lejano fija la escala, encoge a todo lo
-// demás. Es solo geometría de presentación; se calcula UNA vez fuera del render (FASE 1, D4) y se persiste (C2).
+// la altura de los ojos, todo a la misma distancia, sin subir ni bajar. Lo conectado va delante y a los lados; lo que
+// no tiene ninguna conexión va junto, en una grilla detrás. El acomodo se calcula en metros de la pantalla desenrollada
+// y reserva para cada nodo la celda de su etiqueta (`CELDA`): las fuerzas acercan lo relacionado y el choque impide
+// que un texto pise a otro («así es imposible de leer», 2026-10-17). La pertenencia a una rama tira poco: el color ya
+// la dice, y con fuerza normal cada rama (≈80 tarjetas) amontonaba todo en un punto. Es solo geometría de presentación;
+// se calcula UNA vez fuera del render (FASE 1, D4) y se persiste (C2).
 import {
-  forceCenter,
+  forceCollide,
   forceLink,
   forceManyBody,
   forceSimulation,
+  type FuerzaPropia,
   type NodoSimulacion,
 } from 'd3-force-3d'
-import type { Grafo, Nodo, Posicion } from './dominio'
+import { CELDA, CELDA_HU } from './constants/etiquetas'
+import { TipoConexion, TipoNodo, type Grafo, type Nodo, type Posicion } from './dominio'
+import { hashUnitario } from './hash'
 
 const DIMENSIONES = 2
-export const TICKS_LAYOUT = 300
-const DISTANCIA_ENLACE = 30
-const CARGA = -40
+export const TICKS_LAYOUT = 400
+/** Una celda de distancia entre dos nodos enlazados: juntos, sin pisarse. */
+const DISTANCIA_ENLACE = CELDA.ancho
+/** Lo que una rama tira de sus tarjetas, frente a ~1 de un enlace normal. */
+const FUERZA_RAMA = 0.02
+/** Repulsión suave y de corto alcance: separa los grupos sin dispersarlos. */
+const CARGA = -0.05
+const ALCANCE_CARGA = 2
+const VUELTAS_CHOQUE = 3
+/** Las celdas son anchas y bajas: la altura se estira por este factor y el choque se calcula con círculos. */
+const ASPECTO = CELDA.ancho / CELDA.alto
 export const ALTURA_OJOS = 1.6
 /** Distancia (m) de la pantalla al usuario. Se calibra con `?radio=` (FASE 15). */
 export const RADIO_PANORAMA = 3
@@ -37,17 +50,17 @@ export function anguloDe({ x, z }: Posicion): number {
   return Math.atan2(x, -z)
 }
 
-/** Lleva [min, max] a [desde, hasta]; un rango vacío cae en el medio. */
-function escalar(valor: number, min: number, max: number, desde: number, hasta: number): number {
-  const ancho = max - min
-  return ancho === 0 ? (desde + hasta) / 2 : desde + ((valor - min) / ancho) * (hasta - desde)
-}
-
 function conConexion(grafo: Grafo): ReadonlySet<string> {
   return new Set(grafo.conexiones.flatMap(({ origenId, destinoId }) => [origenId, destinoId]))
 }
 
-/** Lo conectado, con fuerzas en 2D, enrollado en `arco` centrado al frente. */
+const radioDeCelda = (tipo: TipoNodo | undefined) =>
+  (tipo === TipoNodo.HISTORIA ? CELDA_HU.ancho : CELDA.ancho) / 2
+
+/**
+ * Lo conectado, enrollado en `arco` centrado al frente. La simulación corre en la pantalla desenrollada: `x` en metros
+ * a lo largo del arco y `y` en metros de altura × ASPECTO, para que la celda (ancha y baja) sea un círculo.
+ */
 function ubicarConectadas(
   grafo: Grafo,
   ids: ReadonlySet<string>,
@@ -55,34 +68,57 @@ function ubicarConectadas(
   radio: number,
   ticks: number,
 ): ReadonlyArray<readonly [string, Posicion]> {
-  // d3 escribe x/y en estos objetos: son copias que nacen y mueren acá, el grafo de entrada no se toca.
-  const nodosSimulacion: NodoSimulacion[] = [...ids].map((id) => ({ id }))
-  const enlaces = grafo.conexiones.map(({ origenId, destinoId }) => ({
+  const tipoDe = new Map(grafo.nodos.map(({ id, tipo }) => [id, tipo]))
+  const grado = new Map<string, number>()
+  grafo.conexiones.forEach(({ origenId, destinoId }) => {
+    grado.set(origenId, (grado.get(origenId) ?? 0) + 1)
+    grado.set(destinoId, (grado.get(destinoId) ?? 0) + 1)
+  })
+  const mitadAncho = (arco * radio) / 2
+  const mitadAlto = ALTO_MEDIO * ASPECTO
+  // d3 escribe x/y en estos objetos: son copias que nacen y mueren acá, el grafo de entrada no se toca. Arrancan
+  // repartidas por toda la pantalla (fijo por id), no apiladas en el centro.
+  const nodosSimulacion: NodoSimulacion[] = [...ids].map((id) => ({
+    id,
+    x: (2 * hashUnitario(id, 'u') - 1) * mitadAncho * 0.9,
+    y: (2 * hashUnitario(id, 'v') - 1) * mitadAlto * 0.9,
+  }))
+  const enlaces = grafo.conexiones.map(({ origenId, destinoId, tipo }) => ({
     source: origenId,
     target: destinoId,
+    fuerza:
+      tipo === TipoConexion.PERTENECE_A && tipoDe.get(destinoId) === TipoNodo.RAMA
+        ? FUERZA_RAMA
+        : 1 / Math.min(grado.get(origenId) ?? 1, grado.get(destinoId) ?? 1),
   }))
+  const radioDe = ({ id }: NodoSimulacion) => radioDeCelda(tipoDe.get(id))
+  // Las paredes de la pantalla: ninguna celda sale del arco ni de la banda de los ojos. d3 mueve cada nodo DESPUÉS de
+  // las fuerzas (x += vx), así que la pared recorta la velocidad, no la posición.
+  const acotar = (valor: number, minimo: number, maximo: number) =>
+    Math.min(maximo, Math.max(minimo, valor))
+  const dentroDeLaPantalla: FuerzaPropia = () =>
+    nodosSimulacion.forEach((nodo) => {
+      const margen = radioDe(nodo)
+      const { x = 0, y = 0, vx = 0, vy = 0 } = nodo
+      nodo.vx = acotar(x + vx, -mitadAncho + margen, mitadAncho - margen) - x
+      nodo.vy = acotar(y + vy, -mitadAlto + margen, mitadAlto - margen) - y
+    })
   forceSimulation(nodosSimulacion, DIMENSIONES)
     .force(
       'enlace',
       forceLink(enlaces)
         .id(({ id }) => id)
-        .distance(DISTANCIA_ENLACE),
+        .distance(DISTANCIA_ENLACE)
+        .strength((enlace) => ('fuerza' in enlace ? Number(enlace.fuerza) : 1)),
     )
-    .force('carga', forceManyBody().strength(CARGA))
-    .force('centro', forceCenter(0, 0))
+    .force('carga', forceManyBody().strength(CARGA).distanceMax(ALCANCE_CARGA))
+    .force('choque', forceCollide().radius(radioDe).iterations(VUELTAS_CHOQUE))
+    .force('pantalla', dentroDeLaPantalla)
     .stop()
     .tick(ticks)
-  const xs = nodosSimulacion.map(({ x = 0 }) => x)
-  const ys = nodosSimulacion.map(({ y = 0 }) => y)
-  const xMin = Math.min(...xs)
-  const xMax = Math.max(...xs)
-  const yMin = Math.min(...ys)
-  const yMax = Math.max(...ys)
   return nodosSimulacion.map(({ id, x = 0, y = 0 }) => {
-    const angulo = escalar(x, xMin, xMax, -arco / 2, arco / 2)
-    // En d3 la y crece hacia abajo (como en una pantalla); en three, hacia arriba.
-    const altura = escalar(y, yMin, yMax, ALTURA_OJOS + ALTO_MEDIO, ALTURA_OJOS - ALTO_MEDIO)
-    return [id, enCilindro(angulo, altura, radio)] as const
+    const altura = ALTURA_OJOS + y / ASPECTO
+    return [id, enCilindro(x / radio, altura, radio)] as const
   })
 }
 
@@ -92,11 +128,7 @@ function ubicarSueltas(
   arco: number,
   radio: number,
 ): ReadonlyArray<readonly [string, Posicion]> {
-  const anchoArco = arco * radio
-  const columnas = Math.max(
-    1,
-    Math.round(Math.sqrt((sueltas.length * anchoArco) / (2 * ALTO_MEDIO))),
-  )
+  const columnas = Math.max(1, Math.floor((arco * radio) / CELDA.ancho))
   const filas = Math.ceil(sueltas.length / columnas)
   const ordenadas = sueltas.toSorted(
     (a, b) => a.titulo.localeCompare(b.titulo) || a.id.localeCompare(b.id),
@@ -110,12 +142,14 @@ function ubicarSueltas(
   })
 }
 
-/** Cuánto del círculo ocupan las sueltas: su proporción, acotada (ni un hilo ni media pantalla). */
-function arcoDeSueltas(sueltas: number, total: number): number {
+const FILAS_EN_LA_BANDA = Math.floor((2 * ALTO_MEDIO) / CELDA.alto)
+
+/** Cuánto del círculo ocupan las sueltas: lo que su grilla necesita, acotado (ni un hilo ni media pantalla). */
+function arcoDeSueltas(sueltas: number, total: number, radio: number): number {
   if (sueltas === 0) return 0
   if (sueltas === total) return 2 * Math.PI - HUECO
-  const proporcional = (2 * Math.PI * sueltas) / total
-  return Math.min(ARCO_SUELTAS_MAXIMO, Math.max(ARCO_SUELTAS_MINIMO, proporcional))
+  const necesario = (Math.ceil(sueltas / FILAS_EN_LA_BANDA) * CELDA.ancho) / radio
+  return Math.min(ARCO_SUELTAS_MAXIMO, Math.max(ARCO_SUELTAS_MINIMO, necesario))
 }
 
 export function calcularLayout(
@@ -125,7 +159,7 @@ export function calcularLayout(
 ): ReadonlyMap<string, Posicion> {
   const conectadas = conConexion(grafo)
   const sueltas = grafo.nodos.filter(({ id }) => !conectadas.has(id))
-  const arcoSueltas = arcoDeSueltas(sueltas.length, grafo.nodos.length)
+  const arcoSueltas = arcoDeSueltas(sueltas.length, grafo.nodos.length, radio)
   const huecos = sueltas.length > 0 ? 2 * HUECO : HUECO
   const arcoConectadas = 2 * Math.PI - arcoSueltas - huecos
   const ubicadas =

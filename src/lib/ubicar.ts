@@ -3,22 +3,13 @@
 // la pantalla curva (FASE 15) entre sus vecinos ya ubicados o, si no tiene, detrás con las sueltas. Determinista: el
 // lugar sale de un hash del id, nunca de Math.random.
 import type { Grafo, Posicion } from './dominio'
+import { hashUnitario } from './hash'
 import { ALTO_MEDIO, ALTURA_OJOS, RADIO_PANORAMA, anguloDe, enCilindro } from './layout'
 
 /** Cuánto se separa un nodo nuevo del centro de sus vecinos (m): lo justo para no taparlos. */
 export const SEPARACION_VECINO = 0.25
 /** Un nuevo sin vecinos cae en este arco detrás (rad), donde la pantalla agrupa las sueltas. */
 const ARCO_NUEVAS_SUELTAS = Math.PI / 6
-const FNV_BASE = 0x811c9dc5
-const FNV_PRIMO = 0x01000193
-const MAXIMO_32 = 0x1_0000_0000
-
-/** FNV-1a de 32 bits llevado a [0, 1): el mismo id da siempre el mismo número. */
-export function hashUnitario(texto: string, sal = ''): number {
-  const bytes = new TextEncoder().encode(`${sal}:${texto}`)
-  const hash = bytes.reduce((h, byte) => Math.imul(h ^ byte, FNV_PRIMO) >>> 0, FNV_BASE)
-  return hash / MAXIMO_32
-}
 
 function vecinosDe(grafo: Grafo): ReadonlyMap<string, readonly string[]> {
   const vecinos = new Map<string, string[]>()

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Posicion } from './dominio'
 import { ALTO_MEDIO, ALTURA_OJOS, anguloDe, enCilindro } from './layout'
-import { SEPARACION_VECINO, hashUnitario, ubicarFaltantes } from './ubicar'
+import { hashUnitario } from './hash'
+import { SEPARACION_VECINO, ubicarFaltantes } from './ubicar'
 
 const nodo = (id: string) => ({ id, tipo: TipoNodo.TAREA, titulo: id, estado: EstadoNodo.ABIERTO })
 const grafo: Grafo = {

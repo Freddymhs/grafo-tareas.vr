@@ -6,18 +6,18 @@
 import { Billboard, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef, useState } from 'react'
+import {
+  ANCHO_ETIQUETA,
+  ANCHO_ETIQUETA_HU,
+  DESPLAZAMIENTO_Y,
+  TAMANO_TEXTO,
+  TAMANO_TEXTO_HU,
+} from '../lib/constants/etiquetas'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
 import { LARGO_ETIQUETA, textoVisible } from '../lib/texto-visible'
 
 export const ETIQUETAS_CERCANAS = 12
 const SEGUNDOS_ENTRE_CALCULOS = 0.25
-const TAMANO_TEXTO = 0.035
-const TAMANO_TEXTO_HU = 0.08
-/** m: el título corto parte en dos líneas en vez de una larga que pisa a los vecinos. */
-const ANCHO_ETIQUETA = 0.45
-/** La de la HU es más grande: con el ancho de las demás partía su nombre en cinco líneas. */
-const ANCHO_ETIQUETA_HU = 1.6
-const DESPLAZAMIENTO_Y = 0.09
 const COLOR_TEXTO = '#e2e8f0'
 
 interface Props {

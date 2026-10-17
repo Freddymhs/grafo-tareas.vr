@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { TEXTO } from './constants/etiquetas'
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
 import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Posicion } from './dominio'
 import { ALTO_MEDIO, ALTURA_OJOS, RADIO_PANORAMA, anguloDe, calcularLayout } from './layout'
@@ -94,5 +95,37 @@ describe('calcularLayout — la pantalla curva (FASE 15)', () => {
 
   it('es determinista: el mapa es el mismo cada vez', () => {
     expect(calcularLayout(conSueltas)).toEqual(posiciones)
+  })
+
+  // El tamaño que el visor real tiene que soportar (216 nodos el 2026-10-17), no la prueba de FPS de 500.
+  const mediano = generarGrafo({ nodos: 220, semilla: SEMILLA_PRUEBA })
+  const acomodo = calcularLayout(mediano)
+  /** Coordenadas de la pantalla desenrollada, en metros: a lo largo del arco y en altura. */
+  const enPantalla = (p: Posicion) => ({ u: anguloDe(p) * RADIO_PANORAMA, v: p.y })
+
+  it('ningún texto pisa a otro (FASE 15, «así es imposible de leer»)', () => {
+    const celdas = [...acomodo.values()].map(enPantalla)
+    const pisadas = celdas.filter((a, i) =>
+      celdas.some(
+        (b, j) => i !== j && Math.abs(a.u - b.u) < TEXTO.ancho && Math.abs(a.v - b.v) < TEXTO.alto,
+      ),
+    )
+    expect(pisadas.length).toBeLessThanOrEqual(Math.ceil(celdas.length * 0.02))
+  })
+
+  it('lo que se relaciona queda cerca: una dependencia es corta comparada con dos nodos cualquiera', () => {
+    const distancia = (a: string, b: string) => {
+      const pa = enPantalla(acomodo.get(a) ?? { x: 0, y: 0, z: 0 })
+      const pb = enPantalla(acomodo.get(b) ?? { x: 0, y: 0, z: 0 })
+      return Math.hypot(pa.u - pb.u, pa.v - pb.v)
+    }
+    const dependencias = mediano.conexiones.filter(({ tipo }) => tipo === TipoConexion.DEPENDE_DE)
+    const media = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
+    const enlazadas = media(
+      dependencias.map(({ origenId, destinoId }) => distancia(origenId, destinoId)),
+    )
+    const ids = mediano.nodos.map(({ id }) => id)
+    const cualquiera = media(ids.map((id, i) => distancia(id, ids[(i * 7 + 13) % ids.length])))
+    expect(enlazadas).toBeLessThan(cualquiera / 2)
   })
 })
