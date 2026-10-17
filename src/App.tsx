@@ -75,7 +75,12 @@ function Vista({ grafo, posiciones, conApi, mensaje }: PropsVista) {
         <XR store={xrStore}>
           <ambientLight intensity={LUZ_AMBIENTE} />
           <directionalLight position={POSICION_LUZ} intensity={LUZ_DIRECCIONAL} />
-          <Grafo grafo={grafo} posiciones={posiciones} conApi={conApi} />
+          <Grafo
+            grafo={grafo}
+            posiciones={posiciones}
+            conApi={conApi}
+            etiquetas={parametros.etiquetas}
+          />
           <Movimiento objetivoOrbita={OBJETIVO_ORBITA} />
         </XR>
       </Canvas>

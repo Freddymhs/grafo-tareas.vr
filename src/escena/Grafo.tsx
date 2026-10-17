@@ -7,6 +7,7 @@ import { Etiquetas } from './Etiquetas'
 import { Medidor } from './Medidor'
 import { Nodos } from './Nodos'
 import { useEstadoVr } from '../lib/estado-vr'
+import { ModoEtiquetas } from '../lib/parametros'
 import { PanelAcciones } from './PanelAcciones'
 import { Seleccion, SeleccionConBloqueo } from './Seleccion'
 import { useAccionesVr } from './useAccionesVr'
@@ -17,9 +18,10 @@ interface Props {
   readonly posiciones: ReadonlyMap<string, Posicion> | null
   /** Con API: la selección pregunta qué bloquea al nodo y se puede editar (FASE 7). Sin API (sintético): solo el título. */
   readonly conApi: boolean
+  readonly etiquetas: ModoEtiquetas
 }
 
-export function Grafo({ grafo, posiciones, conApi }: Props) {
+export function Grafo({ grafo, posiciones, conApi, etiquetas }: Props) {
   const colores = useMemo(() => coloresPorNodo(grafo), [grafo])
   // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
   // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
@@ -63,7 +65,12 @@ export function Grafo({ grafo, posiciones, conApi }: Props) {
           <Aristas conexiones={relaciones} posiciones={posiciones} opacidad={OPACIDAD_ARISTA} />
           <Aristas conexiones={arbol} posiciones={posiciones} opacidad={OPACIDAD_ESTRUCTURA} />
           <Aristas conexiones={aRamas} posiciones={posiciones} opacidad={OPACIDAD_PERTENENCIA} />
-          <Etiquetas nodos={grafo.nodos} posiciones={posiciones} excluir={seleccionado} />
+          <Etiquetas
+            nodos={grafo.nodos}
+            posiciones={posiciones}
+            excluir={seleccionado}
+            todas={etiquetas === ModoEtiquetas.TODAS}
+          />
           {nodoSeleccionado && posicionSeleccionado ? (
             conApi ? (
               <>

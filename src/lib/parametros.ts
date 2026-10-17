@@ -14,6 +14,16 @@ export const FuenteGrafo = {
 } as const
 export type FuenteGrafo = (typeof FuenteGrafo)[keyof typeof FuenteGrafo]
 
+/** Qué nodos llevan su texto: todos (para ver si el acomodo se lee, FASE 15) o solo los más cercanos (FASE 1, D3). */
+export const ModoEtiquetas = {
+  TODAS: 'todas',
+  CERCANAS: 'cercanas',
+} as const
+export type ModoEtiquetas = (typeof ModoEtiquetas)[keyof typeof ModoEtiquetas]
+
+const esModoEtiquetas = (valor: string | null): valor is ModoEtiquetas =>
+  Object.values<string | null>(ModoEtiquetas).includes(valor)
+
 export interface ParametrosPrueba {
   readonly fuente: FuenteGrafo
   readonly nodos: number
@@ -22,6 +32,8 @@ export interface ParametrosPrueba {
   readonly reordenar: boolean
   /** Distancia de la pantalla curva (FASE 15); vale al calcular el layout (`?reordenar` o mapa vacío). */
   readonly radio: number
+  /** Por defecto: el grafo real, todas; la medición de FPS, las cercanas (la de la FASE 1). */
+  readonly etiquetas: ModoEtiquetas
 }
 
 function entero(valor: string | null, porDefecto: number): number {
@@ -48,6 +60,7 @@ function decimalEnRango(
 export function leerParametros(busqueda: string): ParametrosPrueba {
   const query = new URLSearchParams(busqueda)
   const esPrueba = query.has('nodos') || query.has('sintetico')
+  const etiquetasPedidas = query.get('etiquetas')
   const nodos = entero(query.get('nodos'), NODOS_PRUEBA)
   const enRango = nodos >= NODOS_MINIMO && nodos <= NODOS_MAXIMO
   return {
@@ -56,5 +69,10 @@ export function leerParametros(busqueda: string): ParametrosPrueba {
     semilla: entero(query.get('semilla'), SEMILLA_PRUEBA),
     reordenar: query.has('reordenar'),
     radio: decimalEnRango(query.get('radio'), RADIO_MINIMO, RADIO_MAXIMO, RADIO_PANORAMA),
+    etiquetas: esModoEtiquetas(etiquetasPedidas)
+      ? etiquetasPedidas
+      : esPrueba
+        ? ModoEtiquetas.CERCANAS
+        : ModoEtiquetas.TODAS,
   }
 }

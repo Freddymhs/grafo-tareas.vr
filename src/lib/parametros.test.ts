@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
 import { RADIO_PANORAMA } from './layout'
-import { FuenteGrafo, leerParametros } from './parametros'
+import { FuenteGrafo, ModoEtiquetas, leerParametros } from './parametros'
 
 describe('leerParametros', () => {
   it('sin query, el grafo real de la API', () => {
@@ -11,6 +11,7 @@ describe('leerParametros', () => {
       semilla: SEMILLA_PRUEBA,
       reordenar: false,
       radio: RADIO_PANORAMA,
+      etiquetas: ModoEtiquetas.TODAS,
     })
   })
 
@@ -21,6 +22,7 @@ describe('leerParametros', () => {
       semilla: 7,
       reordenar: false,
       radio: RADIO_PANORAMA,
+      etiquetas: ModoEtiquetas.CERCANAS,
     })
     expect(leerParametros('?sintetico').fuente).toBe(FuenteGrafo.SINTETICO)
   })
@@ -41,5 +43,11 @@ describe('leerParametros', () => {
     expect(leerParametros('?reordenar&radio=4.5').radio).toBe(4.5)
     expect(leerParametros('?radio=0.2').radio).toBe(RADIO_PANORAMA)
     expect(leerParametros('?radio=abc').radio).toBe(RADIO_PANORAMA)
+  })
+
+  it('el grafo real muestra todas las etiquetas (para depurar el acomodo, FASE 15); `?etiquetas=` lo cambia', () => {
+    expect(leerParametros('?etiquetas=cercanas').etiquetas).toBe(ModoEtiquetas.CERCANAS)
+    expect(leerParametros('?nodos=100&etiquetas=todas').etiquetas).toBe(ModoEtiquetas.TODAS)
+    expect(leerParametros('?etiquetas=otra').etiquetas).toBe(ModoEtiquetas.TODAS)
   })
 })

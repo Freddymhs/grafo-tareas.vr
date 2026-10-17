@@ -1,5 +1,6 @@
 // Etiquetas solo en los nodos más cercanos a la cabeza (FASE 1, D3): un `<Text>` por nodo no escala ni se lee.
 // Las HU siempre llevan la suya, más grande (FASE 13): son pocas y son las que orientan entre racimos.
+// Con `todas` (FASE 15, el grafo real por defecto) cada nodo lleva la suya: es la prueba de que el acomodo se lee.
 // Se recalcula unas pocas veces por segundo, no en cada frame, y solo re-renderiza si cambió el conjunto.
 
 import { Billboard, Text } from '@react-three/drei'
@@ -12,6 +13,10 @@ export const ETIQUETAS_CERCANAS = 12
 const SEGUNDOS_ENTRE_CALCULOS = 0.25
 const TAMANO_TEXTO = 0.035
 const TAMANO_TEXTO_HU = 0.08
+/** m: el título corto parte en dos líneas en vez de una larga que pisa a los vecinos. */
+const ANCHO_ETIQUETA = 0.45
+/** La de la HU es más grande: con el ancho de las demás partía su nombre en cinco líneas. */
+const ANCHO_ETIQUETA_HU = 1.6
 const DESPLAZAMIENTO_Y = 0.09
 const COLOR_TEXTO = '#e2e8f0'
 
@@ -19,18 +24,19 @@ interface Props {
   readonly nodos: readonly Nodo[]
   readonly posiciones: ReadonlyMap<string, Posicion>
   readonly excluir: string | null
+  readonly todas: boolean
 }
 
 function mismosIds(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i])
 }
 
-export function Etiquetas({ nodos, posiciones, excluir }: Props) {
+export function Etiquetas({ nodos, posiciones, excluir, todas }: Props) {
   const [cercanos, setCercanos] = useState<readonly string[]>([])
   const ultimoCalculo = useRef(Number.NEGATIVE_INFINITY)
 
   useFrame(({ camera, clock }) => {
-    if (clock.elapsedTime - ultimoCalculo.current < SEGUNDOS_ENTRE_CALCULOS) return
+    if (todas || clock.elapsedTime - ultimoCalculo.current < SEGUNDOS_ENTRE_CALCULOS) return
     ultimoCalculo.current = clock.elapsedTime
     const { x: cx, y: cy, z: cz } = camera.position
     const porDistancia = nodos
@@ -48,7 +54,9 @@ export function Etiquetas({ nodos, posiciones, excluir }: Props) {
   const historias = nodos
     .filter(({ tipo, id }) => tipo === TipoNodo.HISTORIA && id !== excluir)
     .map(({ id }) => id)
-  const visibles = [...new Set([...historias, ...cercanos])]
+  const visibles = todas
+    ? nodos.filter(({ id }) => id !== excluir).map(({ id }) => id)
+    : [...new Set([...historias, ...cercanos])]
   return (
     <>
       {visibles.map((id) => {
@@ -59,6 +67,10 @@ export function Etiquetas({ nodos, posiciones, excluir }: Props) {
               fontSize={porId.get(id)?.tipo === TipoNodo.HISTORIA ? TAMANO_TEXTO_HU : TAMANO_TEXTO}
               color={COLOR_TEXTO}
               anchorY="bottom"
+              maxWidth={
+                porId.get(id)?.tipo === TipoNodo.HISTORIA ? ANCHO_ETIQUETA_HU : ANCHO_ETIQUETA
+              }
+              textAlign="center"
             >
               {textoVisible(porId.get(id)?.titulo ?? id, LARGO_ETIQUETA)}
             </Text>
