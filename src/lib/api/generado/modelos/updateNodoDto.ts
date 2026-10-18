@@ -27,4 +27,6 @@ export interface UpdateNodoDto {
    * @nullable
    */
   etapa?: string | null
+  /** @nullable */
+  motivo?: string | null
 }
