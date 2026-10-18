@@ -45,21 +45,18 @@ const FIJOS: readonly Item[] = [
 ]
 const CERRADA: Item = { color: COLOR_SIN_RAMA, texto: 'chica = cerrada', escala: ESCALA_CERRADA }
 
-/** Las ramas con nombre (los carriles del Draft) llevan el suyo; tus círculos (solo emoji) van juntos con un rótulo. */
+/** Solo las ramas con nombre (los carriles del Draft): los círculos sin nombre (solo emoji) no explican nada. */
 function itemsDeRamas(ramas: readonly Nodo[]): readonly Item[] {
-  const conNombre = ramas
+  return ramas
     .map(({ color, titulo }) => ({
       color: color ?? COLOR_SIN_RAMA,
       texto: textoVisible(titulo, LARGO_RAMA),
     }))
     .filter(({ texto }) => texto !== '')
-  const circulos = ramas
-    .filter(({ titulo }) => textoVisible(titulo, LARGO_RAMA) === '')
-    .map(({ color }) => ({ color: color ?? COLOR_SIN_RAMA, texto: '' }))
-  const rotulo: readonly Item[] =
-    circulos.length > 0 ? [{ color: null, texto: 'tus círculos' }] : []
-  return [...circulos, ...rotulo, ...conNombre]
 }
+
+/** Entre lo que significa cada tipo de pelota y los colores de las ramas. */
+const SEPARADOR: Item = { color: null, texto: '│' }
 
 const anchoDe = ({ color, texto }: Item) =>
   (color ? 2 * RADIO_PUNTO + 0.01 : 0) + texto.length * ANCHO_LETRA + AIRE_ITEM
@@ -121,7 +118,7 @@ export function BarraSuperior({ ramas, indice }: Props) {
         />
       ))}
       <group position={[0, -BAJO_LAS_PESTANAS, 0]}>
-        <Leyenda items={[...FIJOS, ...itemsDeRamas(ramas), CERRADA]} />
+        <Leyenda items={[...FIJOS, CERRADA, SEPARADOR, ...itemsDeRamas(ramas)]} />
       </group>
     </group>
   )

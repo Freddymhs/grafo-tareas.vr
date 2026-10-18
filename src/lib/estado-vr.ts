@@ -35,6 +35,8 @@ interface EstadoVr {
   readonly aviso: string | null
   /** La página que se ve (FASE 15): el índice en `GET /derivado/paginas`. */
   readonly pagina: number
+  /** El nodo bajo el rayo, sin tocarlo (FASE 15): su texto se amplía. */
+  readonly apuntado: string | null
   tocar: (id: string) => Toque
   empezarConexion: (conexion: ConexionDesdeVr) => void
   cancelar: () => void
@@ -43,11 +45,18 @@ interface EstadoVr {
   /** X / Y del control izquierdo, o girar la pelota: la siguiente o la anterior, dando la vuelta. */
   cambiarPagina: (paso: 1 | -1, total: number) => void
   irAPagina: (indice: number) => void
+  apuntar: (id: string | null) => void
 }
 
 const NORMAL: Modo = { tipo: 'normal' }
 const NADA: ReadonlySet<string> = new Set()
-const SIN_SELECCION = { seleccionado: null, modo: NORMAL, resaltados: NADA, aviso: null } as const
+const SIN_SELECCION = {
+  seleccionado: null,
+  apuntado: null,
+  modo: NORMAL,
+  resaltados: NADA,
+  aviso: null,
+} as const
 
 /** La regla de un toque, pura: conectando → el tocado es el destino; si no, alterna la selección. */
 export function decidirToque(estado: Pick<EstadoVr, 'seleccionado' | 'modo'>, id: string): Toque {
@@ -65,6 +74,7 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   resaltados: NADA,
   aviso: null,
   pagina: 0,
+  apuntado: null,
   tocar: (id) => {
     const toque = decidirToque(get(), id)
     if (toque.accion === 'conectar')
@@ -85,4 +95,5 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   cambiarPagina: (paso, total) =>
     set({ pagina: paginaVecina(get().pagina, paso, total), ...SIN_SELECCION }),
   irAPagina: (indice) => set({ pagina: indice, ...SIN_SELECCION }),
+  apuntar: (id) => set({ apuntado: id }),
 }))

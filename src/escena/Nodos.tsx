@@ -24,6 +24,8 @@ interface Props {
   readonly seleccionado: string | null
   readonly resaltados: ReadonlySet<string>
   readonly onSeleccionar: (id: string) => void
+  /** El rayo pasa por encima (o se va, `null`): sin tocar, para ampliar el texto. */
+  readonly onApuntar: (id: string | null) => void
 }
 
 function escalaDe(
@@ -46,6 +48,7 @@ export function Nodos({
   seleccionado,
   resaltados,
   onSeleccionar,
+  onApuntar,
 }: Props) {
   return (
     <Instances limit={nodos.length} range={nodos.length}>
@@ -64,6 +67,11 @@ export function Nodos({
             color={resaltados.has(nodo.id) ? COLOR_RESALTADO : colores.get(nodo.id)}
             scale={escalaDe(nodo, seleccionado, resaltados)}
             onClick={seleccionar}
+            onPointerOver={(evento: ThreeEvent<PointerEvent>) => {
+              evento.stopPropagation()
+              onApuntar(nodo.id)
+            }}
+            onPointerOut={() => onApuntar(null)}
           />
         )
       })}

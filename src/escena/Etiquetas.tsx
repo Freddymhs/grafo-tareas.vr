@@ -7,31 +7,38 @@ import { Billboard, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import {
+  ADELANTE_APUNTADA,
   ANCHO_ETIQUETA,
+  ANCHO_ETIQUETA_APUNTADA,
   ANCHO_ETIQUETA_HU,
+  BORDE_APUNTADA,
   DESPLAZAMIENTO_Y,
   TAMANO_TEXTO,
+  TAMANO_TEXTO_APUNTADO,
   TAMANO_TEXTO_HU,
 } from '../lib/constants/etiquetas'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
-import { LARGO_ETIQUETA, textoVisible } from '../lib/texto-visible'
+import { LARGO_APUNTADO, LARGO_ETIQUETA, textoVisible } from '../lib/texto-visible'
 
 export const ETIQUETAS_CERCANAS = 12
 const SEGUNDOS_ENTRE_CALCULOS = 0.25
 const COLOR_TEXTO = '#e2e8f0'
+const COLOR_BORDE = '#020617'
 
 interface Props {
   readonly nodos: readonly Nodo[]
   readonly posiciones: ReadonlyMap<string, Posicion>
   readonly excluir: string | null
   readonly todas: boolean
+  /** El nodo bajo el rayo: su etiqueta va ampliada, con el título entero. */
+  readonly apuntado: string | null
 }
 
 function mismosIds(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i])
 }
 
-export function Etiquetas({ nodos, posiciones, excluir, todas }: Props) {
+export function Etiquetas({ nodos, posiciones, excluir, todas, apuntado }: Props) {
   const [cercanos, setCercanos] = useState<readonly string[]>([])
   const ultimoCalculo = useRef(Number.NEGATIVE_INFINITY)
 
@@ -54,9 +61,12 @@ export function Etiquetas({ nodos, posiciones, excluir, todas }: Props) {
   const historias = nodos
     .filter(({ tipo, id }) => tipo === TipoNodo.HISTORIA && id !== excluir)
     .map(({ id }) => id)
-  const visibles = todas
+  const normales = todas
     ? nodos.filter(({ id }) => id !== excluir).map(({ id }) => id)
     : [...new Set([...historias, ...cercanos])]
+  const visibles = normales.filter((id) => id !== apuntado)
+  const nodoApuntado = apuntado && apuntado !== excluir ? porId.get(apuntado) : undefined
+  const enApuntado = apuntado ? posiciones.get(apuntado) : undefined
   return (
     <>
       {visibles.map((id) => {
@@ -77,6 +87,27 @@ export function Etiquetas({ nodos, posiciones, excluir, todas }: Props) {
           </Billboard>
         )
       })}
+      {nodoApuntado && enApuntado ? (
+        <Billboard
+          position={[
+            enApuntado.x * ADELANTE_APUNTADA,
+            enApuntado.y + DESPLAZAMIENTO_Y,
+            enApuntado.z * ADELANTE_APUNTADA,
+          ]}
+        >
+          <Text
+            fontSize={TAMANO_TEXTO_APUNTADO}
+            color={COLOR_TEXTO}
+            anchorY="bottom"
+            maxWidth={ANCHO_ETIQUETA_APUNTADA}
+            textAlign="center"
+            outlineWidth={BORDE_APUNTADA}
+            outlineColor={COLOR_BORDE}
+          >
+            {textoVisible(nodoApuntado.titulo, LARGO_APUNTADO)}
+          </Text>
+        </Billboard>
+      ) : null}
     </>
   )
 }

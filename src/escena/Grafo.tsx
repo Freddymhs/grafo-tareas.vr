@@ -39,6 +39,8 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores }: Props) 
   const seleccionado = useEstadoVr((estado) => estado.seleccionado)
   const resaltados = useEstadoVr((estado) => estado.resaltados)
   const tocar = useEstadoVr((estado) => estado.tocar)
+  const apuntado = useEstadoVr((estado) => estado.apuntado)
+  const apuntar = useEstadoVr((estado) => estado.apuntar)
   const { conectar } = useAccionesVr()
   const posicionSeleccionado = seleccionado ? posiciones?.get(seleccionado) : undefined
   const nodoSeleccionado = seleccionado
@@ -61,6 +63,7 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores }: Props) 
             seleccionado={seleccionado}
             resaltados={resaltados}
             onSeleccionar={tocarNodo}
+            onApuntar={apuntar}
           />
           <Aristas conexiones={relaciones} posiciones={posiciones} opacidad={OPACIDAD_ARISTA} />
           <Aristas conexiones={arbol} posiciones={posiciones} opacidad={OPACIDAD_ESTRUCTURA} />
@@ -70,6 +73,7 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores }: Props) 
             posiciones={posiciones}
             excluir={seleccionado}
             todas={etiquetas === ModoEtiquetas.TODAS}
+            apuntado={apuntado}
           />
           {nodoSeleccionado && posicionSeleccionado ? (
             conApi ? (

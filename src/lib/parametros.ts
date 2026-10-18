@@ -36,6 +36,8 @@ export interface ParametrosPrueba {
   readonly etiquetas: ModoEtiquetas
   /** En qué página arranca (FASE 15): el índice en `GET /derivado/paginas`. */
   readonly pagina: number
+  /** `?depurar`: el gesto de la pelota deja lo que mide de la mano en `window.__gestoPelota` (calibrarlo con Freddy). */
+  readonly depurar: boolean
 }
 
 function entero(valor: string | null, porDefecto: number): number {
@@ -77,5 +79,6 @@ export function leerParametros(busqueda: string): ParametrosPrueba {
         ? ModoEtiquetas.CERCANAS
         : ModoEtiquetas.TODAS,
     pagina: Math.max(0, entero(query.get('pagina'), 0)),
+    depurar: query.has('depurar'),
   }
 }

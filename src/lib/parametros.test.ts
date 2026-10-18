@@ -13,6 +13,7 @@ describe('leerParametros', () => {
       radio: RADIO_PANORAMA,
       etiquetas: ModoEtiquetas.TODAS,
       pagina: 0,
+      depurar: false,
     })
   })
 
@@ -25,6 +26,7 @@ describe('leerParametros', () => {
       radio: RADIO_PANORAMA,
       etiquetas: ModoEtiquetas.CERCANAS,
       pagina: 0,
+      depurar: false,
     })
     expect(leerParametros('?sintetico').fuente).toBe(FuenteGrafo.SINTETICO)
   })

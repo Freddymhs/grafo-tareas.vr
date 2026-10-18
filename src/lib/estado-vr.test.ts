@@ -42,6 +42,7 @@ describe('useEstadoVr', () => {
       resaltados: new Set(),
       aviso: null,
       pagina: 0,
+      apuntado: null,
     })
   })
 
@@ -74,5 +75,15 @@ describe('useEstadoVr', () => {
     expect(useEstadoVr.getState().pagina).toBe(0)
     useEstadoVr.getState().irAPagina(1)
     expect(useEstadoVr.getState().pagina).toBe(1)
+  })
+
+  it('apuntar a un nodo (sin tocarlo) lo marca para ampliar su texto; cambiar de página lo suelta', () => {
+    useEstadoVr.getState().apuntar('a')
+    expect(useEstadoVr.getState().apuntado).toBe('a')
+    useEstadoVr.getState().apuntar(null)
+    expect(useEstadoVr.getState().apuntado).toBeNull()
+    useEstadoVr.getState().apuntar('b')
+    useEstadoVr.getState().cambiarPagina(1, 2)
+    expect(useEstadoVr.getState().apuntado).toBeNull()
   })
 })

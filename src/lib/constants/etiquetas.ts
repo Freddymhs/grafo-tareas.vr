@@ -9,6 +9,11 @@ export const ANCHO_ETIQUETA = 0.45
 export const ANCHO_ETIQUETA_HU = 1.6
 /** Cuánto sube la etiqueta sobre su esfera. */
 export const DESPLAZAMIENTO_Y = 0.09
+/** La etiqueta del nodo bajo el rayo: más grande, más ancha y adelantada hacia el usuario (no la tapan las vecinas). */
+export const TAMANO_TEXTO_APUNTADO = 0.05
+export const ANCHO_ETIQUETA_APUNTADA = 1.1
+export const ADELANTE_APUNTADA = 0.85
+export const BORDE_APUNTADA = 0.004
 
 const MARGEN = 0.06
 const LINEAS = 2

@@ -12,6 +12,7 @@ import { registrarError } from './lib/registro'
 import { generarGrafo } from './lib/sintetico'
 import { BarraSuperior } from './escena/BarraSuperior'
 import { CambioDePagina } from './escena/CambioDePagina'
+import { GestoPelota } from './escena/GestoPelota'
 import { Grafo } from './escena/Grafo'
 import { Movimiento } from './escena/Movimiento'
 import { useLayout } from './escena/useLayout'
@@ -134,6 +135,7 @@ function VistaApi() {
         <>
           <BarraSuperior ramas={mapa.ramas} indice={mapa.pagina.indice} />
           <CambioDePagina total={mapa.pagina.total} />
+          <GestoPelota total={mapa.pagina.total} depurar={parametros.depurar} />
         </>
       }
       mensaje={mapa.aviso ? { texto: mapa.aviso, esError: true } : null}
