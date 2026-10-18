@@ -34,6 +34,8 @@ export interface ComplementoResponseDto {
   posY?: number | null
   /** @nullable */
   posZ?: number | null
+  /** Cuándo nació en su fuente (la tarjeta en Todoist) o, si se creó acá, al crearse. Nunca vacía */
+  fechaOrigen: string
   createdAt: string
   updatedAt: string
   /** La clave del catálogo (sale de su etiqueta complemento:<clave>) */

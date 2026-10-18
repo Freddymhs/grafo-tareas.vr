@@ -42,6 +42,8 @@ export interface Nodo {
   readonly estado: EstadoNodo
   /** Solo los nodos RAMA: el color de la rama (hex). */
   readonly color?: string
+  /** Cuándo nació en su fuente (ISO, de la API; FASE 15). El sintético no la tiene. */
+  readonly fecha?: string
 }
 
 export interface Conexion {

@@ -30,9 +30,11 @@ interface Props {
   readonly colores: ReadonlyMap<string, string>
   /** Líneas de cada etiqueta (FASE 15): las decide el acomodo de la página. */
   readonly lineas: number
+  /** Las tareas sin padre: llevan su fecha (FASE 15). */
+  readonly conFecha: ReadonlySet<string>
 }
 
-export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas }: Props) {
+export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas, conFecha }: Props) {
   // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
   // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
   const { aRamas, arbol, relaciones } = useMemo(() => {
@@ -136,6 +138,7 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas }:
             apuntado={apuntado}
             lineas={lineas}
             iluminados={iluminados}
+            conFecha={conFecha}
           />
           {nodoSeleccionado && posicionSeleccionado ? (
             conApi ? (

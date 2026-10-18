@@ -36,6 +36,7 @@ const POSICION_LUZ: [number, number, number] = [3, 5, 2]
 const REINTENTOS = 1
 const GRAFO_VACIO: GrafoDominio = { nodos: [], conexiones: [] }
 const SIN_COLORES: ReadonlyMap<string, string> = new Map()
+const NINGUNO: ReadonlySet<string> = new Set()
 
 interface PropsVista {
   readonly grafo: GrafoDominio
@@ -43,6 +44,7 @@ interface PropsVista {
   readonly conApi: boolean
   readonly colores: ReadonlyMap<string, string>
   readonly lineas?: number
+  readonly conFecha?: ReadonlySet<string>
   /** Lo que va fijo en la escena además del grafo: la fila de páginas y leyenda (FASE 15). */
   readonly fijo?: ReactNode
   /** Lo que se le dice al usuario mientras no hay mapa, o si algo falló. */
@@ -55,6 +57,7 @@ function Vista({
   conApi,
   colores,
   lineas = LINEAS_MINIMAS,
+  conFecha = NINGUNO,
   fijo,
   mensaje,
 }: PropsVista) {
@@ -103,6 +106,7 @@ function Vista({
             etiquetas={parametros.etiquetas}
             colores={colores}
             lineas={lineas}
+            conFecha={conFecha}
           />
           {fijo}
           <Movimiento objetivoOrbita={OBJETIVO_ORBITA} />
@@ -143,6 +147,7 @@ function VistaApi() {
       conApi
       colores={mapa.colores}
       lineas={mapa.lineas}
+      conFecha={mapa.conFecha}
       fijo={
         <>
           <BarraSuperior ramas={mapa.ramas} indice={mapa.pagina.indice} />

@@ -8,12 +8,13 @@ export function aGrafo(
 ): Grafo {
   const ids = new Set(nodos.map(({ id }) => id))
   return {
-    nodos: nodos.map(({ id, tipo, titulo, estado, color }) => ({
+    nodos: nodos.map(({ id, tipo, titulo, estado, color, fechaOrigen }) => ({
       id,
       tipo,
       titulo,
       estado,
       ...(color ? { color } : {}),
+      fecha: fechaOrigen,
     })),
     // Una conexión hacia un nodo que no vino (otra página, o borrado entre las dos lecturas) no se dibuja.
     conexiones: conexiones

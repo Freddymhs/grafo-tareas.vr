@@ -17,7 +17,7 @@ import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
 import { TipoNodo, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import { RADIO_PANORAMA, aberturaPara, lineasPara, separarNuevas } from '../lib/layout'
-import { grafoDePagina, hogares } from '../lib/paginas'
+import { grafoDePagina, hogares, sinPadre } from '../lib/paginas'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
 
@@ -42,11 +42,14 @@ export type EstadoMapa =
       readonly pagina: PaginaVisible
       /** Líneas de cada etiqueta en esta página: más donde hay espacio (FASE 15). */
       readonly lineas: number
+      /** Las tareas sin padre (calculado sobre el grafo entero): llevan su fecha a la vista. */
+      readonly conFecha: ReadonlySet<string>
       /** Si guardar las posiciones nuevas falló: el mapa se ve igual, pero la próxima vez se recalcula. */
       readonly aviso: string | null
     }
 
 const SIN_GUARDADAS: ReadonlyMap<string, Posicion> = new Map()
+const NINGUNO: ReadonlySet<string> = new Set()
 
 export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMapa {
   const nodos = useNodosControllerFindAll({ limit: LIMITE_GRAFO })
@@ -65,6 +68,17 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     () => (grafo ? grafo.nodos.filter(({ tipo }) => tipo === TipoNodo.RAMA) : []),
     [grafo],
   )
+  // Solo las TAREAS: la HU se reconoce por su nombre, y lo que viene de los archivos FASE (una duda) no tiene fecha
+  // de origen real (la suya es la de la importación) y mostrarla engañaría.
+  const conFecha = useMemo(() => {
+    if (!grafo) return NINGUNO
+    const raices = sinPadre(grafo)
+    return new Set(
+      grafo.nodos
+        .filter(({ id, tipo }) => tipo === TipoNodo.TAREA && raices.has(id))
+        .map(({ id }) => id),
+    )
+  }, [grafo])
   const lista = paginas.data
   const total = lista?.length ?? 0
   const indice = total > 0 ? indicePedido % total : 0
@@ -122,6 +136,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     ramas,
     pagina: { titulo: pagina.titulo, indice, total },
     lineas,
+    conFecha,
     aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,
   }
 }

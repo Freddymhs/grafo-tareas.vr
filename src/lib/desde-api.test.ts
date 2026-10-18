@@ -9,6 +9,7 @@ const nodo = (id: string, extra: Partial<NodoResponseDto> = {}): NodoResponseDto
     titulo: id,
     estado: 'ABIERTO',
     etiquetas: [],
+    fechaOrigen: '2026-10-14T19:50:39.673Z',
     createdAt: '2026-10-17T00:00:00.000Z',
     updatedAt: '2026-10-17T00:00:00.000Z',
     ...extra,
@@ -28,8 +29,15 @@ describe('aGrafo', () => {
       [conexion('c', 'a', 'r')],
     )
     expect(grafo.nodos).toEqual([
-      { id: 'a', tipo: 'TAREA', titulo: 'a', estado: 'ABIERTO' },
-      { id: 'r', tipo: 'RAMA', titulo: 'r', estado: 'ABIERTO', color: '#3b82f6' },
+      { id: 'a', tipo: 'TAREA', titulo: 'a', estado: 'ABIERTO', fecha: '2026-10-14T19:50:39.673Z' },
+      {
+        id: 'r',
+        tipo: 'RAMA',
+        titulo: 'r',
+        estado: 'ABIERTO',
+        color: '#3b82f6',
+        fecha: '2026-10-14T19:50:39.673Z',
+      },
     ])
     expect(grafo.conexiones).toHaveLength(1)
   })

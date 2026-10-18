@@ -19,6 +19,7 @@ import {
   medidasEtiqueta,
 } from '../lib/constants/etiquetas'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
+import { textoConFecha } from '../lib/paginas'
 import { LARGO_APUNTADO, textoVisible } from '../lib/texto-visible'
 
 export const ETIQUETAS_CERCANAS = 12
@@ -38,6 +39,8 @@ interface Props {
   readonly lineas: number
   /** Con un nodo seleccionado, su familia (FASE 15): las demás etiquetas se apagan. */
   readonly iluminados: ReadonlySet<string> | null
+  /** Las tareas sin padre: su etiqueta empieza con la fecha («14-oct · …», FASE 15). */
+  readonly conFecha: ReadonlySet<string>
 }
 
 function mismosIds(a: readonly string[], b: readonly string[]): boolean {
@@ -52,6 +55,7 @@ export function Etiquetas({
   apuntado,
   lineas,
   iluminados,
+  conFecha,
 }: Props) {
   const { largo } = medidasEtiqueta(lineas)
   const [cercanos, setCercanos] = useState<readonly string[]>([])
@@ -73,6 +77,8 @@ export function Etiquetas({
   })
 
   const porId = new Map(nodos.map((nodo) => [nodo.id, nodo]))
+  const textoDe = (nodo: Nodo | undefined, id: string) =>
+    nodo?.fecha && conFecha.has(id) ? textoConFecha(nodo.titulo, nodo.fecha) : (nodo?.titulo ?? id)
   const historias = nodos
     .filter(({ tipo, id }) => tipo === TipoNodo.HISTORIA && id !== excluir)
     .map(({ id }) => id)
@@ -97,7 +103,7 @@ export function Etiquetas({
               }
               textAlign="center"
             >
-              {textoVisible(porId.get(id)?.titulo ?? id, largo)}
+              {textoVisible(textoDe(porId.get(id), id), largo)}
             </Text>
           </Billboard>
         )
@@ -119,7 +125,7 @@ export function Etiquetas({
             outlineWidth={BORDE_APUNTADA}
             outlineColor={COLOR_BORDE}
           >
-            {textoVisible(nodoApuntado.titulo, LARGO_APUNTADO)}
+            {textoVisible(textoDe(nodoApuntado, nodoApuntado.id), LARGO_APUNTADO)}
           </Text>
         </Billboard>
       ) : null}

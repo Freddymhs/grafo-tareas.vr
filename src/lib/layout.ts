@@ -135,7 +135,10 @@ function ubicarConectadas(
   })
 }
 
-/** Las sueltas en una grilla centrada en `centro`, ordenadas por título: se leen como una lista. */
+/**
+ * Las sueltas en una grilla centrada en `centro`, de la más antigua a la más reciente (FASE 15: «ordenarlas por fecha»),
+ * y por título si comparten fecha o no la tienen: se leen como una lista.
+ */
 function ubicarSueltas(
   sueltas: readonly Nodo[],
   arco: number,
@@ -146,7 +149,10 @@ function ubicarSueltas(
   const columnas = Math.max(1, Math.floor((arco * radio) / celda.ancho))
   const filas = Math.ceil(sueltas.length / columnas)
   const ordenadas = sueltas.toSorted(
-    (a, b) => a.titulo.localeCompare(b.titulo) || a.id.localeCompare(b.id),
+    (a, b) =>
+      (a.fecha ?? '').localeCompare(b.fecha ?? '') ||
+      a.titulo.localeCompare(b.titulo) ||
+      a.id.localeCompare(b.id),
   )
   return ordenadas.map(({ id }, i) => {
     const columna = i % columnas

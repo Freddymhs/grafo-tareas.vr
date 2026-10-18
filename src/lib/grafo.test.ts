@@ -235,3 +235,30 @@ describe('separarNuevas — lo que llega a una página guardada no se apila (FAS
     separadas.forEach((p) => expect(Math.hypot(p.x, p.z)).toBeCloseTo(RADIO_PANORAMA, 9))
   })
 })
+
+describe('las sueltas se ordenan por fecha (FASE 15)', () => {
+  it('la grilla se lee de la más antigua a la más reciente, no por orden alfabético', () => {
+    const suelta = (id: string, titulo: string, fecha: string) => ({
+      id,
+      tipo: TipoNodo.TAREA,
+      titulo,
+      estado: EstadoNodo.ABIERTO,
+      fecha,
+    })
+    const tres: Grafo = {
+      nodos: [
+        suelta('a', 'A · la más nueva', '2026-10-15T00:00:00.000Z'),
+        suelta('b', 'B · la más vieja', '2026-09-13T00:00:00.000Z'),
+        suelta('c', 'C · la del medio', '2026-10-01T00:00:00.000Z'),
+      ],
+      conexiones: [],
+    }
+    const posiciones = calcularLayout(tres, RADIO_PANORAMA, Math.PI)
+    const porAngulo = ['a', 'b', 'c'].toSorted(
+      (x, y) =>
+        anguloDe(posiciones.get(x) ?? { x: 0, y: 0, z: -1 }) -
+        anguloDe(posiciones.get(y) ?? { x: 0, y: 0, z: -1 }),
+    )
+    expect(porAngulo).toEqual(['b', 'c', 'a'])
+  })
+})
