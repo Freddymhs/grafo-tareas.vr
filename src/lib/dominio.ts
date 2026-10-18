@@ -36,6 +36,13 @@ export const Cara = {
 } as const
 export type Cara = (typeof Cara)[keyof typeof Cara]
 
+/** Un PBI tiene dos mitades, su FASE y su tarjeta `[<id>]` (`lib/pbi.ts`): entero si se encuentran; si no, a medias. */
+export const Pbi = {
+  ENTERO: 'entero',
+  A_MEDIAS: 'a-medias',
+} as const
+export type Pbi = (typeof Pbi)[keyof typeof Pbi]
+
 export interface Posicion {
   readonly x: number
   readonly y: number
@@ -55,6 +62,8 @@ export interface Nodo {
   readonly mergeada?: boolean
   /** Un trámite de cierre (URL commit, evidencias, wiki): lo dice la API con una etiqueta; el filtro 3 lo apaga. */
   readonly tramite?: boolean
+  /** Es la FASE o la tarjeta de un PBI, y si está entero (`lib/pbi.ts`). */
+  readonly pbi?: Pbi
 }
 
 export interface Conexion {

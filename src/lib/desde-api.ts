@@ -2,16 +2,20 @@
 import type { ConexionResponseDto, NodoResponseDto } from './api/generado/modelos'
 import { ETIQUETA_MERGEADA, ETIQUETA_TRAMITE } from './constants/grafo'
 import type { Grafo, Posicion } from './dominio'
+import { pbisDe } from './pbi'
 
 export function aGrafo(
   nodos: readonly NodoResponseDto[],
   conexiones: readonly ConexionResponseDto[],
 ): Grafo {
   const ids = new Set(nodos.map(({ id }) => id))
+  // Sobre todos los nodos, no sobre una página: la FASE de una tarjeta puede estar en otra.
+  const pbis = pbisDe(nodos)
   return {
     nodos: nodos.map(({ id, tipo, titulo, estado, color, fechaOrigen, etiquetas }) => {
       const mergeada = (etiquetas ?? []).includes(ETIQUETA_MERGEADA)
       const tramite = (etiquetas ?? []).includes(ETIQUETA_TRAMITE)
+      const pbi = pbis.get(id)
       return {
         id,
         tipo,
@@ -21,6 +25,7 @@ export function aGrafo(
         fecha: fechaOrigen,
         ...(mergeada ? { mergeada } : {}),
         ...(tramite ? { tramite } : {}),
+        ...(pbi ? { pbi } : {}),
       }
     }),
     // Una conexión hacia un nodo que no vino (otra página, o borrado entre las dos lecturas) no se dibuja.

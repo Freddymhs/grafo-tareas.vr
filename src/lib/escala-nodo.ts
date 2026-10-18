@@ -1,5 +1,5 @@
 // Cuánto crece la esfera de cada nodo, por tipo, estado y selección. Puro.
-import { EstadoNodo, TipoNodo, type Nodo } from './dominio'
+import { EstadoNodo, Pbi, TipoNodo, type Nodo } from './dominio'
 
 const ESCALA_CERRADO = 0.5
 const ESCALA_BLOQUEANTE = 1.8
@@ -10,6 +10,8 @@ const BLOQUEANTES: ReadonlySet<string> = new Set([TipoNodo.PERSONA, TipoNodo.DUD
 /** El esqueleto del árbol (FASE 13): la HU es el centro de su racimo; la FASE, un nudo entre la HU y sus tarjetas. */
 const ESCALA_HISTORIA = 3.2
 const ESCALA_FASE = 1.5
+/** El PBI a medias (`lib/pbi.ts`): más grande que una FASE entera, «es algo a resaltar siempre» (Freddy, 2026-10-18). */
+const ESCALA_PBI_A_MEDIAS = 1.8
 
 export function escalaDe(
   nodo: Nodo,
@@ -19,6 +21,7 @@ export function escalaDe(
   if (nodo.id === seleccionado) return ESCALA_SELECCIONADO
   if (resaltados.has(nodo.id)) return ESCALA_RESALTADO
   if (nodo.tipo === TipoNodo.HISTORIA) return ESCALA_HISTORIA
+  if (nodo.pbi === Pbi.A_MEDIAS) return ESCALA_PBI_A_MEDIAS
   if (nodo.tipo === TipoNodo.FASE) return ESCALA_FASE
   if (BLOQUEANTES.has(nodo.tipo)) return ESCALA_BLOQUEANTE
   return nodo.estado === EstadoNodo.CERRADO ? ESCALA_CERRADO : 1

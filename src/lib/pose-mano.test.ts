@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { curvatura, esManoAbierta, esManoAlzada, esPoseDePelota } from './pose-mano'
+import { curvatura, esGestoDeMeta, esManoAbierta, esManoAlzada, esPoseDePelota } from './pose-mano'
 
 const punto = (x: number, y: number) => ({ x, y, z: 0 })
 /** Un dedo de 4 segmentos de 2 cm, doblado `grados` en cada articulación. */
@@ -73,5 +73,30 @@ describe('esManoAlzada — los gestos cuentan con la mano a la altura del hombro
     const SENTADO = 1.2
     expect(esManoAlzada(SENTADO - 0.25, SENTADO)).toBe(true)
     expect(esManoAlzada(SENTADO - 0.7, SENTADO)).toBe(false)
+  })
+})
+
+describe('esGestoDeMeta — el menú de Meta (palma hacia la cara + pellizco) no es un gesto nuestro (Freddy, 2026-10-18)', () => {
+  // La mano derecha alzada 40 cm delante de los ojos (adelante es −z), los dedos hacia arriba.
+  const ojos = { x: 0, y: 1.6, z: 0 }
+  const muneca = { x: 0, y: 1.4, z: -0.4 }
+  const junto = (dx: number, dy: number) => ({ x: muneca.x + dx, y: muneca.y + dy, z: muneca.z })
+  // Con la palma hacia la cara, el pulgar —y la base del índice— quedan a la derecha (+x); hacia afuera, a la izquierda.
+  const palmaHaciaLaCara = { baseIndice: junto(0.02, 0.05), baseMenique: junto(-0.02, 0.045) }
+  const palmaHaciaAfuera = { baseIndice: junto(-0.02, 0.05), baseMenique: junto(0.02, 0.045) }
+  const puntaIndice = junto(0, 0.17)
+  const pellizco = { puntaIndice, puntaPulgar: { ...puntaIndice, x: puntaIndice.x + 0.01 } }
+  const abierta = { puntaIndice, puntaPulgar: { ...puntaIndice, x: puntaIndice.x + 0.06 } }
+
+  it('la palma hacia la cara con el pulgar en el índice: es el de Meta', () => {
+    expect(esGestoDeMeta({ ojos, muneca, ...palmaHaciaLaCara, ...pellizco })).toBe(true)
+  })
+
+  it('el mismo pellizco con la palma hacia afuera —el 3, «OK», o el clic del rayo— no lo es', () => {
+    expect(esGestoDeMeta({ ojos, muneca, ...palmaHaciaAfuera, ...pellizco })).toBe(false)
+  })
+
+  it('la palma hacia la cara sin pellizco tampoco: mirarse la mano no es un gesto', () => {
+    expect(esGestoDeMeta({ ojos, muneca, ...palmaHaciaLaCara, ...abierta })).toBe(false)
   })
 })

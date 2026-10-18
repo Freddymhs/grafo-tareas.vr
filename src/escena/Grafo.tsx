@@ -17,7 +17,8 @@ import { useEstadoVr } from '../lib/estado-vr'
 import { Filtro, encendidosPor, hilosDelFiltro } from '../lib/filtro'
 import { ModoEtiquetas } from '../lib/parametros'
 import { PanelAcciones } from './PanelAcciones'
-import { Seleccion, SeleccionConBloqueo } from './Seleccion'
+import { quienesEsperan } from '../lib/seleccion'
+import { Seleccion, SeleccionConBloqueo, SeleccionDePersona } from './Seleccion'
 import { useAccionesVr } from './useAccionesVr'
 
 interface Props {
@@ -155,7 +156,15 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas, c
           {nodoSeleccionado && posicionSeleccionado ? (
             conApi ? (
               <>
-                <SeleccionConBloqueo nodo={nodoSeleccionado} posicion={posicionSeleccionado} />
+                {nodoSeleccionado.tipo === TipoNodo.PERSONA ? (
+                  <SeleccionDePersona
+                    nodo={nodoSeleccionado}
+                    posicion={posicionSeleccionado}
+                    esperan={quienesEsperan(nodoSeleccionado.id, grafo)}
+                  />
+                ) : (
+                  <SeleccionConBloqueo nodo={nodoSeleccionado} posicion={posicionSeleccionado} />
+                )}
                 <PanelAcciones nodo={nodoSeleccionado} posicion={posicionSeleccionado} />
               </>
             ) : (

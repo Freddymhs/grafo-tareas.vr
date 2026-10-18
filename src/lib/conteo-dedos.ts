@@ -33,16 +33,21 @@ interface Forma {
   readonly pulgar: boolean | null
 }
 
-/** 1 índice · 2 índice y medio · 3 medio, anular y meñique (el «OK») · 4 los cuatro · 5 los cinco. */
+/**
+ * 2 índice y medio · 3 medio, anular y meñique (el «OK») · 4 los cuatro · 5 los cinco. El índice solo NO es un número:
+ * es la pose de apuntar con el rayo, y el visor la contaba como 1 (Freddy en el visor, 2026-10-18).
+ */
 const FORMAS: readonly Forma[] = [
-  { numero: 1, dedos: [true, false, false, false], pulgar: null },
   { numero: 2, dedos: [true, true, false, false], pulgar: null },
   { numero: 3, dedos: [false, true, true, true], pulgar: null },
   { numero: 4, dedos: [true, true, true, true], pulgar: false },
   { numero: 5, dedos: [true, true, true, true], pulgar: true },
 ]
 
-/** El número que muestra la mano; 0 si no es ninguna de las formas. Un dedo perdido (NaN) no cuenta como estirado. */
+/** La mano no muestra ningún número: el puño, una forma que no es de las nuestras, el gesto del menú de Meta. */
+export const NINGUN_NUMERO = 0
+
+/** El número que muestra la mano; `NINGUN_NUMERO` si no es ninguna de las formas. Un dedo perdido (NaN) no cuenta como estirado. */
 export function numeroDeLaMano(curvaturas: CurvaturasMano): number {
   const { pulgar, indice, medio, anular, menique } = curvaturas
   const dedos = [indice, medio, anular, menique].map((c) =>
@@ -54,7 +59,7 @@ export function numeroDeLaMano(curvaturas: CurvaturasMano): number {
       f.dedos.every((estirado, i) => estirado === dedos[i]) &&
       (f.pulgar === null || f.pulgar === pulgarEstirado),
   )
-  return forma?.numero ?? 0
+  return forma?.numero ?? NINGUN_NUMERO
 }
 
 /** Cuánto hay que sostener el mismo número (s) para que cuente. */
@@ -63,7 +68,7 @@ export const SOSTENER_S = 0.6
 export interface MuestraNumero {
   /** Segundos. */
   readonly t: number
-  /** El número que muestra la mano en este frame (`numeroDeLaMano`); 0 = ninguno. */
+  /** El número que muestra la mano en este frame (`numeroDeLaMano`); `NINGUN_NUMERO` = ninguno. */
   readonly numero: number
   /** Si la mano está levantada (`esManoAlzada`): con la mano abajo, el número no cuenta. */
   readonly alzada: boolean
@@ -87,7 +92,7 @@ export function avanzarNumero(
   readonly progreso: number
 } {
   const { t, numero, alzada } = muestra
-  const esPuno = numero === 0
+  const esPuno = numero === NINGUN_NUMERO
   if (!alzada || esPuno) return { estado: NUMERO_INICIAL, evento: null, progreso: 0 }
 
   const { sostenido: anterior, emitido } = estado

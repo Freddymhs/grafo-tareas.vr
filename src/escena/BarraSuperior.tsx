@@ -11,6 +11,8 @@ import {
   COLOR_DUDA,
   COLOR_FASE,
   COLOR_HISTORIA,
+  COLOR_PARA_DECIR,
+  COLOR_PBI_A_MEDIAS,
   COLOR_PERSONA,
   COLOR_SIN_RAMA,
 } from '../lib/constants/grafo'
@@ -55,9 +57,11 @@ interface Item {
 
 const FIJOS: readonly Item[] = [
   { color: COLOR_HISTORIA, texto: 'HU' },
-  { color: COLOR_FASE, texto: 'FASE' },
+  { color: COLOR_FASE, texto: 'PBI' },
+  { color: COLOR_PBI_A_MEDIAS, texto: 'PBI a medias' },
   { color: COLOR_DUDA, texto: 'duda' },
   { color: COLOR_PERSONA, texto: 'persona' },
+  { color: COLOR_PARA_DECIR, texto: 'para decir' },
   { color: COLOR_SIN_RAMA, texto: 'sin rama' },
 ]
 const CERRADA: Item = { color: COLOR_SIN_RAMA, texto: 'chica = cerrada', escala: ESCALA_CERRADA }

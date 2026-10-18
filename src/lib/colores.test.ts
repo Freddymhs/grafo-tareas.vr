@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { colorApagado, coloresPorNodo } from './colores'
-import { COLOR_FASE, COLOR_HISTORIA, COLOR_SIN_RAMA } from './constants/grafo'
-import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
+import {
+  COLOR_FASE,
+  COLOR_HISTORIA,
+  COLOR_PARA_DECIR,
+  COLOR_PBI_A_MEDIAS,
+  COLOR_SIN_RAMA,
+} from './constants/grafo'
+import { EstadoNodo, Pbi, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
 
 const nodo = (id: string, tipo: TipoNodo, color?: string): Nodo => ({
   id,
@@ -43,6 +49,23 @@ describe('coloresPorNodo', () => {
   it('una tarea toma el color de su RAMA aunque antes pertenezca a una FASE o a una HU', () => {
     expect(colores.get('tarjeta')).toBe('#22c55e')
     expect(colores.get('suelta')).toBe(COLOR_SIN_RAMA)
+  })
+
+  it('morado = PBI aunque esté en un carril; el PBI a medias y lo «para decir» tienen color propio (Freddy, 2026-10-18)', () => {
+    const otros = coloresPorNodo({
+      nodos: [
+        { ...nodo('entero', TipoNodo.TAREA), pbi: Pbi.ENTERO },
+        { ...nodo('a-medias', TipoNodo.TAREA), pbi: Pbi.A_MEDIAS },
+        { ...nodo('fase-sin-task', TipoNodo.FASE), pbi: Pbi.A_MEDIAS },
+        nodo('para-decir', TipoNodo.DAILY_ITEM),
+        nodo('verde', TipoNodo.RAMA, '#22c55e'),
+      ],
+      conexiones: [pertenece('entero', 'verde')],
+    })
+    expect(otros.get('entero')).toBe(COLOR_FASE)
+    expect(otros.get('a-medias')).toBe(COLOR_PBI_A_MEDIAS)
+    expect(otros.get('fase-sin-task')).toBe(COLOR_PBI_A_MEDIAS)
+    expect(otros.get('para-decir')).toBe(COLOR_PARA_DECIR)
   })
 })
 

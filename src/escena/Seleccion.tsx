@@ -1,10 +1,11 @@
-// El nodo seleccionado: su título y qué lo bloquea. El "qué lo bloquea" lo responde la API
-// (`GET /nodos/:id/bloqueado`, decisión C1); en el sintético de la FASE 1 no hay API y no se muestra.
+// El nodo seleccionado: su título y qué lo bloquea —a una persona, quién la espera; a un PBI a medias, qué mitad le
+// falta—. El "qué lo bloquea" lo responde la API (`GET /nodos/:id/bloqueado`, decisión C1); en el sintético de la
+// FASE 1 no hay API y no se muestra.
 
 import { Billboard, Text } from '@react-three/drei'
 import { useDerivadoControllerBloqueado } from '../lib/api/generado/derivado/derivado'
 import type { Nodo, Posicion } from '../lib/dominio'
-import { resumenDeEspera } from '../lib/seleccion'
+import { avisoDePbi, resumenDeEspera, resumenDeQuienEspera } from '../lib/seleccion'
 import { LARGO_SELECCION, textoVisible } from '../lib/texto-visible'
 
 const TAMANO_TITULO = 0.06
@@ -55,10 +56,10 @@ export function Seleccion({ nodo, posicion, detalle }: Props) {
   )
 }
 
-/** La selección con el bloqueo que calcula la API. */
+/** La selección con el bloqueo que calcula la API; a un PBI a medias, además, qué mitad le falta (en ámbar). */
 export function SeleccionConBloqueo({ nodo, posicion }: Omit<Props, 'detalle'>) {
   const bloqueado = useDerivadoControllerBloqueado(nodo.id)
-  const detalle: Detalle = bloqueado.isPending
+  const espera: Detalle = bloqueado.isPending
     ? { texto: 'Preguntando a la API…', color: COLOR_NEUTRO }
     : bloqueado.isError
       ? { texto: 'No se pudo saber qué lo bloquea', color: COLOR_NEUTRO }
@@ -66,5 +67,20 @@ export function SeleccionConBloqueo({ nodo, posicion }: Omit<Props, 'detalle'>) 
           texto: resumenDeEspera(bloqueado.data.por.map(({ titulo }) => titulo)),
           color: bloqueado.data.bloqueado ? COLOR_BLOQUEO : COLOR_LIBRE,
         }
+  const aviso = avisoDePbi(nodo)
+  const detalle = aviso ? { texto: `${aviso}\n${espera.texto}`, color: COLOR_BLOQUEO } : espera
+  return <Seleccion nodo={nodo} posicion={posicion} detalle={detalle} />
+}
+
+/** Una persona no espera nada: la esperan. Lo que la espera está en la página (`quienesEsperan`), sin preguntar a la API. */
+export function SeleccionDePersona({
+  nodo,
+  posicion,
+  esperan,
+}: Omit<Props, 'detalle'> & { readonly esperan: readonly string[] }) {
+  const detalle: Detalle = {
+    texto: resumenDeQuienEspera(esperan),
+    color: esperan.length > 0 ? COLOR_BLOQUEO : COLOR_LIBRE,
+  }
   return <Seleccion nodo={nodo} posicion={posicion} detalle={detalle} />
 }

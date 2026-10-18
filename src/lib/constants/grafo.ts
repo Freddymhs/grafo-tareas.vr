@@ -32,13 +32,19 @@ export const COLOR_PERSONA = '#f8fafc'
 export const COLOR_DUDA = '#ef4444'
 /** El esqueleto del árbol (FASE 13): la HU es el centro de su racimo y la FASE el documento de una task. */
 export const COLOR_HISTORIA = '#fde68a'
+/** Morado = PBI (Freddy, 2026-10-18): su FASE y su tarjeta `[<id>]` (`lib/pbi.ts`). */
 export const COLOR_FASE = '#c4b5fd'
+/** El PBI que no encuentra a su otra mitad —tarjeta sin FASE, FASE sin task—: «es algo a resaltar siempre». */
+export const COLOR_PBI_A_MEDIAS = '#e879f9'
+/** Lo que se dice en un ritual del área (DAILY_ITEM: la daily, la retro): no espera respuesta, se cuenta. */
+export const COLOR_PARA_DECIR = '#22d3ee'
 export const COLOR_ARISTA = '#64748b'
-export const OPACIDAD_ARISTA = 0.6
+/** Sin filtro, como con el filtro 2: con 0,6 y 0,4 «nada tiene conexión» (Freddy en el visor, 2026-10-18). */
+export const OPACIDAD_ARISTA = 0.85
 /** PERTENECE_A es la mitad de las aristas y el color del nodo ya dice la rama: va tenue para no tapar los bloqueos. */
 export const OPACIDAD_PERTENENCIA = 0.08
 /** PERTENECE_A una FASE o una HU es el árbol (tarjeta → FASE → HU): se ve, a diferencia de la pertenencia a una rama. */
-export const OPACIDAD_ESTRUCTURA = 0.4
+export const OPACIDAD_ESTRUCTURA = 0.75
 /** Con un nodo seleccionado (FASE 15): las líneas de su familia, brillantes; las demás, casi invisibles. */
 export const OPACIDAD_ILUMINADA = 0.9
 export const OPACIDAD_APAGADA = 0.03

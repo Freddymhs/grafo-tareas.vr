@@ -3,7 +3,7 @@ import { EstadoNodo, TipoConexion, TipoNodo, type Nodo } from './dominio'
 import {
   Filtro,
   encendidosPor,
-  filtroDeNumero,
+  filtroAlMostrar,
   filtroDeTexto,
   hilosDelFiltro,
   pendientes,
@@ -18,12 +18,21 @@ const nodo = (id: string, extra: Partial<Nodo> = {}): Nodo => ({
   ...extra,
 })
 
-describe('filtroDeNumero — los dedos de la mano derecha eligen el filtro (Freddy, 2026-10-18)', () => {
-  it('de menor a mayor: 1 = todo (por defecto), 2 = pendiente, 3 = pendiente sin trámites; 4 y 5 todavía no hacen nada', () => {
-    expect(filtroDeNumero(1)).toBe(Filtro.TODO)
-    expect(filtroDeNumero(2)).toBe(Filtro.PENDIENTE)
-    expect(filtroDeNumero(3)).toBe(Filtro.SIN_TRAMITES)
-    expect([0, 4, 5].map(filtroDeNumero)).toEqual([null, null, null])
+describe('filtroAlMostrar — los dedos de la mano derecha eligen el filtro (Freddy, 2026-10-18)', () => {
+  it('2 = pendiente, 3 = pendiente sin trámites; el 1 es la pose de apuntar y no elige nada, ni el 4 ni el 5', () => {
+    expect(filtroAlMostrar(2, Filtro.TODO)).toBe(Filtro.PENDIENTE)
+    expect(filtroAlMostrar(3, Filtro.PENDIENTE)).toBe(Filtro.SIN_TRAMITES)
+    expect([0, 1, 4, 5].map((n) => filtroAlMostrar(n, Filtro.PENDIENTE))).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ])
+  })
+
+  it('el número del filtro puesto lo apaga: vuelve a ver todo', () => {
+    expect(filtroAlMostrar(2, Filtro.PENDIENTE)).toBe(Filtro.TODO)
+    expect(filtroAlMostrar(3, Filtro.SIN_TRAMITES)).toBe(Filtro.TODO)
   })
 
   it('el botón B recorre todo → pendiente → sin trámites → todo; `?filtro=` acepta los mismos nombres', () => {

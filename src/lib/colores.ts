@@ -1,17 +1,22 @@
-// De qué color se pinta cada nodo: la rama a la que pertenece (los círculos de Freddy), y colores fijos para
-// personas y dudas, que son las que bloquean.
+// De qué color se pinta cada nodo: la rama a la que pertenece (los círculos de Freddy), y colores fijos para lo que
+// es otra cosa que una tarea: personas y dudas, que bloquean; la HU; el PBI (morado, `lib/pbi.ts`) y lo «para decir».
 
 import {
   COLOR_DUDA,
   COLOR_FONDO,
   COLOR_FASE,
   COLOR_HISTORIA,
+  COLOR_PARA_DECIR,
+  COLOR_PBI_A_MEDIAS,
   COLOR_PERSONA,
   COLOR_SIN_RAMA,
 } from './constants/grafo'
-import { TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
+import { Pbi, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
 
 function colorDe(nodo: Nodo, primeraRama: ReadonlyMap<string, string>): string {
+  // Un PBI es morado aunque su tarjeta esté en un carril: «es un PBI» pesa más que la zona de código.
+  if (nodo.pbi === Pbi.A_MEDIAS) return COLOR_PBI_A_MEDIAS
+  if (nodo.pbi === Pbi.ENTERO) return COLOR_FASE
   switch (nodo.tipo) {
     case TipoNodo.RAMA:
       return nodo.color ?? COLOR_SIN_RAMA
@@ -23,6 +28,8 @@ function colorDe(nodo: Nodo, primeraRama: ReadonlyMap<string, string>): string {
       return COLOR_HISTORIA
     case TipoNodo.FASE:
       return COLOR_FASE
+    case TipoNodo.DAILY_ITEM:
+      return COLOR_PARA_DECIR
     default:
       return primeraRama.get(nodo.id) ?? COLOR_SIN_RAMA
   }

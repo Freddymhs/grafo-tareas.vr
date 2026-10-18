@@ -13,12 +13,12 @@ export const Filtro = {
 export type Filtro = (typeof Filtro)[keyof typeof Filtro]
 
 /**
- * Se cuenta de menor a mayor (Freddy, 2026-10-18): 1 = ver todo (por defecto), 2 = pendiente, 3 = pendiente sin
- * trámites; 4 y 5 quedan para los que vengan. La mano abierta (5) es la de descanso: como «por defecto» se dispararía
- * sin querer.
+ * Se cuenta de menor a mayor (Freddy, 2026-10-18): 2 = pendiente, 3 = pendiente sin trámites; 4 y 5 quedan para los
+ * que vengan. El 1 ya no elige nada: el índice solo es la pose de apuntar con el rayo, y el visor la contaba como
+ * «1 = todo» (Freddy en el visor, 2026-10-18). Ver todo (el filtro apagado, por defecto) es mostrar otra vez el número
+ * del filtro puesto, o el botón B. La mano abierta (5) es la de descanso: como «por defecto» se dispararía sin querer.
  */
 const POR_NUMERO: Readonly<Record<number, Filtro>> = {
-  1: Filtro.TODO,
   2: Filtro.PENDIENTE,
   3: Filtro.SIN_TRAMITES,
 }
@@ -27,12 +27,15 @@ const ORDEN: readonly Filtro[] = [Filtro.TODO, Filtro.PENDIENTE, Filtro.SIN_TRAM
 /** Lo que dice la leyenda mientras un filtro está puesto: qué se ve y con qué dedos se sale. */
 export const TEXTO_DEL_FILTRO: Readonly<Record<Filtro, string | null>> = {
   [Filtro.TODO]: null,
-  [Filtro.PENDIENTE]: 'filtro 2 · pendiente (1 = todo)',
-  [Filtro.SIN_TRAMITES]: 'filtro 3 · pendiente sin trámites (1 = todo)',
+  [Filtro.PENDIENTE]: 'filtro 2 · pendiente (2 otra vez = todo)',
+  [Filtro.SIN_TRAMITES]: 'filtro 3 · pendiente sin trámites (3 otra vez = todo)',
 }
 
-export function filtroDeNumero(numero: number): Filtro | null {
-  return POR_NUMERO[numero] ?? null
+/** El filtro que pide mostrar `numero` con el filtro `actual` puesto: el mismo número lo apaga; `null`, ninguno. */
+export function filtroAlMostrar(numero: number, actual: Filtro): Filtro | null {
+  const pedido = POR_NUMERO[numero]
+  if (pedido === undefined) return null
+  return pedido === actual ? Filtro.TODO : pedido
 }
 
 export function filtroDeTexto(texto: string | null): Filtro {

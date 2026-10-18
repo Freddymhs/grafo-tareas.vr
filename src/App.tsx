@@ -2,15 +2,16 @@ import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore } from '@react-three/xr'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
+import { MeshBasicMaterial } from 'three'
 import { coloresPorNodo } from './lib/colores'
 import { LINEAS_MINIMAS } from './lib/constants/etiquetas'
 import { COLOR_FONDO } from './lib/constants/grafo'
 import { VIGENCIA_CONSULTA_MS } from './lib/constants/api'
 import { Cara, type Grafo as GrafoDominio, type Posicion } from './lib/dominio'
-import { ALTURA_OJOS } from './lib/layout'
+import { ALTURA_OJOS, RADIO_PANORAMA } from './lib/layout'
 import { FuenteGrafo, leerParametros, type ParametrosPrueba } from './lib/parametros'
 import { useEstadoVr } from './lib/estado-vr'
-import { filtroDeNumero } from './lib/filtro'
+import { filtroAlMostrar } from './lib/filtro'
 import { guardarUltimaVista, leerUltimaVista } from './lib/ultima-vista'
 import { registrarError } from './lib/registro'
 import { generarGrafo } from './lib/sintetico'
@@ -26,9 +27,24 @@ import { useLayout } from './escena/useLayout'
 import { useMapaApi } from './escena/useMapaApi'
 import { VoltearConControl } from './escena/VoltearConControl'
 
+// El rayo sólido y hasta la pantalla curva, con la mano y con el control: el de serie se desvanece y llega a 1 m, y
+// «me cuesta mucho» apuntar (Freddy en el visor, 2026-10-18).
+const RAYO_SOLIDO = {
+  rayModel: {
+    materialClass: MeshBasicMaterial,
+    opacity: 1,
+    color: '#ffffff',
+    size: 0.007,
+    maxLength: RADIO_PANORAMA,
+  },
+}
 // El emulador de @react-three/xr queda apagado: lo reemplaza `lib/emulador.ts` (solo en desarrollo), porque el
 // suyo no se instala sobre el WebXR nativo de Chrome. Apagado además saca del service worker ~5,9 MB de salas.
-const xrStore = createXRStore({ emulate: false })
+const xrStore = createXRStore({
+  emulate: false,
+  hand: { rayPointer: RAYO_SOLIDO },
+  controller: { rayPointer: RAYO_SOLIDO },
+})
 const parametros = leerParametros(window.location.search)
 // `?pagina=` (FASE 15) abre esa HU por su cara real; sin él, la última HU y cara que se vieron en este visor (Freddy,
 // 2026-10-18: «conservar el estado en lo último que abrió»). Se guarda solo cuando cambian.
@@ -148,6 +164,7 @@ function VistaApi() {
   const mapa = useMapaApi(parametros.reordenar, parametros.radio)
   const verCara = useEstadoVr((estado) => estado.verCara)
   const verFiltro = useEstadoVr((estado) => estado.verFiltro)
+  const filtroPuesto = useEstadoVr((estado) => estado.filtro)
   if (mapa.estado !== 'listo') {
     return (
       <Vista
@@ -164,9 +181,9 @@ function VistaApi() {
   const voltear = () => {
     if (otra) verCara(otra)
   }
-  // Los dedos de la mano derecha (FASE 17): 1 = todo, 2 = pendiente; los demás números todavía no eligen nada.
+  // Los dedos de la mano derecha (FASE 17): 2 = pendiente, 3 = sin trámites; el mismo número otra vez, todo.
   const elegirFiltro = (numero: number) => {
-    const filtro = filtroDeNumero(numero)
+    const filtro = filtroAlMostrar(numero, filtroPuesto)
     if (filtro) verFiltro(filtro)
   }
   return (

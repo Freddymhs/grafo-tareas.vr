@@ -52,7 +52,7 @@ interface EstadoVr {
   irALibro: (indice: number) => void
   /** Dar vuelta la hoja (FASE 17): la otra cara del mismo libro (`otraCara`). */
   verCara: (cara: Cara) => void
-  /** Los dedos de la mano derecha (`filtroDeNumero`). */
+  /** Los dedos de la mano derecha (`filtroAlMostrar`). */
   verFiltro: (filtro: Filtro) => void
   /** El botón B del control derecho: el filtro siguiente, dando la vuelta (`siguienteFiltro`). */
   alternarFiltro: () => void

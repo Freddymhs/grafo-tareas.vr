@@ -28,36 +28,37 @@ function mano(estirados: readonly (keyof CurvaturasMano)[]): CurvaturasMano {
 }
 
 describe('numeroDeLaMano — cada número es una forma de mano, la de Freddy (2026-10-18)', () => {
-  it('1 índice · 2 índice y medio · 3 medio, anular y meñique · 4 los cuatro · 5 los cinco', () => {
-    expect(numeroDeLaMano(mano(['indice']))).toBe(1)
+  it('2 índice y medio · 3 medio, anular y meñique · 4 los cuatro · 5 los cinco', () => {
     expect(numeroDeLaMano(mano(['indice', 'medio']))).toBe(2)
     expect(numeroDeLaMano(mano(['medio', 'anular', 'menique']))).toBe(3)
     expect(numeroDeLaMano(mano(['indice', 'medio', 'anular', 'menique']))).toBe(4)
     expect(numeroDeLaMano(mano(['pulgar', 'indice', 'medio', 'anular', 'menique']))).toBe(5)
   })
 
-  it('en el 1, el 2 y el 3 el pulgar no importa (el visor lo lee con ruido); en el 4 y el 5 decide', () => {
-    expect(numeroDeLaMano(mano(['pulgar', 'indice']))).toBe(1)
+  it('en el 2 y el 3 el pulgar no importa (el visor lo lee con ruido); en el 4 y el 5 decide', () => {
     expect(numeroDeLaMano(mano(['pulgar', 'indice', 'medio']))).toBe(2)
     expect(numeroDeLaMano(mano(['pulgar', 'medio', 'anular', 'menique']))).toBe(3)
   })
 
   it('lo que no es una de esas formas no es un número: el puño, contar «a lo ancho», un dedo suelto', () => {
     expect(numeroDeLaMano(mano([]))).toBe(0)
+    // El índice solo es la pose de apuntar con el rayo (Freddy en el visor, 2026-10-18): con o sin pulgar.
+    expect(numeroDeLaMano(mano(['indice']))).toBe(0)
+    expect(numeroDeLaMano(mano(['pulgar', 'indice']))).toBe(0)
     expect(numeroDeLaMano(mano(['indice', 'medio', 'anular']))).toBe(0)
     expect(numeroDeLaMano(mano(['menique']))).toBe(0)
     expect(numeroDeLaMano(mano(['pulgar']))).toBe(0)
   })
 
   it('un dedo perdido (NaN) no cuenta como estirado', () => {
-    expect(numeroDeLaMano({ ...mano(['indice', 'medio']), medio: Number.NaN })).toBe(1)
+    expect(numeroDeLaMano({ ...mano(['indice', 'medio', 'anular']), anular: Number.NaN })).toBe(2)
   })
 
   it('el pulgar tiene su propio límite, más exigente que el de los otros dedos', () => {
     const aMedias = (CURVATURA_PULGAR_ESTIRADO_MAXIMA + CURVATURA_ESTIRADO_MAXIMA) / 2
     const cuatro = mano(['indice', 'medio', 'anular', 'menique'])
     expect(numeroDeLaMano({ ...cuatro, pulgar: aMedias })).toBe(4)
-    expect(numeroDeLaMano({ ...mano([]), indice: aMedias })).toBe(1)
+    expect(numeroDeLaMano({ ...mano(['medio']), indice: aMedias })).toBe(2)
   })
 })
 

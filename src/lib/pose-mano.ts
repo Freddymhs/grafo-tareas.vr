@@ -55,3 +55,41 @@ export const MANO_ALZADA_BAJO_LOS_OJOS_M = 0.3
 export function esManoAlzada(alturaMuneca: number, alturaOjos: number): boolean {
   return alturaOjos - alturaMuneca <= MANO_ALZADA_BAJO_LOS_OJOS_M
 }
+
+/** Las puntas del pulgar y del índice juntas: el pellizco con que Meta hace clic y abre su menú. Primera estimación. */
+export const PELLIZCO_MAXIMO_M = 0.025
+/** La palma mira a los ojos si su normal y la dirección a los ojos forman menos de 60° (coseno 0,5). A calibrar. */
+export const PALMA_HACIA_LA_CARA_COSENO_MINIMO = 0.5
+
+const resta = (a: Punto, b: Punto): Punto => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z })
+const cruz = (a: Punto, b: Punto): Punto => ({
+  x: a.y * b.z - a.z * b.y,
+  y: a.z * b.x - a.x * b.z,
+  z: a.x * b.y - a.y * b.x,
+})
+const largo = ({ x, y, z }: Punto) => Math.hypot(x, y, z)
+const coseno = (a: Punto, b: Punto) => (a.x * b.x + a.y * b.y + a.z * b.z) / (largo(a) * largo(b))
+
+export interface PuntosDeMeta {
+  readonly muneca: Punto
+  readonly baseIndice: Punto
+  readonly baseMenique: Punto
+  readonly puntaPulgar: Punto
+  readonly puntaIndice: Punto
+  readonly ojos: Punto
+}
+
+/**
+ * El gesto de sistema de Meta con la mano DERECHA: la palma hacia la cara y el pulgar tocando el índice —abre su menú—.
+ * Ningún gesto nuestro lo usa: se ignora (Freddy en el visor, 2026-10-18). Solo el pellizco no alcanza para ignorarlo:
+ * el 3 («OK») también junta el pulgar con el índice. En la mano derecha, (base del índice − muñeca) × (base del meñique −
+ * muñeca) sale por la palma.
+ */
+export function esGestoDeMeta(puntos: PuntosDeMeta): boolean {
+  const { muneca, baseIndice, baseMenique, puntaPulgar, puntaIndice, ojos } = puntos
+  const esPellizco = largo(resta(puntaPulgar, puntaIndice)) <= PELLIZCO_MAXIMO_M
+  const normalDeLaPalma = cruz(resta(baseIndice, muneca), resta(baseMenique, muneca))
+  const palmaHaciaLaCara =
+    coseno(normalDeLaPalma, resta(ojos, muneca)) >= PALMA_HACIA_LA_CARA_COSENO_MINIMO
+  return esPellizco && palmaHaciaLaCara
+}

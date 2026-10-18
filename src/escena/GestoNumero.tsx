@@ -1,20 +1,28 @@
 // Mostrar un número con la mano DERECHA (FASE 17): en cada frame mide cuánto se dobla cada uno de los cinco dedos,
 // lee qué forma hace (`numeroDeLaMano`) y, SOLO con la mano levantada (`esManoAlzada`), decide con
 // `lib/conteo-dedos.ts` y avisa por `onNumero`. Qué hace cada número lo conecta quien integra. Mientras se sostiene
-// aparece el número abajo a la derecha del campo de visión, con una barrita que se llena (te entendió).
+// aparece el número abajo a la derecha del campo de visión, con una barrita que se llena (te entendió). El gesto del
+// menú de Meta (`esGestoDeMeta`) no es ningún número, aunque la forma de los dedos se parezca al 3.
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useXR, useXRInputSourceState } from '@react-three/xr'
 import { useRef, useState } from 'react'
 import { Vector3, type Group } from 'three'
 import {
+  NINGUN_NUMERO,
   NUMERO_INICIAL,
   avanzarNumero,
   numeroDeLaMano,
   type CurvaturasMano,
 } from '../lib/conteo-dedos'
-import { esManoAlzada } from '../lib/pose-mano'
-import { MUESTRAS_DEPURACION, PASOS_DE_PROGRESO, PROGRESO_VISIBLE, curvaturaDe } from './mano-xr'
+import { esGestoDeMeta, esManoAlzada } from '../lib/pose-mano'
+import {
+  MUESTRAS_DEPURACION,
+  PASOS_DE_PROGRESO,
+  PROGRESO_VISIBLE,
+  curvaturaDe,
+  puntoDe,
+} from './mano-xr'
 
 /** El indicador, abajo a la derecha del campo de visión: lejos del arco de la pelota (x = 0) y de la barrita de voltear (x = 0,08). */
 const DELANTE = new Vector3(0.16, -0.12, -0.6)
@@ -29,6 +37,8 @@ export interface MuestraDepuracionNumero {
   readonly curvaturas: CurvaturasMano
   readonly numero: number
   readonly alzada: boolean
+  /** El visor vio el gesto del menú de Meta: para calibrar `esGestoDeMeta` (el signo de la palma es un supuesto). */
+  readonly meta: boolean
   readonly progreso: number
   readonly evento: number | null
 }
@@ -72,7 +82,25 @@ export function GestoNumero({
       anular: curvaturaDe(frame, hand, espacio, 'ring-finger'),
       menique: curvaturaDe(frame, hand, espacio, 'pinky-finger'),
     }
-    const numero = numeroDeLaMano(curvaturas)
+    const punto = (articulacion: XRHandJoint) => puntoDe(frame, hand, espacio, articulacion)
+    const baseIndice = punto('index-finger-metacarpal')
+    const baseMenique = punto('pinky-finger-metacarpal')
+    const puntaPulgar = punto('thumb-tip')
+    const puntaIndice = punto('index-finger-tip')
+    const meta =
+      baseIndice !== null &&
+      baseMenique !== null &&
+      puntaPulgar !== null &&
+      puntaIndice !== null &&
+      esGestoDeMeta({
+        muneca: pose.transform.position,
+        baseIndice,
+        baseMenique,
+        puntaPulgar,
+        puntaIndice,
+        ojos: camera.position,
+      })
+    const numero = meta ? NINGUN_NUMERO : numeroDeLaMano(curvaturas)
     const alzada = esManoAlzada(pose.transform.position.y, camera.position.y)
     const paso = avanzarNumero(gesto.current, { t: clock.elapsedTime, numero, alzada })
     gesto.current = paso.estado
@@ -91,6 +119,7 @@ export function GestoNumero({
         curvaturas,
         numero,
         alzada,
+        meta,
         progreso: paso.progreso,
         evento: paso.evento,
       })
