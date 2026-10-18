@@ -228,3 +228,66 @@ export function calcularLayout(
       : []
   return new Map([...ubicadas, ...ubicarSueltas(sueltas, arcoSueltas, radio, centroSueltas, celda)])
 }
+
+/** Pocas vueltas: solo se acomoda lo que llega; lo demás ya está quieto. */
+const TICKS_SEPARAR = 200
+/** Lo que llega se queda cerca de sus vecinos, pero el choque manda. */
+const FUERZA_HACIA_VECINOS = 0.3
+
+/**
+ * Lo que llega a una página ya acomodada —un nodo nuevo, o una invitada que vive en otra página (las hijas de una tarjeta
+ * de «Sin HU»)— parte de donde lo dejó `ubicarFaltantes` y se separa con el mismo choque de celdas del acomodo, sin
+ * mover lo guardado (fijo en d3). Sin esto, quince hijas de una misma madre caían una encima de otra.
+ */
+export function separarNuevas(
+  grafo: Grafo,
+  fijas: ReadonlyMap<string, Posicion>,
+  nuevas: ReadonlyMap<string, Posicion>,
+  radio: number,
+  lineas: number = LINEAS_MINIMAS,
+): ReadonlyMap<string, Posicion> {
+  if (nuevas.size === 0) return nuevas
+  const { celda } = medidasEtiqueta(lineas)
+  const aspecto = celda.ancho / celda.alto
+  const mitadAlto = ALTO_MEDIO * aspecto
+  const tipoDe = new Map(grafo.nodos.map(({ id, tipo }) => [id, tipo]))
+  const aPantalla = (p: Posicion) => ({ x: anguloDe(p) * radio, y: (p.y - ALTURA_OJOS) * aspecto })
+  // d3 escribe x/y en estos objetos: son copias. Lo guardado lleva fx/fy: no se mueve.
+  const nodosSimulacion: NodoSimulacion[] = [
+    ...[...fijas].map(([id, p]) => {
+      const { x, y } = aPantalla(p)
+      return { id, x, y, fx: x, fy: y }
+    }),
+    ...[...nuevas].map(([id, p]) => ({ id, ...aPantalla(p) })),
+  ]
+  const presentes = new Set(nodosSimulacion.map(({ id }) => id))
+  const enlaces = grafo.conexiones
+    .filter(({ origenId, destinoId }) => presentes.has(origenId) && presentes.has(destinoId))
+    .map(({ origenId, destinoId }) => ({ source: origenId, target: destinoId }))
+  const radioDe = ({ id }: NodoSimulacion) => radioDeCelda(tipoDe.get(id), celda)
+  const enLaBanda: FuerzaPropia = () =>
+    nodosSimulacion
+      .filter(({ fx }) => fx === undefined)
+      .forEach((nodo) => {
+        const margen = radioDe(nodo)
+        const { y = 0, vy = 0 } = nodo
+        nodo.vy = Math.min(mitadAlto - margen, Math.max(-mitadAlto + margen, y + vy)) - y
+      })
+  forceSimulation(nodosSimulacion, DIMENSIONES)
+    .force(
+      'enlace',
+      forceLink(enlaces)
+        .id(({ id }) => id)
+        .distance(celda.ancho)
+        .strength(FUERZA_HACIA_VECINOS),
+    )
+    .force('choque', forceCollide().radius(radioDe).iterations(VUELTAS_CHOQUE))
+    .force('banda', enLaBanda)
+    .stop()
+    .tick(TICKS_SEPARAR)
+  return new Map(
+    nodosSimulacion
+      .filter(({ id }) => nuevas.has(id))
+      .map(({ id, x = 0, y = 0 }) => [id, enCilindro(x / radio, ALTURA_OJOS + y / aspecto, radio)]),
+  )
+}

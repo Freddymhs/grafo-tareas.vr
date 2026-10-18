@@ -9,7 +9,9 @@ import {
   aberturaPara,
   anguloDe,
   calcularLayout,
+  enCilindro,
   lineasPara,
+  separarNuevas,
 } from './layout'
 import { generarGrafo } from './sintetico'
 
@@ -190,5 +192,46 @@ describe('lineasPara — más texto donde la página tiene espacio (FASE 15)', (
     )
     expect(lineas).toBe(4)
     expect(pisadas.length).toBeLessThanOrEqual(Math.ceil(celdas.length * 0.02))
+  })
+})
+
+describe('separarNuevas — lo que llega a una página guardada no se apila (FASE 15)', () => {
+  it('15 invitadas alrededor de la misma madre: ni se pisan entre ellas ni mueven lo guardado', () => {
+    const nodo = (id: string) => ({
+      id,
+      tipo: TipoNodo.TAREA,
+      titulo: id,
+      estado: EstadoNodo.ABIERTO,
+    })
+    const hijas = Array.from({ length: 15 }, (_, i) => `hija-${i}`)
+    const grafoPagina: Grafo = {
+      nodos: [nodo('madre'), nodo('vecina'), ...hijas.map(nodo)],
+      conexiones: hijas.map((h) => ({
+        id: h,
+        origenId: 'madre',
+        destinoId: h,
+        tipo: TipoConexion.DEPENDE_DE,
+      })),
+    }
+    const fijas = new Map([
+      ['madre', enCilindro(0, ALTURA_OJOS, RADIO_PANORAMA)],
+      ['vecina', enCilindro(0.3, ALTURA_OJOS, RADIO_PANORAMA)],
+    ])
+    // Como las deja `ubicarFaltantes`: todas casi encima de la madre.
+    const nuevas = new Map(
+      hijas.map((h, i) => [h, enCilindro(0.001 * i, ALTURA_OJOS, RADIO_PANORAMA)]),
+    )
+    const separadas = separarNuevas(grafoPagina, fijas, nuevas, RADIO_PANORAMA, 2)
+    const { texto } = medidasEtiqueta(2)
+    const enPantalla = (p: Posicion) => ({ u: anguloDe(p) * RADIO_PANORAMA, v: p.y })
+    const todas = [...fijas.values(), ...separadas.values()].map(enPantalla)
+    const pisadas = todas.filter((a, i) =>
+      todas.some(
+        (b, j) => i !== j && Math.abs(a.u - b.u) < texto.ancho && Math.abs(a.v - b.v) < texto.alto,
+      ),
+    )
+    expect([...separadas.keys()].sort()).toEqual([...hijas].sort())
+    expect(pisadas.length).toBeLessThanOrEqual(1)
+    separadas.forEach((p) => expect(Math.hypot(p.x, p.z)).toBeCloseTo(RADIO_PANORAMA, 9))
   })
 })

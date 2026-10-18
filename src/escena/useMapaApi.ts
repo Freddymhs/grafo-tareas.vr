@@ -16,7 +16,7 @@ import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
 import { TipoNodo, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
-import { RADIO_PANORAMA, aberturaPara, lineasPara } from '../lib/layout'
+import { RADIO_PANORAMA, aberturaPara, lineasPara, separarNuevas } from '../lib/layout'
 import { grafoDePagina, hogares } from '../lib/paginas'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
@@ -87,9 +87,12 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const ubicacion = useMemo(() => {
     if (!grafoPagina) return null
     if (sinAcomodo) return layout ? { posiciones: layout, nuevas: layout } : null
-    // Lo nuevo sin vecinos va al extremo derecho de la página, donde el acomodo pone las sueltas.
-    return ubicarFaltantes(grafoPagina, guardadas, abertura / 2)
-  }, [grafoPagina, guardadas, sinAcomodo, layout, abertura])
+    // Lo nuevo sin vecinos va al extremo derecho de la página, donde el acomodo pone las sueltas; después, lo que llega
+    // (nuevo o invitado de otra página) se separa sin mover lo guardado.
+    const { nuevas } = ubicarFaltantes(grafoPagina, guardadas, abertura / 2)
+    const separadas = separarNuevas(grafoPagina, guardadas, nuevas, radio, lineas)
+    return { posiciones: new Map([...guardadas, ...separadas]), nuevas: separadas }
+  }, [grafoPagina, guardadas, sinAcomodo, layout, abertura, radio, lineas])
 
   const { mutate } = guardar
   useEffect(() => {

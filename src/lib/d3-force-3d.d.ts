@@ -7,6 +7,9 @@ declare module 'd3-force-3d' {
     z?: number
     vx?: number
     vy?: number
+    /** Fijo: d3 no lo mueve (lo ya guardado, al separar lo que llega). */
+    fx?: number
+    fy?: number
   }
 
   export interface EnlaceSimulacion {
