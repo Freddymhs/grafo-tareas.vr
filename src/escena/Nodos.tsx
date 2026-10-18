@@ -2,20 +2,14 @@
 
 import { Instance, Instances } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { EstadoNodo, TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
+import { LIMITE_GRAFO } from '../lib/constants/api'
+import { RADIO_NODO } from '../lib/constants/grafo'
+import type { Nodo, Posicion } from '../lib/dominio'
+import { escalaDe } from '../lib/escala-nodo'
 
-const RADIO_NODO = 0.05
 const SEGMENTOS_ESFERA = 12
-const ESCALA_CERRADO = 0.5
-const ESCALA_BLOQUEANTE = 1.8
-const ESCALA_SELECCIONADO = 2.2
-/** Lo que se liberó al cerrar (FASE 7): más grande y en verde, para que se vea qué destrabó. */
-const ESCALA_RESALTADO = 1.9
+/** Lo que se liberó al cerrar (FASE 7): en verde, para que se vea qué destrabó (el tamaño, en `escala-nodo`). */
 const COLOR_RESALTADO = '#4ade80'
-const BLOQUEANTES: ReadonlySet<string> = new Set([TipoNodo.PERSONA, TipoNodo.DUDA, TipoNodo.RAMA])
-/** El esqueleto del árbol (FASE 13): la HU es el centro de su racimo; la FASE, un nudo entre la HU y sus tarjetas. */
-const ESCALA_HISTORIA = 3.2
-const ESCALA_FASE = 1.5
 
 interface Props {
   readonly nodos: readonly Nodo[]
@@ -28,19 +22,6 @@ interface Props {
   readonly onApuntar: (id: string | null) => void
 }
 
-function escalaDe(
-  nodo: Nodo,
-  seleccionado: string | null,
-  resaltados: ReadonlySet<string>,
-): number {
-  if (nodo.id === seleccionado) return ESCALA_SELECCIONADO
-  if (resaltados.has(nodo.id)) return ESCALA_RESALTADO
-  if (nodo.tipo === TipoNodo.HISTORIA) return ESCALA_HISTORIA
-  if (nodo.tipo === TipoNodo.FASE) return ESCALA_FASE
-  if (BLOQUEANTES.has(nodo.tipo)) return ESCALA_BLOQUEANTE
-  return nodo.estado === EstadoNodo.CERRADO ? ESCALA_CERRADO : 1
-}
-
 export function Nodos({
   nodos,
   posiciones,
@@ -50,8 +31,12 @@ export function Nodos({
   onSeleccionar,
   onApuntar,
 }: Props) {
+  // `<Instances>` arma sus buffers UNA vez, con el `limit` del primer render. Con el tamaño de la página como límite,
+  // pasar de una página chica a una grande dejaba las esferas de más sin posición, encima de la cabeza (en el visor,
+  // 2026-10-18: HU 20379 → HU 19565, sin esferas y 20 FPS). La capacidad es la de la API; si un grafo la pasa, se rearma.
+  const capacidad = Math.max(LIMITE_GRAFO, nodos.length)
   return (
-    <Instances limit={nodos.length} range={nodos.length}>
+    <Instances key={capacidad} limit={capacidad} range={nodos.length}>
       <sphereGeometry args={[RADIO_NODO, SEGMENTOS_ESFERA, SEGMENTOS_ESFERA]} />
       <meshStandardMaterial />
       {nodos.map((nodo) => {

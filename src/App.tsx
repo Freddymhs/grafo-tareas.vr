@@ -6,26 +6,43 @@ import { coloresPorNodo } from './lib/colores'
 import { LINEAS_MINIMAS } from './lib/constants/etiquetas'
 import { COLOR_FONDO } from './lib/constants/grafo'
 import { VIGENCIA_CONSULTA_MS } from './lib/constants/api'
-import type { Grafo as GrafoDominio, Posicion } from './lib/dominio'
+import { Cara, type Grafo as GrafoDominio, type Posicion } from './lib/dominio'
 import { ALTURA_OJOS } from './lib/layout'
 import { FuenteGrafo, leerParametros, type ParametrosPrueba } from './lib/parametros'
 import { useEstadoVr } from './lib/estado-vr'
+import { filtroDeNumero } from './lib/filtro'
+import { guardarUltimaVista, leerUltimaVista } from './lib/ultima-vista'
 import { registrarError } from './lib/registro'
 import { generarGrafo } from './lib/sintetico'
 import { BarraSuperior } from './escena/BarraSuperior'
 import { CambioDePagina } from './escena/CambioDePagina'
+import { FiltroConControl } from './escena/FiltroConControl'
 import { GestoPelota } from './escena/GestoPelota'
+import { GestoNumero } from './escena/GestoNumero'
+import { GestoVoltear } from './escena/GestoVoltear'
 import { Grafo } from './escena/Grafo'
 import { Movimiento } from './escena/Movimiento'
 import { useLayout } from './escena/useLayout'
 import { useMapaApi } from './escena/useMapaApi'
+import { VoltearConControl } from './escena/VoltearConControl'
 
 // El emulador de @react-three/xr queda apagado: lo reemplaza `lib/emulador.ts` (solo en desarrollo), porque el
 // suyo no se instala sobre el WebXR nativo de Chrome. Apagado además saca del service worker ~5,9 MB de salas.
 const xrStore = createXRStore({ emulate: false })
 const parametros = leerParametros(window.location.search)
-// `?pagina=` (FASE 15): la página con la que arranca; después la cambian X / Y, las pestañas o el gesto.
-useEstadoVr.setState({ pagina: parametros.pagina })
+// `?pagina=` (FASE 15) abre esa HU por su cara real; sin él, la última HU y cara que se vieron en este visor (Freddy,
+// 2026-10-18: «conservar el estado en lo último que abrió»). Se guarda solo cuando cambian.
+const ultimaVista = parametros.pagina === null ? leerUltimaVista(window.localStorage) : null
+useEstadoVr.setState({
+  libro: parametros.pagina ?? ultimaVista?.libro ?? 0,
+  cara: ultimaVista?.cara ?? Cara.REAL,
+  filtro: parametros.filtro,
+})
+useEstadoVr.subscribe(({ libro, cara }, anterior) => {
+  if (libro !== anterior.libro || cara !== anterior.cara) {
+    guardarUltimaVista(window.localStorage, { libro, cara })
+  }
+})
 
 const CAMARA_INICIAL: [number, number, number] = [0, ALTURA_OJOS, 0.01]
 const OBJETIVO_ORBITA: [number, number, number] = [0, ALTURA_OJOS, 0]
@@ -129,6 +146,8 @@ function VistaSintetica({ prueba }: { readonly prueba: ParametrosPrueba }) {
 /** El grafo real (FASE 6): de la API, una página (una HU) a la vez (FASE 15), con las posiciones guardadas. */
 function VistaApi() {
   const mapa = useMapaApi(parametros.reordenar, parametros.radio)
+  const verCara = useEstadoVr((estado) => estado.verCara)
+  const verFiltro = useEstadoVr((estado) => estado.verFiltro)
   if (mapa.estado !== 'listo') {
     return (
       <Vista
@@ -140,6 +159,16 @@ function VistaApi() {
       />
     )
   }
+  // Dar vuelta la hoja (FASE 17): a la otra cara de la HU, si tiene plan; si no, nada.
+  const { otra } = mapa.pagina
+  const voltear = () => {
+    if (otra) verCara(otra)
+  }
+  // Los dedos de la mano derecha (FASE 17): 1 = todo, 2 = pendiente; los demás números todavía no eligen nada.
+  const elegirFiltro = (numero: number) => {
+    const filtro = filtroDeNumero(numero)
+    if (filtro) verFiltro(filtro)
+  }
   return (
     <Vista
       grafo={mapa.grafo}
@@ -150,9 +179,18 @@ function VistaApi() {
       conFecha={mapa.conFecha}
       fijo={
         <>
-          <BarraSuperior ramas={mapa.ramas} indice={mapa.pagina.indice} />
+          <BarraSuperior
+            ramas={mapa.ramas}
+            indice={mapa.pagina.indice}
+            cara={mapa.pagina.cara}
+            otra={mapa.pagina.otra}
+          />
           <CambioDePagina total={mapa.pagina.total} />
           <GestoPelota total={mapa.pagina.total} depurar={parametros.depurar} />
+          <GestoVoltear onVoltear={voltear} depurar={parametros.depurar} />
+          <VoltearConControl onVoltear={voltear} />
+          <FiltroConControl />
+          <GestoNumero onNumero={elegirFiltro} depurar={parametros.depurar} />
         </>
       }
       mensaje={mapa.aviso ? { texto: mapa.aviso, esError: true } : null}

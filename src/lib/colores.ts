@@ -53,7 +53,10 @@ const canales = (hex: string) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(
 const aHex = (valores: readonly number[]) =>
   `#${valores.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`
 
-/** Lo que no es de la familia del nodo seleccionado (FASE 15): su color, hundido hacia el fondo. */
+/**
+ * Lo que queda fuera de lo iluminado —la familia de una selección (FASE 15) o lo pendiente del filtro (FASE 17)—: su
+ * color, hundido hacia el fondo. Un tenue a medias no alcanzaba: obligaba a buscar (Freddy en el visor, 2026-10-18).
+ */
 export function colorApagado(hex: string): string {
   const fondo = canales(COLOR_FONDO)
   return aHex(canales(hex).map((valor, i) => valor + (fondo[i] - valor) * APAGADO))

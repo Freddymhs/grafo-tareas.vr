@@ -23,6 +23,7 @@ import type {
 
 import type {
   CambioResponseDto,
+  ContrasteResponseDto,
   DescartadoResponseDto,
   DescartarDto,
   DescarteResponseDto,
@@ -380,6 +381,132 @@ export function usePulidoControllerDescartes<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getPulidoControllerDescartesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  return withQueryKey(query, queryOptions.queryKey)
+}
+
+export const getPulidoControllerContrasteUrl = () => {
+  return `/api/v1/contraste`
+}
+
+/**
+ * @summary El contraste Todoist ↔ grafo, desde el grafo: qué sigue igual, qué se editó y qué se descartó, con su motivo
+ */
+export const pulidoControllerContraste = async (
+  options?: Parameters<typeof cliente>[1],
+): Promise<ContrasteResponseDto> => {
+  return cliente<ContrasteResponseDto>(getPulidoControllerContrasteUrl(), {
+    ...options,
+    method: 'GET',
+  })
+}
+
+export const getPulidoControllerContrasteQueryKey = () => {
+  return [`/api/v1/contraste`] as const
+}
+
+export const getPulidoControllerContrasteQueryOptions = <
+  TData = Awaited<ReturnType<typeof pulidoControllerContraste>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof pulidoControllerContraste>>, TError, TData>
+  >
+  request?: SecondParameter<typeof cliente>
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = queryOptions?.queryKey ?? getPulidoControllerContrasteQueryKey()
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof pulidoControllerContraste>>> = ({
+    signal,
+  }) => pulidoControllerContraste({ signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof pulidoControllerContraste>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PulidoControllerContrasteQueryResult = NonNullable<
+  Awaited<ReturnType<typeof pulidoControllerContraste>>
+>
+export type PulidoControllerContrasteQueryError = unknown
+
+export function usePulidoControllerContraste<
+  TData = Awaited<ReturnType<typeof pulidoControllerContraste>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof pulidoControllerContraste>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof pulidoControllerContraste>>,
+          TError,
+          Awaited<ReturnType<typeof pulidoControllerContraste>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePulidoControllerContraste<
+  TData = Awaited<ReturnType<typeof pulidoControllerContraste>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof pulidoControllerContraste>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof pulidoControllerContraste>>,
+          TError,
+          Awaited<ReturnType<typeof pulidoControllerContraste>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePulidoControllerContraste<
+  TData = Awaited<ReturnType<typeof pulidoControllerContraste>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof pulidoControllerContraste>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary El contraste Todoist ↔ grafo, desde el grafo: qué sigue igual, qué se editó y qué se descartó, con su motivo
+ */
+
+export function usePulidoControllerContraste<
+  TData = Awaited<ReturnType<typeof pulidoControllerContraste>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof pulidoControllerContraste>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getPulidoControllerContrasteQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>

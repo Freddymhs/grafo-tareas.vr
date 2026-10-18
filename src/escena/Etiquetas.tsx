@@ -37,7 +37,7 @@ interface Props {
   readonly apuntado: string | null
   /** Cuántas líneas lleva cada etiqueta en esta página (FASE 15): más donde hay espacio. */
   readonly lineas: number
-  /** Con un nodo seleccionado, su familia (FASE 15): las demás etiquetas se apagan. */
+  /** Lo iluminado —la familia de una selección (FASE 15) o lo pendiente del filtro (FASE 17)—: lo demás se apaga. */
   readonly iluminados: ReadonlySet<string> | null
   /** Las tareas sin padre: su etiqueta empieza con la fecha («14-oct · …», FASE 15). */
   readonly conFecha: ReadonlySet<string>
@@ -77,6 +77,8 @@ export function Etiquetas({
   })
 
   const porId = new Map(nodos.map((nodo) => [nodo.id, nodo]))
+  const colorDeTexto = (id: string) =>
+    iluminados && !iluminados.has(id) ? COLOR_TEXTO_APAGADO : COLOR_TEXTO
   const textoDe = (nodo: Nodo | undefined, id: string) =>
     nodo?.fecha && conFecha.has(id) ? textoConFecha(nodo.titulo, nodo.fecha) : (nodo?.titulo ?? id)
   const historias = nodos
@@ -96,7 +98,7 @@ export function Etiquetas({
           <Billboard key={id} position={[x, y + DESPLAZAMIENTO_Y, z]}>
             <Text
               fontSize={porId.get(id)?.tipo === TipoNodo.HISTORIA ? TAMANO_TEXTO_HU : TAMANO_TEXTO}
-              color={iluminados && !iluminados.has(id) ? COLOR_TEXTO_APAGADO : COLOR_TEXTO}
+              color={colorDeTexto(id)}
               anchorY="bottom"
               maxWidth={
                 porId.get(id)?.tipo === TipoNodo.HISTORIA ? ANCHO_ETIQUETA_HU : ANCHO_ETIQUETA

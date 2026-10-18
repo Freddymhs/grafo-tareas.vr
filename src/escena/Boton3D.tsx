@@ -23,15 +23,24 @@ interface Props {
   readonly onTocar: () => void
   readonly apagado?: boolean
   readonly resaltado?: boolean
+  /** Otro color para el resaltado: la pestaña de una HU vista por su cara plan (FASE 17). */
+  readonly colorResaltado?: string
 }
 
-export function Boton3D({ texto, posicion, onTocar, apagado = false, resaltado = false }: Props) {
+export function Boton3D({
+  texto,
+  posicion,
+  onTocar,
+  apagado = false,
+  resaltado = false,
+  colorResaltado = COLOR_RESALTADO,
+}: Props) {
   const [encima, setEncima] = useState(false)
   const tocar = (evento: ThreeEvent<MouseEvent>) => {
     evento.stopPropagation()
     if (!apagado) onTocar()
   }
-  const reposo = resaltado ? COLOR_RESALTADO : COLOR_FONDO
+  const reposo = resaltado ? colorResaltado : COLOR_FONDO
   const fondo = apagado ? COLOR_APAGADO : encima ? COLOR_ENCIMA : reposo
   return (
     <group position={[...posicion]}>

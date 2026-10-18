@@ -29,6 +29,13 @@ export const EstadoNodo = {
 } as const
 export type EstadoNodo = (typeof EstadoNodo)[keyof typeof EstadoNodo]
 
+/** Las dos caras de cada HU (FASE 17): lo que se trabaja y lo que se intuyó (el Draft). La decide la API. */
+export const Cara = {
+  REAL: 'REAL',
+  PLAN: 'PLAN',
+} as const
+export type Cara = (typeof Cara)[keyof typeof Cara]
+
 export interface Posicion {
   readonly x: number
   readonly y: number
@@ -44,6 +51,10 @@ export interface Nodo {
   readonly color?: string
   /** Cuándo nació en su fuente (ISO, de la API; FASE 15). El sintético no la tiene. */
   readonly fecha?: string
+  /** La FASE ya se mergeó (FASE 17): lo dice la API con una etiqueta; la VR solo lo muestra. */
+  readonly mergeada?: boolean
+  /** Un trámite de cierre (URL commit, evidencias, wiki): lo dice la API con una etiqueta; el filtro 3 lo apaga. */
+  readonly tramite?: boolean
 }
 
 export interface Conexion {

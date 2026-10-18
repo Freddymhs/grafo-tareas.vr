@@ -1,7 +1,7 @@
-// El grafo real, una página (una HU) a la vez (FASE 15). Qué hay en cada página lo decide la API
-// (`GET /derivado/paginas`); acá se recorta el grafo a la página, se decide dónde va cada nodo y se guardan las posiciones
-// que faltaban (C2). Cada página guarda su acomodo: la primera vez (sus nodos sin posición) o con `reordenar`, el layout
-// de la página en el Worker → PUT de sus nodos. Después, las guardadas, y lo nuevo junto a sus vecinos (`ubicarFaltantes`).
+// El grafo real, una página (una HU) a la vez (FASE 15), y de cada HU una cara: lo real o el plan (FASE 17). Qué hay en
+// cada página lo decide la API (`GET /derivado/paginas`); acá se recorta el grafo a la página, se decide dónde va cada
+// nodo y se guardan las posiciones que faltaban (C2). Cada página —cada cara— guarda su acomodo: la primera vez (sus
+// nodos sin posición) o con `reordenar`, el layout de la página en el Worker → PUT de sus nodos. Después, las guardadas, y lo nuevo junto a sus vecinos (`ubicarFaltantes`).
 // Un nodo que también está en otra página (una persona que bloquea en dos HU) se guarda en la primera («hogar») y en las
 // demás se ubica junto a sus vecinos sin pisarla. Los colores salen del grafo entero: las ramas no son contenido de página.
 import { useEffect, useMemo, useRef } from 'react'
@@ -14,17 +14,29 @@ import {
 import { coloresPorNodo } from '../lib/colores'
 import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
-import { TipoNodo, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
+import { TipoNodo, type Cara, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import { RADIO_PANORAMA, aberturaPara, lineasPara, separarNuevas } from '../lib/layout'
-import { grafoDePagina, hogares, sinPadre } from '../lib/paginas'
+import {
+  caraVisible,
+  grafoDePagina,
+  hogares,
+  librosDe,
+  otraCara,
+  ramasDePagina,
+  sinPadre,
+} from '../lib/paginas'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
 
 export interface PaginaVisible {
   readonly titulo: string
+  /** El libro (la HU) entre todos: lo que cambian X / Y y girar la pelota. */
   readonly indice: number
   readonly total: number
+  readonly cara: Cara
+  /** La cara a la que lleva dar vuelta la hoja; `null` si la HU no tiene plan. */
+  readonly otra: Cara | null
 }
 
 export type EstadoMapa =
@@ -37,7 +49,7 @@ export type EstadoMapa =
       readonly posiciones: ReadonlyMap<string, Posicion>
       /** Del grafo entero: la rama de una tarjeta no está en su página. */
       readonly colores: ReadonlyMap<string, string>
-      /** Las ramas de colores, para la leyenda. */
+      /** Las ramas que colorean esta página, para la leyenda. */
       readonly ramas: readonly Nodo[]
       readonly pagina: PaginaVisible
       /** Líneas de cada etiqueta en esta página: más donde hay espacio (FASE 15). */
@@ -55,7 +67,8 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const nodos = useNodosControllerFindAll({ limit: LIMITE_GRAFO })
   const conexiones = useConexionesControllerFindAll()
   const paginas = useDerivadoControllerPaginas()
-  const indicePedido = useEstadoVr((estado) => estado.pagina)
+  const indicePedido = useEstadoVr((estado) => estado.libro)
+  const caraPedida = useEstadoVr((estado) => estado.cara)
   const guardar = useNodosControllerGuardarPosiciones()
   const guardadoPara = useRef<string | null>(null)
 
@@ -64,10 +77,6 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     [nodos.data, conexiones.data],
   )
   const colores = useMemo(() => (grafo ? coloresPorNodo(grafo) : null), [grafo])
-  const ramas = useMemo(
-    () => (grafo ? grafo.nodos.filter(({ tipo }) => tipo === TipoNodo.RAMA) : []),
-    [grafo],
-  )
   // Solo las TAREAS: la HU se reconoce por su nombre, y lo que viene de los archivos FASE (una duda) no tiene fecha
   // de origen real (la suya es la de la importación) y mostrarla engañaría.
   const conFecha = useMemo(() => {
@@ -80,13 +89,22 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     )
   }, [grafo])
   const lista = paginas.data
-  const total = lista?.length ?? 0
+  const libros = useMemo(() => librosDe(lista ?? []), [lista])
+  const total = libros.length
   const indice = total > 0 ? indicePedido % total : 0
-  const pagina = lista && total > 0 ? lista[indice] : null
+  const libro = total > 0 ? libros[indice] : null
+  const pagina = libro ? caraVisible(libro, caraPedida) : null
+  const otra = libro ? otraCara(libro, caraPedida) : null
   const grafoPagina = useMemo(
     () => (grafo && pagina ? grafoDePagina(grafo, pagina.nodos) : null),
     [grafo, pagina],
   )
+  // La leyenda, por página: solo las ramas que colorean lo que se ve.
+  const ramas = useMemo(() => {
+    if (!grafo || !pagina) return []
+    const deLaPagina = ramasDePagina(grafo, pagina.nodos)
+    return grafo.nodos.filter(({ id }) => deLaPagina.has(id))
+  }, [grafo, pagina])
   const hogar = useMemo(() => hogares(lista ?? []), [lista])
   const guardadas = useMemo(() => {
     if (!nodos.data || !pagina) return SIN_GUARDADAS
@@ -134,7 +152,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     posiciones: ubicacion.posiciones,
     colores,
     ramas,
-    pagina: { titulo: pagina.titulo, indice, total },
+    pagina: { titulo: pagina.titulo, indice, total, cara: pagina.cara, otra },
     lineas,
     conFecha,
     aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,

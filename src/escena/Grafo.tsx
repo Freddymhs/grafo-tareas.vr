@@ -14,6 +14,7 @@ import { Etiquetas } from './Etiquetas'
 import { Medidor } from './Medidor'
 import { Nodos } from './Nodos'
 import { useEstadoVr } from '../lib/estado-vr'
+import { Filtro, encendidosPor, hilosDelFiltro } from '../lib/filtro'
 import { ModoEtiquetas } from '../lib/parametros'
 import { PanelAcciones } from './PanelAcciones'
 import { Seleccion, SeleccionConBloqueo } from './Seleccion'
@@ -59,10 +60,15 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas, c
   const familia = useDerivadoControllerFamilia(seleccionado ?? '', {
     query: { enabled: conApi && seleccionado !== null },
   })
-  const iluminados = useMemo(
-    () => (seleccionado && familia.data ? new Set(familia.data.ids) : null),
-    [seleccionado, familia.data],
-  )
+  // Un filtro (FASE 17) ilumina como una selección: lo que quedó por hacer encendido, lo resuelto (y con el 3, los
+  // trámites) apagado con el mismo contraste. Una selección manda sobre el filtro: se ve su familia.
+  const filtro = useEstadoVr((estado) => estado.filtro)
+  const porSeleccion = seleccionado !== null && familia.data !== undefined
+  const porFiltro = !porSeleccion && filtro !== Filtro.TODO
+  const iluminados = useMemo(() => {
+    if (porSeleccion && familia.data) return new Set(familia.data.ids)
+    return porFiltro ? encendidosPor(filtro, grafo.nodos) : null
+  }, [porSeleccion, porFiltro, filtro, familia.data, grafo])
   const coloresVisibles = useMemo(
     () =>
       iluminados
@@ -76,13 +82,19 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas, c
     [colores, iluminados],
   )
   const { deLaFamilia, fueraDeLaFamilia } = useMemo(() => {
-    const adentro = ({ origenId, destinoId }: { origenId: string; destinoId: string }) =>
-      iluminados !== null && iluminados.has(origenId) && iluminados.has(destinoId)
+    // Con una selección, las dos puntas en su familia; con el filtro, los hilos que llevan a algo pendiente.
+    const delFiltro = porFiltro && iluminados ? hilosDelFiltro(grafo.conexiones, iluminados) : null
+    const adentro = (conexion: { id: string; origenId: string; destinoId: string }) =>
+      delFiltro
+        ? delFiltro.has(conexion.id)
+        : iluminados !== null &&
+          iluminados.has(conexion.origenId) &&
+          iluminados.has(conexion.destinoId)
     return {
       deLaFamilia: grafo.conexiones.filter(adentro),
       fueraDeLaFamilia: grafo.conexiones.filter((c) => !adentro(c)),
     }
-  }, [grafo, iluminados])
+  }, [grafo, iluminados, porFiltro])
   const posicionSeleccionado = seleccionado ? posiciones?.get(seleccionado) : undefined
   const nodoSeleccionado = seleccionado
     ? grafo.nodos.find(({ id }) => id === seleccionado)

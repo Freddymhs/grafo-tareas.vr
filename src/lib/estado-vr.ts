@@ -1,7 +1,8 @@
 // El estado de la app VR (FASE 7, tarea 3): qué está seleccionado, si se está conectando y qué se resalta.
 // Zustand por la practice-wishlist; el estado del SERVIDOR sigue en TanStack Query, acá solo lo de la escena.
 import { create } from 'zustand'
-import { TipoConexion } from './dominio'
+import { Cara, TipoConexion } from './dominio'
+import { Filtro, siguienteFiltro } from './filtro'
 import { paginaVecina } from './paginas'
 
 /** Las conexiones que se crean apuntando: las que frenan trabajo. PERTENECE_A y EN_DAILY_DE se hacen en la PWA. */
@@ -33,8 +34,12 @@ interface EstadoVr {
   /** Lo que se liberó al cerrar el último nodo (`GET /nodos/:id/libera`). */
   readonly resaltados: ReadonlySet<string>
   readonly aviso: string | null
-  /** La página que se ve (FASE 15): el índice en `GET /derivado/paginas`. */
-  readonly pagina: number
+  /** La HU que se ve (FASE 15): el índice de su libro entre los de `GET /derivado/paginas` (`librosDe`). */
+  readonly libro: number
+  /** Qué cara del libro (FASE 17): lo real o el plan. */
+  readonly cara: Cara
+  /** El lente de la página (FASE 17): todo, o lo pendiente con lo resuelto apagado. Sigue al cambiar de HU. */
+  readonly filtro: Filtro
   /** El nodo bajo el rayo, sin tocarlo (FASE 15): su texto se amplía. */
   readonly apuntado: string | null
   tocar: (id: string) => Toque
@@ -42,9 +47,15 @@ interface EstadoVr {
   cancelar: () => void
   resaltar: (ids: readonly string[]) => void
   avisar: (aviso: string | null) => void
-  /** X / Y del control izquierdo, o girar la pelota: la siguiente o la anterior, dando la vuelta. */
-  cambiarPagina: (paso: 1 | -1, total: number) => void
-  irAPagina: (indice: number) => void
+  /** X / Y del control izquierdo, o girar la pelota: la HU siguiente o la anterior, dando la vuelta. Cae en lo real. */
+  cambiarLibro: (paso: 1 | -1, total: number) => void
+  irALibro: (indice: number) => void
+  /** Dar vuelta la hoja (FASE 17): la otra cara del mismo libro (`otraCara`). */
+  verCara: (cara: Cara) => void
+  /** Los dedos de la mano derecha (`filtroDeNumero`). */
+  verFiltro: (filtro: Filtro) => void
+  /** El botón B del control derecho: el filtro siguiente, dando la vuelta (`siguienteFiltro`). */
+  alternarFiltro: () => void
   apuntar: (id: string | null) => void
 }
 
@@ -73,7 +84,9 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   modo: NORMAL,
   resaltados: NADA,
   aviso: null,
-  pagina: 0,
+  libro: 0,
+  cara: Cara.REAL,
+  filtro: Filtro.TODO,
   apuntado: null,
   tocar: (id) => {
     const toque = decidirToque(get(), id)
@@ -91,9 +104,13 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   cancelar: () => set({ modo: NORMAL, aviso: null }),
   resaltar: (ids) => set({ resaltados: new Set(ids) }),
   avisar: (aviso) => set({ aviso }),
-  // Lo seleccionado puede no existir en la otra página (regla §7): se suelta al cambiar.
-  cambiarPagina: (paso, total) =>
-    set({ pagina: paginaVecina(get().pagina, paso, total), ...SIN_SELECCION }),
-  irAPagina: (indice) => set({ pagina: indice, ...SIN_SELECCION }),
+  // Lo seleccionado puede no existir en la otra página (regla §7): se suelta al cambiar de HU o de cara.
+  // «TRABAJO va primero»: otra HU se abre siempre en lo real.
+  cambiarLibro: (paso, total) =>
+    set({ libro: paginaVecina(get().libro, paso, total), cara: Cara.REAL, ...SIN_SELECCION }),
+  irALibro: (indice) => set({ libro: indice, cara: Cara.REAL, ...SIN_SELECCION }),
+  verCara: (cara) => set({ cara, ...SIN_SELECCION }),
+  verFiltro: (filtro) => set({ filtro }),
+  alternarFiltro: () => set({ filtro: siguienteFiltro(get().filtro) }),
   apuntar: (id) => set({ apuntado: id }),
 }))

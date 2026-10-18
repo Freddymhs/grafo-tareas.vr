@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ConexionResponseDto, NodoResponseDto } from './api/generado/modelos'
+import { ETIQUETA_MERGEADA, ETIQUETA_TRAMITE } from './constants/grafo'
 import { aGrafo, posicionesGuardadas } from './desde-api'
 
 const nodo = (id: string, extra: Partial<NodoResponseDto> = {}): NodoResponseDto =>
@@ -44,6 +45,29 @@ describe('aGrafo', () => {
 
   it('una conexión hacia un nodo que no vino no se dibuja', () => {
     expect(aGrafo([nodo('a')], [conexion('c', 'a', 'fantasma')]).conexiones).toEqual([])
+  })
+
+  it('mergeada solo con la etiqueta de la API (FASE 17)', () => {
+    const [conEtiqueta, sinEtiqueta, otraEtiqueta] = aGrafo(
+      [
+        nodo('f', { tipo: 'FASE', etiquetas: [ETIQUETA_MERGEADA] }),
+        nodo('g', { tipo: 'FASE' }),
+        nodo('h', { tipo: 'FASE', etiquetas: ['otra'] }),
+      ],
+      [],
+    ).nodos
+    expect(conEtiqueta?.mergeada).toBe(true)
+    expect(sinEtiqueta?.mergeada).toBeUndefined()
+    expect(otraEtiqueta?.mergeada).toBeUndefined()
+  })
+
+  it('trámite solo con la etiqueta de la API (FASE 15 t3)', () => {
+    const [conEtiqueta, sinEtiqueta] = aGrafo(
+      [nodo('t', { etiquetas: [ETIQUETA_TRAMITE] }), nodo('u', { etiquetas: ['board'] })],
+      [],
+    ).nodos
+    expect(conEtiqueta?.tramite).toBe(true)
+    expect(sinEtiqueta?.tramite).toBeUndefined()
   })
 })
 

@@ -5,10 +5,14 @@
  * Tareas como grafo: nodos, conexiones, ramas y lo derivado (bloqueado, hoy puedo, qué se libera)
  * OpenAPI spec version: 1.0
  */
+import type { PaginaDtoCara } from './paginaDtoCara'
 
 export interface PaginaDto {
-  /** El id de la HU, o «sin-hu» */
+  /** El id de la HU, o «sin-hu»; la cara plan lleva «:plan» al final */
   id: string
+  /** El libro: el id de la página real. Las dos caras de una HU comparten libro */
+  libro: string
+  cara: PaginaDtoCara
   titulo: string
   /** @nullable */
   historiaId: string | null

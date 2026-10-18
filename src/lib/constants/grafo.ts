@@ -42,3 +42,10 @@ export const OPACIDAD_ESTRUCTURA = 0.4
 /** Con un nodo seleccionado (FASE 15): las líneas de su familia, brillantes; las demás, casi invisibles. */
 export const OPACIDAD_ILUMINADA = 0.9
 export const OPACIDAD_APAGADA = 0.03
+
+/** Radio (m) de la esfera de cada nodo, antes de escalarla por tipo o selección. */
+export const RADIO_NODO = 0.05
+/** La pone la API cuando la FASE tiene tildada su casilla `Mergeado` (FASE 17 de grafo-tareas). */
+export const ETIQUETA_MERGEADA = 'mergeada'
+/** La pone la API en los trámites de cierre (URL commit, evidencias, wiki): el filtro 3 los apaga (FASE 15 t3). */
+export const ETIQUETA_TRAMITE = 'complemento:tramite'

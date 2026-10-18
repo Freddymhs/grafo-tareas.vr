@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
 import { RADIO_PANORAMA } from './layout'
 import { FuenteGrafo, ModoEtiquetas, leerParametros } from './parametros'
+import { Filtro } from './filtro'
 
 describe('leerParametros', () => {
   it('sin query, el grafo real de la API', () => {
@@ -12,7 +13,8 @@ describe('leerParametros', () => {
       reordenar: false,
       radio: RADIO_PANORAMA,
       etiquetas: ModoEtiquetas.TODAS,
-      pagina: 0,
+      pagina: null,
+      filtro: Filtro.TODO,
       depurar: false,
     })
   })
@@ -25,7 +27,8 @@ describe('leerParametros', () => {
       reordenar: false,
       radio: RADIO_PANORAMA,
       etiquetas: ModoEtiquetas.CERCANAS,
-      pagina: 0,
+      pagina: null,
+      filtro: Filtro.TODO,
       depurar: false,
     })
     expect(leerParametros('?sintetico').fuente).toBe(FuenteGrafo.SINTETICO)
@@ -53,6 +56,12 @@ describe('leerParametros', () => {
     expect(leerParametros('?etiquetas=cercanas').etiquetas).toBe(ModoEtiquetas.CERCANAS)
     expect(leerParametros('?nodos=100&etiquetas=todas').etiquetas).toBe(ModoEtiquetas.TODAS)
     expect(leerParametros('?etiquetas=otra').etiquetas).toBe(ModoEtiquetas.TODAS)
+  })
+
+  it('`?filtro=pendiente` o `sin-tramites` abre con ese filtro puesto (FASE 17); otro valor, todo', () => {
+    expect(leerParametros('?filtro=pendiente').filtro).toBe(Filtro.PENDIENTE)
+    expect(leerParametros('?filtro=sin-tramites').filtro).toBe(Filtro.SIN_TRAMITES)
+    expect(leerParametros('?filtro=cualquiera').filtro).toBe(Filtro.TODO)
   })
 
   it('`?pagina=` abre directo en esa página (FASE 15); si no es un número válido, la primera', () => {

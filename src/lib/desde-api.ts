@@ -1,5 +1,6 @@
 // Baja las respuestas de la API (tipos de Orval) al modelo que dibuja la escena. Puro.
 import type { ConexionResponseDto, NodoResponseDto } from './api/generado/modelos'
+import { ETIQUETA_MERGEADA, ETIQUETA_TRAMITE } from './constants/grafo'
 import type { Grafo, Posicion } from './dominio'
 
 export function aGrafo(
@@ -8,14 +9,20 @@ export function aGrafo(
 ): Grafo {
   const ids = new Set(nodos.map(({ id }) => id))
   return {
-    nodos: nodos.map(({ id, tipo, titulo, estado, color, fechaOrigen }) => ({
-      id,
-      tipo,
-      titulo,
-      estado,
-      ...(color ? { color } : {}),
-      fecha: fechaOrigen,
-    })),
+    nodos: nodos.map(({ id, tipo, titulo, estado, color, fechaOrigen, etiquetas }) => {
+      const mergeada = (etiquetas ?? []).includes(ETIQUETA_MERGEADA)
+      const tramite = (etiquetas ?? []).includes(ETIQUETA_TRAMITE)
+      return {
+        id,
+        tipo,
+        titulo,
+        estado,
+        ...(color ? { color } : {}),
+        fecha: fechaOrigen,
+        ...(mergeada ? { mergeada } : {}),
+        ...(tramite ? { tramite } : {}),
+      }
+    }),
     // Una conexión hacia un nodo que no vino (otra página, o borrado entre las dos lecturas) no se dibuja.
     conexiones: conexiones
       .filter(({ origenId, destinoId }) => ids.has(origenId) && ids.has(destinoId))

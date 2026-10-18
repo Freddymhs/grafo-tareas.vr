@@ -1,5 +1,6 @@
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
 import { RADIO_PANORAMA } from './layout'
+import { type Filtro, filtroDeTexto } from './filtro'
 
 const NODOS_MINIMO = 30
 const NODOS_MAXIMO = 2000
@@ -34,8 +35,10 @@ export interface ParametrosPrueba {
   readonly radio: number
   /** Por defecto: el grafo real, todas; la medición de FPS, las cercanas (la de la FASE 1). */
   readonly etiquetas: ModoEtiquetas
-  /** En qué página arranca (FASE 15): el índice en `GET /derivado/paginas`. */
-  readonly pagina: number
+  /** En qué HU arranca (FASE 15); `null` = no se pidió y manda la última que se vio (`ultima-vista.ts`). */
+  readonly pagina: number | null
+  /** `?filtro=pendiente|sin-tramites` (FASE 17): arranca con ese lente puesto; después lo cambian los dedos o el botón B. */
+  readonly filtro: Filtro
   /** `?depurar`: el gesto de la pelota deja lo que mide de la mano en `window.__gestoPelota` (calibrarlo con Freddy). */
   readonly depurar: boolean
 }
@@ -78,7 +81,8 @@ export function leerParametros(busqueda: string): ParametrosPrueba {
       : esPrueba
         ? ModoEtiquetas.CERCANAS
         : ModoEtiquetas.TODAS,
-    pagina: Math.max(0, entero(query.get('pagina'), 0)),
+    pagina: query.has('pagina') ? Math.max(0, entero(query.get('pagina'), 0)) : null,
+    filtro: filtroDeTexto(query.get('filtro')),
     depurar: query.has('depurar'),
   }
 }

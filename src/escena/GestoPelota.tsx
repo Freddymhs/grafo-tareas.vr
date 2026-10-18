@@ -9,7 +9,14 @@ import { Quaternion, Vector3, type Group } from 'three'
 import { giroVertical } from '../lib/giro-vertical'
 import { useEstadoVr } from '../lib/estado-vr'
 import { GESTO_INICIAL, avanzarGesto } from '../lib/gesto-pelota'
-import { curvatura, esPoseDePelota, type Punto } from '../lib/pose-mano'
+import { esManoAlzada, esPoseDePelota } from '../lib/pose-mano'
+import {
+  MUESTRAS_DEPURACION,
+  PASOS_DE_PROGRESO,
+  PROGRESO_VISIBLE,
+  curvaturasDe,
+  puntoDe,
+} from './mano-xr'
 
 /** El arco, abajo al centro del campo de visión. */
 const DELANTE = new Vector3(0, -0.12, -0.6)
@@ -17,20 +24,6 @@ const RADIO_INTERNO = 0.03
 const RADIO_EXTERNO = 0.04
 const SEGMENTOS = 32
 const COLOR_ARCO = '#38bdf8'
-/** Por debajo de esto no se muestra: la mano siempre se mueve un poco. */
-const PROGRESO_VISIBLE = 0.3
-/** El progreso se redondea a décimos: re-renderizar en cada frame no hace falta para un arco. */
-const PASOS_DE_PROGRESO = 10
-/** `?depurar`: cuántas muestras se guardan (~1 min a 72 Hz) para calibrar los umbrales con datos reales. */
-const MUESTRAS_DEPURACION = 4320
-const ARTICULACIONES_DEDO = [
-  'metacarpal',
-  'phalanx-proximal',
-  'phalanx-intermediate',
-  'phalanx-distal',
-  'tip',
-] as const
-const DEDOS = ['index-finger', 'middle-finger', 'ring-finger'] as const
 
 export interface MuestraDepuracion {
   readonly t: number
@@ -41,6 +34,8 @@ export interface MuestraDepuracion {
   readonly curvaturas: readonly number[]
   /** Distancia (m) entre las puntas del pulgar y del índice. */
   readonly pulgarIndice: number
+  /** Cuánto por debajo de los ojos está la muñeca (m): para calibrar `esManoAlzada`. */
+  readonly bajoLosOjos: number
 }
 
 declare global {
@@ -58,7 +53,7 @@ export function GestoPelota({
 }) {
   const mano = useXRInputSourceState('hand', 'left')
   const espacio = useXR((xr) => xr.originReferenceSpace)
-  const cambiarPagina = useEstadoVr((estado) => estado.cambiarPagina)
+  const cambiarLibro = useEstadoVr((estado) => estado.cambiarLibro)
   const gesto = useRef(GESTO_INICIAL)
   // El giro acumulado y la orientación anterior: estado de la medición, frame a frame.
   const medicion = useRef<{ angulo: number; anterior: Quaternion | null }>({
@@ -70,23 +65,15 @@ export function GestoPelota({
 
   useFrame(({ camera, clock }, _delta, frame?: XRFrame) => {
     const muneca = mano?.inputSource.hand.get('wrist')
-    if (!frame || !muneca || !espacio) return
+    if (!frame || !mano || !muneca || !espacio) return
     const pose = frame.getJointPose?.(muneca, espacio)
     if (!pose) {
       medicion.current.anterior = null
       return
     }
-    const punto = (articulacion: XRHandJoint): Punto | null => {
-      const espacioArticulacion = mano?.inputSource.hand.get(articulacion)
-      const p = espacioArticulacion ? frame.getJointPose?.(espacioArticulacion, espacio) : undefined
-      return p ? p.transform.position : null
-    }
-    const curvaturas = DEDOS.map((dedo) => {
-      const puntos = ARTICULACIONES_DEDO.map((a) => punto(`${dedo}-${a}`))
-      return puntos.every((p): p is Punto => p !== null) ? curvatura(puntos) : Number.NaN
-    })
-    const pulgar = punto('thumb-tip')
-    const indice = punto('index-finger-tip')
+    const curvaturas = curvaturasDe(frame, mano.inputSource.hand, espacio)
+    const pulgar = puntoDe(frame, mano.inputSource.hand, espacio, 'thumb-tip')
+    const indice = puntoDe(frame, mano.inputSource.hand, espacio, 'index-finger-tip')
     const pulgarIndice =
       pulgar && indice
         ? Math.hypot(pulgar.x - indice.x, pulgar.y - indice.y, pulgar.z - indice.z)
@@ -97,10 +84,12 @@ export function GestoPelota({
     const angulo = medicion.current.angulo + (anterior ? giroVertical(anterior, ahora) : 0)
     medicion.current = { angulo, anterior: ahora }
 
-    const enPose = esPoseDePelota(curvaturas)
+    const bajoLosOjos = camera.position.y - pose.transform.position.y
+    const enPose =
+      esPoseDePelota(curvaturas) && esManoAlzada(pose.transform.position.y, camera.position.y)
     const paso = avanzarGesto(gesto.current, { t: clock.elapsedTime, angulo, enPose })
     gesto.current = paso.estado
-    if (paso.evento) cambiarPagina(paso.evento === 'siguiente' ? 1 : -1, total)
+    if (paso.evento) cambiarLibro(paso.evento === 'siguiente' ? 1 : -1, total)
     const redondeado = Math.round(paso.progreso * PASOS_DE_PROGRESO) / PASOS_DE_PROGRESO
     setProgreso((actual) => (actual === redondeado ? actual : redondeado))
     if (depurar) {
@@ -113,6 +102,7 @@ export function GestoPelota({
         evento: paso.evento,
         curvaturas,
         pulgarIndice,
+        bajoLosOjos,
       })
       window.__gestoPelota = muestras.slice(-MUESTRAS_DEPURACION)
     }

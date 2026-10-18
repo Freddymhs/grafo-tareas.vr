@@ -10,14 +10,14 @@ const BOTON_ANTERIOR = 'y-button'
 
 export function CambioDePagina({ total }: { readonly total: number }) {
   const control = useXRInputSourceState('controller', 'left')
-  const cambiarPagina = useEstadoVr((estado) => estado.cambiarPagina)
+  const cambiarLibro = useEstadoVr((estado) => estado.cambiarLibro)
   const apretados = useRef({ siguiente: false, anterior: false })
 
   useFrame(() => {
     const siguiente = control?.gamepad[BOTON_SIGUIENTE]?.state === 'pressed'
     const anterior = control?.gamepad[BOTON_ANTERIOR]?.state === 'pressed'
-    if (siguiente && !apretados.current.siguiente) cambiarPagina(1, total)
-    if (anterior && !apretados.current.anterior) cambiarPagina(-1, total)
+    if (siguiente && !apretados.current.siguiente) cambiarLibro(1, total)
+    if (anterior && !apretados.current.anterior) cambiarLibro(-1, total)
     apretados.current = { siguiente, anterior }
   })
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { TipoConexion } from './dominio'
+import { Cara, TipoConexion } from './dominio'
+import { Filtro } from './filtro'
 import { decidirToque, useEstadoVr } from './estado-vr'
 
 const NORMAL = { tipo: 'normal' } as const
@@ -41,7 +42,9 @@ describe('useEstadoVr', () => {
       modo: NORMAL,
       resaltados: new Set(),
       aviso: null,
-      pagina: 0,
+      libro: 0,
+      cara: Cara.REAL,
+      filtro: Filtro.TODO,
       apuntado: null,
     })
   })
@@ -67,14 +70,25 @@ describe('useEstadoVr', () => {
     expect(useEstadoVr.getState().resaltados.size).toBe(0)
   })
 
-  it('cambiar de página avanza dando la vuelta y suelta la selección: el nodo puede no estar en la otra', () => {
+  it('cambiar de HU avanza dando la vuelta y suelta la selección: el nodo puede no estar en la otra', () => {
     useEstadoVr.getState().tocar('a')
-    useEstadoVr.getState().cambiarPagina(1, 2)
-    expect(useEstadoVr.getState()).toMatchObject({ pagina: 1, seleccionado: null })
-    useEstadoVr.getState().cambiarPagina(1, 2)
-    expect(useEstadoVr.getState().pagina).toBe(0)
-    useEstadoVr.getState().irAPagina(1)
-    expect(useEstadoVr.getState().pagina).toBe(1)
+    useEstadoVr.getState().cambiarLibro(1, 2)
+    expect(useEstadoVr.getState()).toMatchObject({ libro: 1, seleccionado: null })
+    useEstadoVr.getState().cambiarLibro(1, 2)
+    expect(useEstadoVr.getState().libro).toBe(0)
+    useEstadoVr.getState().irALibro(1)
+    expect(useEstadoVr.getState().libro).toBe(1)
+  })
+
+  it('dar vuelta la hoja cambia de cara y suelta la selección; cambiar de HU vuelve siempre a lo real (FASE 17)', () => {
+    useEstadoVr.getState().tocar('a')
+    useEstadoVr.getState().verCara(Cara.PLAN)
+    expect(useEstadoVr.getState()).toMatchObject({ cara: Cara.PLAN, libro: 0, seleccionado: null })
+    useEstadoVr.getState().cambiarLibro(1, 2)
+    expect(useEstadoVr.getState().cara).toBe(Cara.REAL)
+    useEstadoVr.getState().verCara(Cara.PLAN)
+    useEstadoVr.getState().irALibro(0)
+    expect(useEstadoVr.getState().cara).toBe(Cara.REAL)
   })
 
   it('apuntar a un nodo (sin tocarlo) lo marca para ampliar su texto; cambiar de página lo suelta', () => {
@@ -83,7 +97,19 @@ describe('useEstadoVr', () => {
     useEstadoVr.getState().apuntar(null)
     expect(useEstadoVr.getState().apuntado).toBeNull()
     useEstadoVr.getState().apuntar('b')
-    useEstadoVr.getState().cambiarPagina(1, 2)
+    useEstadoVr.getState().cambiarLibro(1, 2)
     expect(useEstadoVr.getState().apuntado).toBeNull()
+  })
+
+  it('el filtro (FASE 17): se elige con la mano, el control lo alterna, y cambiar de HU no lo suelta', () => {
+    useEstadoVr.getState().verFiltro(Filtro.PENDIENTE)
+    useEstadoVr.getState().cambiarLibro(1, 2)
+    expect(useEstadoVr.getState().filtro).toBe(Filtro.PENDIENTE)
+    useEstadoVr.getState().alternarFiltro()
+    expect(useEstadoVr.getState().filtro).toBe(Filtro.SIN_TRAMITES)
+    useEstadoVr.getState().alternarFiltro()
+    expect(useEstadoVr.getState().filtro).toBe(Filtro.TODO)
+    useEstadoVr.getState().alternarFiltro()
+    expect(useEstadoVr.getState().filtro).toBe(Filtro.PENDIENTE)
   })
 })

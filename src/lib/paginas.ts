@@ -1,11 +1,63 @@
 // Una HU a la vez (FASE 15): qué hay en cada página lo decide la API (`GET /derivado/paginas`); acá solo se recorta el
-// grafo a esa página, se cambia de una a otra y se sabe de qué página es la posición guardada de cada nodo. Puro.
-import { TipoConexion, TipoNodo, type Grafo } from './dominio'
+// grafo a esa página, se cambia de una a otra y se sabe de qué página es la posición guardada de cada nodo. Cada HU es
+// un libro de dos caras (FASE 17): la API dice de qué libro y de qué cara es cada página; acá se agrupan. Puro.
+import { Cara, TipoConexion, TipoNodo, type Grafo } from './dominio'
 
 /** La siguiente (`1`) o la anterior (`-1`), dando la vuelta: con dos HU, X alterna entre ellas. */
 export function paginaVecina(indice: number, paso: 1 | -1, total: number): number {
   if (total === 0) return 0
   return (((indice + paso) % total) + total) % total
+}
+
+interface ConCara {
+  readonly id: string
+  readonly libro: string
+  readonly cara: Cara
+}
+
+export interface Libro<P extends ConCara> {
+  readonly id: string
+  readonly real: P | null
+  readonly plan: P | null
+}
+
+/** Las páginas agrupadas por libro, en el orden en que las da la API. */
+export function librosDe<P extends ConCara>(paginas: readonly P[]): Libro<P>[] {
+  const ids = [...new Set(paginas.map(({ libro }) => libro))]
+  return ids.map((id) => {
+    const deLaCara = (cara: Cara) =>
+      paginas.find((pagina) => pagina.libro === id && pagina.cara === cara) ?? null
+    return { id, real: deLaCara(Cara.REAL), plan: deLaCara(Cara.PLAN) }
+  })
+}
+
+/** La cara pedida; si el libro no la tiene, la que tiene (girar la pelota pide lo real, y todo libro tiene alguna). */
+export function caraVisible<P extends ConCara>(libro: Libro<P>, cara: Cara): P | null {
+  const pedida = cara === Cara.PLAN ? libro.plan : libro.real
+  return pedida ?? libro.real ?? libro.plan
+}
+
+/** A qué cara lleva dar vuelta la hoja desde la que se ve; `null` si el libro tiene una sola. */
+export function otraCara<P extends ConCara>(libro: Libro<P>, cara: Cara): Cara | null {
+  const visible = caraVisible(libro, cara)?.cara
+  const otra = visible === Cara.PLAN ? Cara.REAL : Cara.PLAN
+  return caraVisible(libro, otra)?.cara === otra ? otra : null
+}
+
+/** Las ramas que colorean una página: a las que PERTENECE_A algo de ella. La leyenda nombra solo ésas (Freddy, 2026-10-18). */
+export function ramasDePagina(grafo: Grafo, ids: readonly string[]): ReadonlySet<string> {
+  const enLaPagina = new Set(ids)
+  const esRama = new Set(
+    grafo.nodos.filter(({ tipo }) => tipo === TipoNodo.RAMA).map(({ id }) => id),
+  )
+  return new Set(
+    grafo.conexiones
+      .filter(
+        ({ origenId, destinoId, tipo }) =>
+          tipo === TipoConexion.PERTENECE_A && enLaPagina.has(origenId) && esRama.has(destinoId),
+      )
+      .map(({ destinoId }) => destinoId),
+  )
 }
 
 /** Los nodos de la página y las conexiones entre ellos: lo demás no se dibuja. */

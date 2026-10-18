@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { EstadoNodo, TipoConexion, TipoNodo, type Grafo } from './dominio'
+import { Cara, EstadoNodo, TipoConexion, TipoNodo, type Grafo } from './dominio'
 import {
+  caraVisible,
   fechaCorta,
   grafoDePagina,
   hogares,
+  librosDe,
+  otraCara,
   paginaVecina,
+  ramasDePagina,
   sinPadre,
   textoConFecha,
 } from './paginas'
@@ -85,5 +89,64 @@ describe('textoConFecha — la fecha adelante, sin repetirla', () => {
       '13-sep · Confirmar TOPE',
     )
     expect(textoConFecha('1-oct · retro', '2026-10-01T10:00:00.000Z')).toBe('1-oct · retro')
+  })
+})
+
+describe('librosDe — las dos caras de cada HU son un libro (FASE 17)', () => {
+  const pagina = (libro: string, cara: Cara) => ({
+    id: cara === Cara.PLAN ? `${libro}:plan` : libro,
+    libro,
+    cara,
+  })
+  const libros = librosDe([
+    pagina('HU 1', Cara.REAL),
+    pagina('HU 2', Cara.REAL),
+    pagina('HU 2', Cara.PLAN),
+    pagina('sin-hu', Cara.REAL),
+  ])
+
+  it('un libro por HU, en el orden de la API, con su cara real y la del plan si tiene', () => {
+    expect(libros.map(({ id, real, plan }) => [id, real?.id ?? null, plan?.id ?? null])).toEqual([
+      ['HU 1', 'HU 1', null],
+      ['HU 2', 'HU 2', 'HU 2:plan'],
+      ['sin-hu', 'sin-hu', null],
+    ])
+  })
+
+  it('se ve la cara pedida; si el libro no la tiene, la que tiene', () => {
+    const [sinPlan, conPlan] = libros
+    expect(caraVisible(conPlan, Cara.PLAN)?.id).toBe('HU 2:plan')
+    expect(caraVisible(conPlan, Cara.REAL)?.id).toBe('HU 2')
+    expect(caraVisible(sinPlan, Cara.PLAN)?.id).toBe('HU 1')
+    expect(caraVisible(librosDe([pagina('x', Cara.PLAN)])[0], Cara.REAL)?.id).toBe('x:plan')
+  })
+
+  it('dar vuelta la hoja va a la otra cara; un libro de una sola cara no tiene otra', () => {
+    const [sinPlan, conPlan] = libros
+    expect(otraCara(conPlan, Cara.REAL)).toBe(Cara.PLAN)
+    expect(otraCara(conPlan, Cara.PLAN)).toBe(Cara.REAL)
+    expect(otraCara(sinPlan, Cara.REAL)).toBeNull()
+  })
+})
+
+describe('ramasDePagina — la leyenda nombra solo los colores de la página que se ve (Freddy, 2026-10-18)', () => {
+  it('las ramas a las que pertenece algo de la página; las de otras páginas, no', () => {
+    const rama = (id: string) => ({
+      id,
+      tipo: TipoNodo.RAMA,
+      titulo: id,
+      estado: EstadoNodo.ABIERTO,
+    })
+    const conRamas: Grafo = {
+      nodos: [...grafo.nodos, rama('azul'), rama('verde')],
+      conexiones: [
+        ...grafo.conexiones,
+        { id: 'a-azul', origenId: 'a', destinoId: 'azul', tipo: TipoConexion.PERTENECE_A },
+        { id: 'c-verde', origenId: 'c', destinoId: 'verde', tipo: TipoConexion.PERTENECE_A },
+        { id: 'b-verde', origenId: 'b', destinoId: 'verde', tipo: TipoConexion.DEPENDE_DE },
+      ],
+    }
+    expect([...ramasDePagina(conRamas, ['a', 'b'])]).toEqual(['azul'])
+    expect([...ramasDePagina(conRamas, ['c'])]).toEqual(['verde'])
   })
 })

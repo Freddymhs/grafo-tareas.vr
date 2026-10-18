@@ -27,9 +27,31 @@ export function curvatura(puntos: readonly Punto[]): number {
 export const CURVATURA_PELOTA_MINIMA = 0.15
 export const CURVATURA_PELOTA_MAXIMA = 0.55
 
-/** Con la media del índice, el medio y el anular. Si el visor perdió un dedo (NaN), no es pelota. */
+/** La media del índice, el medio y el anular. Si el visor perdió un dedo (NaN), NaN: ninguna pose la acepta. */
+function curvaturaMedia(curvaturas: readonly number[]): number {
+  if (curvaturas.length === 0) return Number.NaN
+  return curvaturas.reduce((suma, c) => suma + c, 0) / curvaturas.length
+}
+
 export function esPoseDePelota(curvaturas: readonly number[]): boolean {
-  if (curvaturas.length === 0 || curvaturas.some(Number.isNaN)) return false
-  const media = curvaturas.reduce((suma, c) => suma + c, 0) / curvaturas.length
+  const media = curvaturaMedia(curvaturas)
   return media >= CURVATURA_PELOTA_MINIMA && media <= CURVATURA_PELOTA_MAXIMA
+}
+
+/** La mano abierta (FASE 17, dar vuelta la hoja): los dedos estirados. Medido en Freddy: abierta 0,00–0,01. */
+export const CURVATURA_ABIERTA_MAXIMA = 0.1
+
+export function esManoAbierta(curvaturas: readonly number[]): boolean {
+  return curvaturaMedia(curvaturas) <= CURVATURA_ABIERTA_MAXIMA
+}
+
+/**
+ * La mano levantada, para TODOS los gestos (Freddy, 2026-10-18): con la mano abajo, en reposo, cualquier movimiento
+ * parecía un gesto. Cuenta la muñeca hasta esto por debajo de los ojos: el hombro (el pecho, 0,45 m, no alcanzaba).
+ * Se mide desde la cabeza, así vale igual sentado o de pie. Primera estimación: se calibra con `?depurar`.
+ */
+export const MANO_ALZADA_BAJO_LOS_OJOS_M = 0.3
+
+export function esManoAlzada(alturaMuneca: number, alturaOjos: number): boolean {
+  return alturaOjos - alturaMuneca <= MANO_ALZADA_BAJO_LOS_OJOS_M
 }

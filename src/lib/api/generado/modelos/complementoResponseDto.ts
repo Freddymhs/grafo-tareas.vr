@@ -5,6 +5,7 @@
  * Tareas como grafo: nodos, conexiones, ramas y lo derivado (bloqueado, hoy puedo, qué se libera)
  * OpenAPI spec version: 1.0
  */
+import type { ComplementoResponseDtoCara } from './complementoResponseDtoCara'
 import type { ComplementoResponseDtoEstado } from './complementoResponseDtoEstado'
 import type { ComplementoResponseDtoTipo } from './complementoResponseDtoTipo'
 
@@ -13,6 +14,7 @@ export interface ComplementoResponseDto {
   tipo: ComplementoResponseDtoTipo
   titulo: string
   estado: ComplementoResponseDtoEstado
+  cara: ComplementoResponseDtoCara
   /** @nullable */
   color?: string | null
   /** @nullable */

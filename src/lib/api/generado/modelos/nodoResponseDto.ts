@@ -5,6 +5,7 @@
  * Tareas como grafo: nodos, conexiones, ramas y lo derivado (bloqueado, hoy puedo, qué se libera)
  * OpenAPI spec version: 1.0
  */
+import type { NodoResponseDtoCara } from './nodoResponseDtoCara'
 import type { NodoResponseDtoEstado } from './nodoResponseDtoEstado'
 import type { NodoResponseDtoTipo } from './nodoResponseDtoTipo'
 
@@ -13,6 +14,7 @@ export interface NodoResponseDto {
   tipo: NodoResponseDtoTipo
   titulo: string
   estado: NodoResponseDtoEstado
+  cara: NodoResponseDtoCara
   /** @nullable */
   color?: string | null
   /** @nullable */
