@@ -16,20 +16,41 @@ export const ADELANTE_APUNTADA = 0.85
 export const BORDE_APUNTADA = 0.004
 
 const MARGEN = 0.06
-const LINEAS = 2
 const INTERLINEADO = 1.2
+/** Cuántas líneas lleva una etiqueta: 2 en una página llena, hasta 4 donde sobra espacio (FASE 15). */
+export const LINEAS_MINIMAS = 2
+export const LINEAS_MAXIMAS = 4
+/** Letras que caben en una línea de ANCHO_ETIQUETA con TAMANO_TEXTO (medido: 48 letras = 2 líneas). */
+const LETRAS_POR_LINEA = 24
 
-/** El bloque de texto de una etiqueta: dos líneas. Lo que no puede pisar al de otra. */
-export const TEXTO = { ancho: ANCHO_ETIQUETA, alto: LINEAS * TAMANO_TEXTO * INTERLINEADO } as const
+export interface Medidas {
+  readonly ancho: number
+  readonly alto: number
+}
 
-/** Lo que ocupa un nodo con su etiqueta: la esfera abajo, dos líneas de texto arriba, y aire alrededor. */
-export const CELDA = {
-  ancho: ANCHO_ETIQUETA + MARGEN,
-  alto: DESPLAZAMIENTO_Y + LINEAS * TAMANO_TEXTO * INTERLINEADO + MARGEN,
-} as const
+/**
+ * Lo que ocupa una etiqueta de `lineas` líneas: el bloque de texto (lo que no puede pisar al de otra), la celda (la esfera
+ * abajo, el texto arriba y aire alrededor) y cuántas letras entran.
+ */
+export function medidasEtiqueta(lineas: number): {
+  readonly texto: Medidas
+  readonly celda: Medidas
+  readonly largo: number
+} {
+  const altoTexto = lineas * TAMANO_TEXTO * INTERLINEADO
+  return {
+    texto: { ancho: ANCHO_ETIQUETA, alto: altoTexto },
+    celda: { ancho: ANCHO_ETIQUETA + MARGEN, alto: DESPLAZAMIENTO_Y + altoTexto + MARGEN },
+    largo: lineas * LETRAS_POR_LINEA,
+  }
+}
+
+/** La de dos líneas: el caso de una página llena. */
+export const TEXTO = medidasEtiqueta(LINEAS_MINIMAS).texto
+export const CELDA = medidasEtiqueta(LINEAS_MINIMAS).celda
 
 /** La HU: su nombre en una o dos líneas grandes. */
 export const CELDA_HU = {
   ancho: ANCHO_ETIQUETA_HU + MARGEN,
-  alto: DESPLAZAMIENTO_Y + LINEAS * TAMANO_TEXTO_HU * INTERLINEADO + MARGEN,
+  alto: DESPLAZAMIENTO_Y + LINEAS_MINIMAS * TAMANO_TEXTO_HU * INTERLINEADO + MARGEN,
 } as const

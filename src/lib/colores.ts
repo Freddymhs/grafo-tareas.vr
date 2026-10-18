@@ -3,6 +3,7 @@
 
 import {
   COLOR_DUDA,
+  COLOR_FONDO,
   COLOR_FASE,
   COLOR_HISTORIA,
   COLOR_PERSONA,
@@ -43,4 +44,17 @@ export function coloresPorNodo(grafo: Grafo): ReadonlyMap<string, string> {
       .map(({ origenId, destinoId }) => [origenId, colorRama.get(destinoId) ?? COLOR_SIN_RAMA]),
   )
   return new Map(grafo.nodos.map((nodo) => [nodo.id, colorDe(nodo, primeraRama)]))
+}
+
+/** Cuánto se acerca al fondo lo que queda fuera de la selección: se ve que está, pero no compite. */
+const APAGADO = 0.75
+
+const canales = (hex: string) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16))
+const aHex = (valores: readonly number[]) =>
+  `#${valores.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`
+
+/** Lo que no es de la familia del nodo seleccionado (FASE 15): su color, hundido hacia el fondo. */
+export function colorApagado(hex: string): string {
+  const fondo = canales(COLOR_FONDO)
+  return aHex(canales(hex).map((valor, i) => valor + (fondo[i] - valor) * APAGADO))
 }

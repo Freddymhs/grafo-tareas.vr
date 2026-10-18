@@ -3,6 +3,8 @@ import { XR, createXRStore } from '@react-three/xr'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { coloresPorNodo } from './lib/colores'
+import { LINEAS_MINIMAS } from './lib/constants/etiquetas'
+import { COLOR_FONDO } from './lib/constants/grafo'
 import { VIGENCIA_CONSULTA_MS } from './lib/constants/api'
 import type { Grafo as GrafoDominio, Posicion } from './lib/dominio'
 import { ALTURA_OJOS } from './lib/layout'
@@ -27,7 +29,6 @@ useEstadoVr.setState({ pagina: parametros.pagina })
 
 const CAMARA_INICIAL: [number, number, number] = [0, ALTURA_OJOS, 0.01]
 const OBJETIVO_ORBITA: [number, number, number] = [0, ALTURA_OJOS, 0]
-const COLOR_FONDO = '#020617'
 const LUZ_AMBIENTE = 0.7
 const LUZ_DIRECCIONAL = 0.8
 const POSICION_LUZ: [number, number, number] = [3, 5, 2]
@@ -41,13 +42,22 @@ interface PropsVista {
   readonly posiciones: ReadonlyMap<string, Posicion> | null
   readonly conApi: boolean
   readonly colores: ReadonlyMap<string, string>
+  readonly lineas?: number
   /** Lo que va fijo en la escena además del grafo: la fila de páginas y leyenda (FASE 15). */
   readonly fijo?: ReactNode
   /** Lo que se le dice al usuario mientras no hay mapa, o si algo falló. */
   readonly mensaje: { readonly texto: string; readonly esError: boolean } | null
 }
 
-function Vista({ grafo, posiciones, conApi, colores, fijo, mensaje }: PropsVista) {
+function Vista({
+  grafo,
+  posiciones,
+  conApi,
+  colores,
+  lineas = LINEAS_MINIMAS,
+  fijo,
+  mensaje,
+}: PropsVista) {
   const [errorVr, setErrorVr] = useState<string | null>(null)
   const entrarEnVr = () => {
     setErrorVr(null)
@@ -92,6 +102,7 @@ function Vista({ grafo, posiciones, conApi, colores, fijo, mensaje }: PropsVista
             conApi={conApi}
             etiquetas={parametros.etiquetas}
             colores={colores}
+            lineas={lineas}
           />
           {fijo}
           <Movimiento objetivoOrbita={OBJETIVO_ORBITA} />
@@ -131,6 +142,7 @@ function VistaApi() {
       posiciones={mapa.posiciones}
       conApi
       colores={mapa.colores}
+      lineas={mapa.lineas}
       fijo={
         <>
           <BarraSuperior ramas={mapa.ramas} indice={mapa.pagina.indice} />

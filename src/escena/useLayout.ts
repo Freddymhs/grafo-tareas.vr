@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Grafo, Posicion } from '../lib/dominio'
+import { LINEAS_MINIMAS } from '../lib/constants/etiquetas'
 import { RADIO_PANORAMA, VUELTA } from '../lib/layout'
 import type { PedidoLayout, RespuestaLayout } from '../lib/layout.worker'
 
@@ -16,6 +17,7 @@ export function useLayout(
   grafo: Grafo | null,
   radio: number = RADIO_PANORAMA,
   abertura: number = VUELTA,
+  lineas: number = LINEAS_MINIMAS,
 ): ReadonlyMap<string, Posicion> | null {
   const [resultado, setResultado] = useState<Resultado | null>(null)
 
@@ -26,10 +28,10 @@ export function useLayout(
     })
     worker.onmessage = ({ data }: MessageEvent<RespuestaLayout>) =>
       setResultado({ grafo, posiciones: new Map(data) })
-    const pedido: PedidoLayout = { grafo, radio, abertura }
+    const pedido: PedidoLayout = { grafo, radio, abertura, lineas }
     worker.postMessage(pedido)
     return () => worker.terminate()
-  }, [grafo, radio, abertura])
+  }, [grafo, radio, abertura, lineas])
 
   // Un resultado de otro grafo (el anterior) no vale: se deriva, no se borra con un efecto.
   return resultado && resultado.grafo === grafo ? resultado.posiciones : null

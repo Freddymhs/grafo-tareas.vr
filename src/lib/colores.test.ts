@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coloresPorNodo } from './colores'
+import { colorApagado, coloresPorNodo } from './colores'
 import { COLOR_FASE, COLOR_HISTORIA, COLOR_SIN_RAMA } from './constants/grafo'
 import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
 
@@ -43,5 +43,17 @@ describe('coloresPorNodo', () => {
   it('una tarea toma el color de su RAMA aunque antes pertenezca a una FASE o a una HU', () => {
     expect(colores.get('tarjeta')).toBe('#22c55e')
     expect(colores.get('suelta')).toBe(COLOR_SIN_RAMA)
+  })
+})
+
+describe('colorApagado — lo que queda fuera de la familia seleccionada (FASE 15)', () => {
+  it('se acerca al fondo: más oscuro, pero todavía se distingue', () => {
+    const brillo = (hex: string) =>
+      [1, 3, 5].reduce((suma, i) => suma + Number.parseInt(hex.slice(i, i + 2), 16), 0)
+    const original = '#22c55e'
+    const apagado = colorApagado(original)
+    expect(apagado).toMatch(/^#[0-9a-f]{6}$/)
+    expect(brillo(apagado)).toBeLessThan(brillo(original) / 2)
+    expect(apagado).not.toBe('#020617')
   })
 })

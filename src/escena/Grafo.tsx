@@ -1,5 +1,13 @@
 import { useMemo } from 'react'
-import { OPACIDAD_ARISTA, OPACIDAD_ESTRUCTURA, OPACIDAD_PERTENENCIA } from '../lib/constants/grafo'
+import { useDerivadoControllerFamilia } from '../lib/api/generado/derivado/derivado'
+import { colorApagado } from '../lib/colores'
+import {
+  OPACIDAD_APAGADA,
+  OPACIDAD_ARISTA,
+  OPACIDAD_ESTRUCTURA,
+  OPACIDAD_ILUMINADA,
+  OPACIDAD_PERTENENCIA,
+} from '../lib/constants/grafo'
 import { TipoConexion, TipoNodo, type Grafo as GrafoDominio, type Posicion } from '../lib/dominio'
 import { Aristas } from './Aristas'
 import { Etiquetas } from './Etiquetas'
@@ -20,9 +28,11 @@ interface Props {
   readonly etiquetas: ModoEtiquetas
   /** El color de cada nodo, calculado sobre el grafo ENTERO: en una página (FASE 15) no están las ramas. */
   readonly colores: ReadonlyMap<string, string>
+  /** Líneas de cada etiqueta (FASE 15): las decide el acomodo de la página. */
+  readonly lineas: number
 }
 
-export function Grafo({ grafo, posiciones, conApi, etiquetas, colores }: Props) {
+export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas }: Props) {
   // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
   // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
   const { aRamas, arbol, relaciones } = useMemo(() => {
@@ -42,6 +52,35 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores }: Props) 
   const apuntado = useEstadoVr((estado) => estado.apuntado)
   const apuntar = useEstadoVr((estado) => estado.apuntar)
   const { conectar } = useAccionesVr()
+  // Al seleccionar (FASE 15): la API dice qué se ilumina —el nodo, lo que cuelga de él y con qué se conecta—; lo demás
+  // se apaga. Sin API (la prueba sintética) no hay familia y nada se apaga.
+  const familia = useDerivadoControllerFamilia(seleccionado ?? '', {
+    query: { enabled: conApi && seleccionado !== null },
+  })
+  const iluminados = useMemo(
+    () => (seleccionado && familia.data ? new Set(familia.data.ids) : null),
+    [seleccionado, familia.data],
+  )
+  const coloresVisibles = useMemo(
+    () =>
+      iluminados
+        ? new Map(
+            [...colores].map(([id, color]) => [
+              id,
+              iluminados.has(id) ? color : colorApagado(color),
+            ]),
+          )
+        : colores,
+    [colores, iluminados],
+  )
+  const { deLaFamilia, fueraDeLaFamilia } = useMemo(() => {
+    const adentro = ({ origenId, destinoId }: { origenId: string; destinoId: string }) =>
+      iluminados !== null && iluminados.has(origenId) && iluminados.has(destinoId)
+    return {
+      deLaFamilia: grafo.conexiones.filter(adentro),
+      fueraDeLaFamilia: grafo.conexiones.filter((c) => !adentro(c)),
+    }
+  }, [grafo, iluminados])
   const posicionSeleccionado = seleccionado ? posiciones?.get(seleccionado) : undefined
   const nodoSeleccionado = seleccionado
     ? grafo.nodos.find(({ id }) => id === seleccionado)
@@ -59,21 +98,44 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores }: Props) 
           <Nodos
             nodos={grafo.nodos}
             posiciones={posiciones}
-            colores={colores}
+            colores={coloresVisibles}
             seleccionado={seleccionado}
             resaltados={resaltados}
             onSeleccionar={tocarNodo}
             onApuntar={apuntar}
           />
-          <Aristas conexiones={relaciones} posiciones={posiciones} opacidad={OPACIDAD_ARISTA} />
-          <Aristas conexiones={arbol} posiciones={posiciones} opacidad={OPACIDAD_ESTRUCTURA} />
-          <Aristas conexiones={aRamas} posiciones={posiciones} opacidad={OPACIDAD_PERTENENCIA} />
+          {iluminados ? (
+            <>
+              <Aristas
+                conexiones={deLaFamilia}
+                posiciones={posiciones}
+                opacidad={OPACIDAD_ILUMINADA}
+              />
+              <Aristas
+                conexiones={fueraDeLaFamilia}
+                posiciones={posiciones}
+                opacidad={OPACIDAD_APAGADA}
+              />
+            </>
+          ) : (
+            <>
+              <Aristas conexiones={relaciones} posiciones={posiciones} opacidad={OPACIDAD_ARISTA} />
+              <Aristas conexiones={arbol} posiciones={posiciones} opacidad={OPACIDAD_ESTRUCTURA} />
+              <Aristas
+                conexiones={aRamas}
+                posiciones={posiciones}
+                opacidad={OPACIDAD_PERTENENCIA}
+              />
+            </>
+          )}
           <Etiquetas
             nodos={grafo.nodos}
             posiciones={posiciones}
             excluir={seleccionado}
             todas={etiquetas === ModoEtiquetas.TODAS}
             apuntado={apuntado}
+            lineas={lineas}
+            iluminados={iluminados}
           />
           {nodoSeleccionado && posicionSeleccionado ? (
             conApi ? (

@@ -16,14 +16,16 @@ import {
   TAMANO_TEXTO,
   TAMANO_TEXTO_APUNTADO,
   TAMANO_TEXTO_HU,
+  medidasEtiqueta,
 } from '../lib/constants/etiquetas'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
-import { LARGO_APUNTADO, LARGO_ETIQUETA, textoVisible } from '../lib/texto-visible'
+import { LARGO_APUNTADO, textoVisible } from '../lib/texto-visible'
 
 export const ETIQUETAS_CERCANAS = 12
 const SEGUNDOS_ENTRE_CALCULOS = 0.25
 const COLOR_TEXTO = '#e2e8f0'
 const COLOR_BORDE = '#020617'
+const COLOR_TEXTO_APAGADO = '#334155'
 
 interface Props {
   readonly nodos: readonly Nodo[]
@@ -32,13 +34,26 @@ interface Props {
   readonly todas: boolean
   /** El nodo bajo el rayo: su etiqueta va ampliada, con el título entero. */
   readonly apuntado: string | null
+  /** Cuántas líneas lleva cada etiqueta en esta página (FASE 15): más donde hay espacio. */
+  readonly lineas: number
+  /** Con un nodo seleccionado, su familia (FASE 15): las demás etiquetas se apagan. */
+  readonly iluminados: ReadonlySet<string> | null
 }
 
 function mismosIds(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i])
 }
 
-export function Etiquetas({ nodos, posiciones, excluir, todas, apuntado }: Props) {
+export function Etiquetas({
+  nodos,
+  posiciones,
+  excluir,
+  todas,
+  apuntado,
+  lineas,
+  iluminados,
+}: Props) {
+  const { largo } = medidasEtiqueta(lineas)
   const [cercanos, setCercanos] = useState<readonly string[]>([])
   const ultimoCalculo = useRef(Number.NEGATIVE_INFINITY)
 
@@ -75,14 +90,14 @@ export function Etiquetas({ nodos, posiciones, excluir, todas, apuntado }: Props
           <Billboard key={id} position={[x, y + DESPLAZAMIENTO_Y, z]}>
             <Text
               fontSize={porId.get(id)?.tipo === TipoNodo.HISTORIA ? TAMANO_TEXTO_HU : TAMANO_TEXTO}
-              color={COLOR_TEXTO}
+              color={iluminados && !iluminados.has(id) ? COLOR_TEXTO_APAGADO : COLOR_TEXTO}
               anchorY="bottom"
               maxWidth={
                 porId.get(id)?.tipo === TipoNodo.HISTORIA ? ANCHO_ETIQUETA_HU : ANCHO_ETIQUETA
               }
               textAlign="center"
             >
-              {textoVisible(porId.get(id)?.titulo ?? id, LARGO_ETIQUETA)}
+              {textoVisible(porId.get(id)?.titulo ?? id, largo)}
             </Text>
           </Billboard>
         )

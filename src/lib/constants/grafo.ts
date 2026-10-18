@@ -25,6 +25,8 @@ export const COLORES_RAMA = [
   '#ec4899',
 ] as const
 
+/** El fondo de la escena (y hacia donde se apaga lo que no está seleccionado). */
+export const COLOR_FONDO = '#020617'
 export const COLOR_SIN_RAMA = '#94a3b8'
 export const COLOR_PERSONA = '#f8fafc'
 export const COLOR_DUDA = '#ef4444'
@@ -37,3 +39,6 @@ export const OPACIDAD_ARISTA = 0.6
 export const OPACIDAD_PERTENENCIA = 0.08
 /** PERTENECE_A una FASE o una HU es el árbol (tarjeta → FASE → HU): se ve, a diferencia de la pertenencia a una rama. */
 export const OPACIDAD_ESTRUCTURA = 0.4
+/** Con un nodo seleccionado (FASE 15): las líneas de su familia, brillantes; las demás, casi invisibles. */
+export const OPACIDAD_ILUMINADA = 0.9
+export const OPACIDAD_APAGADA = 0.03

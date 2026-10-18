@@ -13,22 +13,25 @@ import {
   type FuerzaPropia,
   type NodoSimulacion,
 } from 'd3-force-3d'
-import { CELDA, CELDA_HU } from './constants/etiquetas'
+import {
+  CELDA,
+  CELDA_HU,
+  LINEAS_MAXIMAS,
+  LINEAS_MINIMAS,
+  medidasEtiqueta,
+  type Medidas,
+} from './constants/etiquetas'
 import { TipoConexion, TipoNodo, type Grafo, type Nodo, type Posicion } from './dominio'
 import { hashUnitario } from './hash'
 
 const DIMENSIONES = 2
 export const TICKS_LAYOUT = 400
-/** Una celda de distancia entre dos nodos enlazados: juntos, sin pisarse. */
-const DISTANCIA_ENLACE = CELDA.ancho
 /** Lo que una rama tira de sus tarjetas, frente a ~1 de un enlace normal. */
 const FUERZA_RAMA = 0.02
 /** Repulsión suave y de corto alcance: separa los grupos sin dispersarlos. */
 const CARGA = -0.05
 const ALCANCE_CARGA = 2
 const VUELTAS_CHOQUE = 3
-/** Las celdas son anchas y bajas: la altura se estira por este factor y el choque se calcula con círculos. */
-const ASPECTO = CELDA.ancho / CELDA.alto
 export const ALTURA_OJOS = 1.6
 /** Distancia (m) de la pantalla al usuario. Se calibra con `?radio=` (FASE 15). */
 export const RADIO_PANORAMA = 3
@@ -60,8 +63,8 @@ function conConexion(grafo: Grafo): ReadonlySet<string> {
   return new Set(grafo.conexiones.flatMap(({ origenId, destinoId }) => [origenId, destinoId]))
 }
 
-const radioDeCelda = (tipo: TipoNodo | undefined) =>
-  (tipo === TipoNodo.HISTORIA ? CELDA_HU.ancho : CELDA.ancho) / 2
+const radioDeCelda = (tipo: TipoNodo | undefined, celda: Medidas) =>
+  (tipo === TipoNodo.HISTORIA ? CELDA_HU.ancho : celda.ancho) / 2
 
 /**
  * Lo conectado, enrollado en `arco` centrado en el ángulo `centro`. La simulación corre en la pantalla desenrollada: `x` en metros
@@ -74,7 +77,10 @@ function ubicarConectadas(
   radio: number,
   ticks: number,
   centro: number,
+  celda: Medidas,
 ): ReadonlyArray<readonly [string, Posicion]> {
+  // Las celdas son anchas y bajas: la altura se estira por este factor y el choque se calcula con círculos.
+  const aspecto = celda.ancho / celda.alto
   const tipoDe = new Map(grafo.nodos.map(({ id, tipo }) => [id, tipo]))
   const grado = new Map<string, number>()
   grafo.conexiones.forEach(({ origenId, destinoId }) => {
@@ -82,7 +88,7 @@ function ubicarConectadas(
     grado.set(destinoId, (grado.get(destinoId) ?? 0) + 1)
   })
   const mitadAncho = (arco * radio) / 2
-  const mitadAlto = ALTO_MEDIO * ASPECTO
+  const mitadAlto = ALTO_MEDIO * aspecto
   // d3 escribe x/y en estos objetos: son copias que nacen y mueren acá, el grafo de entrada no se toca. Arrancan
   // repartidas por toda la pantalla (fijo por id), no apiladas en el centro.
   const nodosSimulacion: NodoSimulacion[] = [...ids].map((id) => ({
@@ -98,7 +104,7 @@ function ubicarConectadas(
         ? FUERZA_RAMA
         : 1 / Math.min(grado.get(origenId) ?? 1, grado.get(destinoId) ?? 1),
   }))
-  const radioDe = ({ id }: NodoSimulacion) => radioDeCelda(tipoDe.get(id))
+  const radioDe = ({ id }: NodoSimulacion) => radioDeCelda(tipoDe.get(id), celda)
   // Las paredes de la pantalla: ninguna celda sale del arco ni de la banda de los ojos. d3 mueve cada nodo DESPUÉS de
   // las fuerzas (x += vx), así que la pared recorta la velocidad, no la posición.
   const acotar = (valor: number, minimo: number, maximo: number) =>
@@ -115,7 +121,7 @@ function ubicarConectadas(
       'enlace',
       forceLink(enlaces)
         .id(({ id }) => id)
-        .distance(DISTANCIA_ENLACE)
+        .distance(celda.ancho)
         .strength((enlace) => ('fuerza' in enlace ? Number(enlace.fuerza) : 1)),
     )
     .force('carga', forceManyBody().strength(CARGA).distanceMax(ALCANCE_CARGA))
@@ -124,7 +130,7 @@ function ubicarConectadas(
     .stop()
     .tick(ticks)
   return nodosSimulacion.map(({ id, x = 0, y = 0 }) => {
-    const altura = ALTURA_OJOS + y / ASPECTO
+    const altura = ALTURA_OJOS + y / aspecto
     return [id, enCilindro(centro + x / radio, altura, radio)] as const
   })
 }
@@ -135,8 +141,9 @@ function ubicarSueltas(
   arco: number,
   radio: number,
   centro: number,
+  celda: Medidas,
 ): ReadonlyArray<readonly [string, Posicion]> {
-  const columnas = Math.max(1, Math.floor((arco * radio) / CELDA.ancho))
+  const columnas = Math.max(1, Math.floor((arco * radio) / celda.ancho))
   const filas = Math.ceil(sueltas.length / columnas)
   const ordenadas = sueltas.toSorted(
     (a, b) => a.titulo.localeCompare(b.titulo) || a.id.localeCompare(b.id),
@@ -150,21 +157,46 @@ function ubicarSueltas(
   })
 }
 
-const FILAS_EN_LA_BANDA = Math.floor((2 * ALTO_MEDIO) / CELDA.alto)
-
 /** Cuánto ocupan las sueltas: lo que su grilla necesita, acotado (ni un hilo ni la mitad de la abertura). */
-function arcoDeSueltas(sueltas: number, total: number, radio: number, abertura: number): number {
+function arcoDeSueltas(
+  sueltas: number,
+  total: number,
+  radio: number,
+  abertura: number,
+  celda: Medidas,
+): number {
   if (sueltas === 0) return 0
   if (sueltas === total) return abertura - HUECO
-  const necesario = (Math.ceil(sueltas / FILAS_EN_LA_BANDA) * CELDA.ancho) / radio
+  const filasEnLaBanda = Math.max(1, Math.floor((2 * ALTO_MEDIO) / celda.alto))
+  const necesario = (Math.ceil(sueltas / filasEnLaBanda) * celda.ancho) / radio
   const maximo = Math.min(ARCO_SUELTAS_MAXIMO, abertura / 2)
   return Math.min(maximo, Math.max(ARCO_SUELTAS_MINIMO, necesario))
 }
 
+/** Cuánto espacio necesitan `nodos` celdas con aire (m²). */
+const areaNecesaria = (nodos: number, celda: Medidas) =>
+  (nodos * celda.ancho * celda.alto) / LLENADO
+
+/**
+ * Cuántas líneas lleva cada etiqueta en una página (FASE 15, «si hay espacio, que se muestre»): la mayor que cabe en su
+ * pantalla. Una página llena se queda en 2; una con aire sube hasta 4. El acomodo y el dibujo usan el mismo número.
+ */
+export function lineasPara(nodos: number, radio: number, abertura: number): number {
+  const disponible = abertura * radio * 2 * ALTO_MEDIO
+  const candidatas = Array.from(
+    { length: LINEAS_MAXIMAS - LINEAS_MINIMAS + 1 },
+    (_, i) => LINEAS_MAXIMAS - i,
+  )
+  return (
+    candidatas.find(
+      (lineas) => areaNecesaria(nodos, medidasEtiqueta(lineas).celda) <= disponible,
+    ) ?? LINEAS_MINIMAS
+  )
+}
+
 /** La abertura de una página: lo que sus celdas necesitan con aire, entre 180° y 270°. */
 export function aberturaPara(nodos: number, radio: number): number {
-  const area = (nodos * CELDA.ancho * CELDA.alto) / LLENADO
-  const necesaria = area / (2 * ALTO_MEDIO) / radio
+  const necesaria = areaNecesaria(nodos, CELDA) / (2 * ALTO_MEDIO) / radio
   return Math.min(ABERTURA_PAGINA_MAXIMA, Math.max(ABERTURA_PAGINA_MINIMA, necesaria))
 }
 
@@ -176,12 +208,14 @@ export function calcularLayout(
   grafo: Grafo,
   radio: number = RADIO_PANORAMA,
   abertura: number = VUELTA,
+  lineas: number = LINEAS_MINIMAS,
   ticks: number = TICKS_LAYOUT,
 ): ReadonlyMap<string, Posicion> {
+  const { celda } = medidasEtiqueta(lineas)
   const conectadas = conConexion(grafo)
   const sueltas = grafo.nodos.filter(({ id }) => !conectadas.has(id))
   const vueltaCompleta = abertura >= VUELTA
-  const arcoSueltas = arcoDeSueltas(sueltas.length, grafo.nodos.length, radio, abertura)
+  const arcoSueltas = arcoDeSueltas(sueltas.length, grafo.nodos.length, radio, abertura, celda)
   const huecosDeLaVuelta = sueltas.length > 0 ? 2 * HUECO : HUECO
   const huecosDeLaPagina = sueltas.length > 0 ? HUECO : 0
   const huecos = vueltaCompleta ? huecosDeLaVuelta : huecosDeLaPagina
@@ -190,7 +224,7 @@ export function calcularLayout(
   const centroSueltas = vueltaCompleta ? Math.PI : abertura / 2 - arcoSueltas / 2
   const ubicadas =
     conectadas.size > 0
-      ? ubicarConectadas(grafo, conectadas, arcoConectadas, radio, ticks, centroConectadas)
+      ? ubicarConectadas(grafo, conectadas, arcoConectadas, radio, ticks, centroConectadas, celda)
       : []
-  return new Map([...ubicadas, ...ubicarSueltas(sueltas, arcoSueltas, radio, centroSueltas)])
+  return new Map([...ubicadas, ...ubicarSueltas(sueltas, arcoSueltas, radio, centroSueltas, celda)])
 }

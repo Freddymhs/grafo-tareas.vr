@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TEXTO } from './constants/etiquetas'
+import { TEXTO, medidasEtiqueta } from './constants/etiquetas'
 import { NODOS_PRUEBA, SEMILLA_PRUEBA } from './constants/grafo'
 import { EstadoNodo, TipoConexion, TipoNodo, type Grafo, type Posicion } from './dominio'
 import {
@@ -9,6 +9,7 @@ import {
   aberturaPara,
   anguloDe,
   calcularLayout,
+  lineasPara,
 } from './layout'
 import { generarGrafo } from './sintetico'
 
@@ -155,5 +156,39 @@ describe('aberturaPara — cuánta pantalla necesita una página', () => {
     expect(grande).toBeGreaterThan(Math.PI)
     expect(grande).toBeLessThanOrEqual(1.5 * Math.PI)
     expect(aberturaPara(100, RADIO_PANORAMA)).toBeLessThanOrEqual(grande)
+  })
+})
+
+describe('lineasPara — más texto donde la página tiene espacio (FASE 15)', () => {
+  it('pocas pelotas: 4 líneas; muchas: 2; nunca más de lo que cabe', () => {
+    expect(lineasPara(20, RADIO_PANORAMA, Math.PI)).toBe(4)
+    expect(lineasPara(98, RADIO_PANORAMA, aberturaPara(98, RADIO_PANORAMA))).toBe(2)
+    expect(lineasPara(60, RADIO_PANORAMA, Math.PI)).toBeGreaterThanOrEqual(
+      lineasPara(98, RADIO_PANORAMA, Math.PI),
+    )
+  })
+
+  it('con más líneas, la celda es más alta y entra más texto', () => {
+    expect(medidasEtiqueta(4).celda.alto).toBeGreaterThan(medidasEtiqueta(2).celda.alto)
+    expect(medidasEtiqueta(4).largo).toBe(2 * medidasEtiqueta(2).largo)
+  })
+
+  it('una página con etiquetas de 4 líneas tampoco pisa textos', () => {
+    const chico = generarGrafo({ nodos: 50, semilla: SEMILLA_PRUEBA })
+    const lineas = lineasPara(chico.nodos.length, RADIO_PANORAMA, Math.PI)
+    const { texto } = medidasEtiqueta(lineas)
+    const celdas = [...calcularLayout(chico, RADIO_PANORAMA, Math.PI, lineas).values()].map(
+      (p) => ({
+        u: anguloDe(p) * RADIO_PANORAMA,
+        v: p.y,
+      }),
+    )
+    const pisadas = celdas.filter((a, i) =>
+      celdas.some(
+        (b, j) => i !== j && Math.abs(a.u - b.u) < texto.ancho && Math.abs(a.v - b.v) < texto.alto,
+      ),
+    )
+    expect(lineas).toBe(4)
+    expect(pisadas.length).toBeLessThanOrEqual(Math.ceil(celdas.length * 0.02))
   })
 })

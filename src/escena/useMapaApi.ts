@@ -16,7 +16,7 @@ import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
 import { TipoNodo, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
-import { RADIO_PANORAMA, aberturaPara } from '../lib/layout'
+import { RADIO_PANORAMA, aberturaPara, lineasPara } from '../lib/layout'
 import { grafoDePagina, hogares } from '../lib/paginas'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
@@ -40,6 +40,8 @@ export type EstadoMapa =
       /** Las ramas de colores, para la leyenda. */
       readonly ramas: readonly Nodo[]
       readonly pagina: PaginaVisible
+      /** Líneas de cada etiqueta en esta página: más donde hay espacio (FASE 15). */
+      readonly lineas: number
       /** Si guardar las posiciones nuevas falló: el mapa se ve igual, pero la próxima vez se recalcula. */
       readonly aviso: string | null
     }
@@ -78,9 +80,10 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     return new Map([...todas].filter(([id]) => hogar.get(id) === pagina.id))
   }, [nodos.data, pagina, hogar])
   const abertura = aberturaPara(grafoPagina?.nodos.length ?? 0, radio)
+  const lineas = lineasPara(grafoPagina?.nodos.length ?? 0, radio, abertura)
   const sinAcomodo =
     grafoPagina !== null && grafoPagina.nodos.length > 0 && (guardadas.size === 0 || reordenar)
-  const layout = useLayout(sinAcomodo ? grafoPagina : null, radio, abertura)
+  const layout = useLayout(sinAcomodo ? grafoPagina : null, radio, abertura, lineas)
   const ubicacion = useMemo(() => {
     if (!grafoPagina) return null
     if (sinAcomodo) return layout ? { posiciones: layout, nuevas: layout } : null
@@ -115,6 +118,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     colores,
     ramas,
     pagina: { titulo: pagina.titulo, indice, total },
+    lineas,
     aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,
   }
 }

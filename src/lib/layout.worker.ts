@@ -11,9 +11,13 @@ export interface PedidoLayout {
   readonly radio: number
   /** 2π el grafo entero; menos, una página (FASE 15). */
   readonly abertura: number
+  /** Las líneas de cada etiqueta: el acomodo reserva celdas de ese alto (FASE 15). */
+  readonly lineas: number
 }
 
 self.onmessage = ({ data }: MessageEvent<PedidoLayout>) => {
-  const respuesta: RespuestaLayout = [...calcularLayout(data.grafo, data.radio, data.abertura)]
+  const respuesta: RespuestaLayout = [
+    ...calcularLayout(data.grafo, data.radio, data.abertura, data.lineas),
+  ]
   self.postMessage(respuesta)
 }
