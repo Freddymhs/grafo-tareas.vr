@@ -4,17 +4,21 @@
 import { Billboard, Text } from '@react-three/drei'
 import { useDerivadoControllerBloqueado } from '../lib/api/generado/derivado/derivado'
 import type { Nodo, Posicion } from '../lib/dominio'
-import { LARGO_ETIQUETA, LARGO_SELECCION, textoVisible } from '../lib/texto-visible'
+import { resumenDeEspera } from '../lib/seleccion'
+import { LARGO_SELECCION, textoVisible } from '../lib/texto-visible'
 
 const TAMANO_TITULO = 0.06
 const TAMANO_DETALLE = 0.04
 const DESPLAZAMIENTO_Y = 0.16
 const ANCHO_MAXIMO = 1.2
 const COLOR_TITULO = '#ffffff'
-const COLOR_BLOQUEO = '#fca5a5'
+/** Ámbar suave con borde oscuro: el rojo sobre el fondo oscuro no se leía (Freddy, 2026-10-18). */
+const COLOR_BLOQUEO = '#fcd34d'
 const COLOR_LIBRE = '#86efac'
 const COLOR_NEUTRO = '#cbd5e1'
 const SEPARACION = 0.02
+const BORDE = 0.003
+const COLOR_BORDE = '#020617'
 
 export interface Detalle {
   readonly texto: string
@@ -41,6 +45,8 @@ export function Seleccion({ nodo, posicion, detalle }: Props) {
           color={detalle.color}
           anchorY="top"
           maxWidth={ANCHO_MAXIMO}
+          outlineWidth={BORDE}
+          outlineColor={COLOR_BORDE}
         >
           {detalle.texto}
         </Text>
@@ -56,13 +62,9 @@ export function SeleccionConBloqueo({ nodo, posicion }: Omit<Props, 'detalle'>) 
     ? { texto: 'Preguntando a la API…', color: COLOR_NEUTRO }
     : bloqueado.isError
       ? { texto: 'No se pudo saber qué lo bloquea', color: COLOR_NEUTRO }
-      : bloqueado.data.bloqueado
-        ? {
-            texto: `Bloqueado por: ${bloqueado.data.por
-              .map(({ titulo }) => textoVisible(titulo, LARGO_ETIQUETA))
-              .join(' · ')}`,
-            color: COLOR_BLOQUEO,
-          }
-        : { texto: 'Libre: nada lo bloquea', color: COLOR_LIBRE }
+      : {
+          texto: resumenDeEspera(bloqueado.data.por.map(({ titulo }) => titulo)),
+          color: bloqueado.data.bloqueado ? COLOR_BLOQUEO : COLOR_LIBRE,
+        }
   return <Seleccion nodo={nodo} posicion={posicion} detalle={detalle} />
 }
