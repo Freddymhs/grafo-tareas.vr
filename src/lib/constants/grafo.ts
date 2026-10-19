@@ -57,3 +57,5 @@ export const ETIQUETA_MERGEADA = 'mergeada'
 export const ETIQUETA_TRAMITE = 'complemento:tramite'
 /** La pone el reparto en una pieza del plan que todavía no tiene task en el tracker: candidata a PBI. */
 export const ETIQUETA_POR_CREAR = 'por-crear'
+/** Lo ya pedido que espera a que otro entregue o valide (complemento `espera` de roles.yaml): «está en su cancha». */
+export const ETIQUETA_ESPERA = 'complemento:espera'

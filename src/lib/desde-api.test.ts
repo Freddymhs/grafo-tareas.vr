@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { ConexionResponseDto, NodoResponseDto } from './api/generado/modelos'
-import { ETIQUETA_MERGEADA, ETIQUETA_POR_CREAR, ETIQUETA_TRAMITE } from './constants/grafo'
+import {
+  ETIQUETA_ESPERA,
+  ETIQUETA_MERGEADA,
+  ETIQUETA_POR_CREAR,
+  ETIQUETA_TRAMITE,
+} from './constants/grafo'
 import { aGrafo, posicionesGuardadas } from './desde-api'
 
 const nodo = (id: string, extra: Partial<NodoResponseDto> = {}): NodoResponseDto =>
@@ -80,6 +85,18 @@ describe('aGrafo', () => {
     ).nodos
     expect(porCrear?.porCrear).toBe(true)
     expect(conTask?.porCrear).toBeUndefined()
+  })
+
+  it('lo que espera a otro, solo con la etiqueta del complemento espera (Freddy, 2026-10-19)', () => {
+    const [espera, duda] = aGrafo(
+      [
+        nodo('e', { tipo: 'DUDA', etiquetas: [ETIQUETA_ESPERA] }),
+        nodo('d', { tipo: 'DUDA', etiquetas: ['complemento:duda-negocio'] }),
+      ],
+      [],
+    ).nodos
+    expect(espera?.espera).toBe(true)
+    expect(duda?.espera).toBeUndefined()
   })
 })
 

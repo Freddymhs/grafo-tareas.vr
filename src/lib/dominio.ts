@@ -66,6 +66,8 @@ export interface Nodo {
   readonly pbi?: Pbi
   /** Una pieza del plan sin task en el tracker (etiqueta del reparto): la leyenda del plan las cuenta. */
   readonly porCrear?: boolean
+  /** Lo ya pedido que espera a otro (etiqueta del complemento `espera`): abierta, se lee «espera ·» delante. */
+  readonly espera?: boolean
 }
 
 export interface Conexion {
