@@ -18,6 +18,7 @@ import {
   TAMANO_TEXTO_HU,
   medidasEtiqueta,
 } from '../lib/constants/etiquetas'
+import { conMarca } from '../lib/cierre'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
 import { textoConFecha } from '../lib/paginas'
 import { LARGO_APUNTADO, textoVisible } from '../lib/texto-visible'
@@ -79,8 +80,12 @@ export function Etiquetas({
   const porId = new Map(nodos.map((nodo) => [nodo.id, nodo]))
   const colorDeTexto = (id: string) =>
     iluminados && !iluminados.has(id) ? COLOR_TEXTO_APAGADO : COLOR_TEXTO
-  const textoDe = (nodo: Nodo | undefined, id: string) =>
-    nodo?.fecha && conFecha.has(id) ? textoConFecha(nodo.titulo, nodo.fecha) : (nodo?.titulo ?? id)
+  const textoDe = (nodo: Nodo | undefined, id: string) => {
+    if (!nodo) return id
+    const texto =
+      nodo.fecha && conFecha.has(id) ? textoConFecha(nodo.titulo, nodo.fecha) : nodo.titulo
+    return conMarca(nodo, texto)
+  }
   const historias = nodos
     .filter(({ tipo, id }) => tipo === TipoNodo.HISTORIA && id !== excluir)
     .map(({ id }) => id)

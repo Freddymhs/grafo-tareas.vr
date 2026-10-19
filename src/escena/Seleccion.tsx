@@ -1,9 +1,11 @@
 // El nodo seleccionado: su título y qué lo bloquea —a una persona, quién la espera; a un PBI a medias, qué mitad le
-// falta—. El "qué lo bloquea" lo responde la API (`GET /nodos/:id/bloqueado`, decisión C1); en el sintético de la
-// FASE 1 no hay API y no se muestra.
+// falta; a algo cerrado, cuándo y con qué respuesta se cerró—. El "qué lo bloquea" lo responde la API
+// (`GET /nodos/:id/bloqueado`, decisión C1); en el sintético de la FASE 1 no hay API y no se muestra.
 
 import { Billboard, Text } from '@react-three/drei'
 import { useDerivadoControllerBloqueado } from '../lib/api/generado/derivado/derivado'
+import { usePulidoControllerCambiosDe } from '../lib/api/generado/pulido/pulido'
+import { conMarca, resumenDeCierre } from '../lib/cierre'
 import type { Nodo, Posicion } from '../lib/dominio'
 import { avisoDePbi, resumenDeEspera, resumenDeQuienEspera } from '../lib/seleccion'
 import { LARGO_SELECCION, textoVisible } from '../lib/texto-visible'
@@ -37,7 +39,7 @@ export function Seleccion({ nodo, posicion, detalle }: Props) {
   return (
     <Billboard position={[x, y + DESPLAZAMIENTO_Y, z]}>
       <Text fontSize={TAMANO_TITULO} color={COLOR_TITULO} anchorY="bottom" maxWidth={ANCHO_MAXIMO}>
-        {`${textoVisible(nodo.titulo, LARGO_SELECCION)} · ${nodo.estado}`}
+        {`${conMarca(nodo, textoVisible(nodo.titulo, LARGO_SELECCION))} · ${nodo.estado}`}
       </Text>
       {detalle ? (
         <Text
@@ -69,6 +71,17 @@ export function SeleccionConBloqueo({ nodo, posicion }: Omit<Props, 'detalle'>) 
         }
   const aviso = avisoDePbi(nodo)
   const detalle = aviso ? { texto: `${aviso}\n${espera.texto}`, color: COLOR_BLOQUEO } : espera
+  return <Seleccion nodo={nodo} posicion={posicion} detalle={detalle} />
+}
+
+/** Lo cerrado ya no espera nada: dice cuándo se cerró y con qué motivo (la respuesta, si es una duda). */
+export function SeleccionDeCerrado({ nodo, posicion }: Omit<Props, 'detalle'>) {
+  const bitacora = usePulidoControllerCambiosDe(nodo.id)
+  const detalle: Detalle = bitacora.isPending
+    ? { texto: 'Preguntando a la API…', color: COLOR_NEUTRO }
+    : bitacora.isError
+      ? { texto: 'No se pudo leer cómo se cerró', color: COLOR_NEUTRO }
+      : { texto: resumenDeCierre(nodo, bitacora.data), color: COLOR_LIBRE }
   return <Seleccion nodo={nodo} posicion={posicion} detalle={detalle} />
 }
 

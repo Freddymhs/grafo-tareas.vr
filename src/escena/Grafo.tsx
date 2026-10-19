@@ -8,7 +8,13 @@ import {
   OPACIDAD_ILUMINADA,
   OPACIDAD_PERTENENCIA,
 } from '../lib/constants/grafo'
-import { TipoConexion, TipoNodo, type Grafo as GrafoDominio, type Posicion } from '../lib/dominio'
+import {
+  EstadoNodo,
+  TipoConexion,
+  TipoNodo,
+  type Grafo as GrafoDominio,
+  type Posicion,
+} from '../lib/dominio'
 import { Aristas } from './Aristas'
 import { Etiquetas } from './Etiquetas'
 import { Medidor } from './Medidor'
@@ -18,7 +24,7 @@ import { Filtro, encendidosPor, hilosDelFiltro } from '../lib/filtro'
 import { ModoEtiquetas } from '../lib/parametros'
 import { PanelAcciones } from './PanelAcciones'
 import { quienesEsperan } from '../lib/seleccion'
-import { Seleccion, SeleccionConBloqueo, SeleccionDePersona } from './Seleccion'
+import { Seleccion, SeleccionConBloqueo, SeleccionDeCerrado, SeleccionDePersona } from './Seleccion'
 import { useAccionesVr } from './useAccionesVr'
 
 interface Props {
@@ -173,6 +179,8 @@ export function Grafo({
                     posicion={posicionSeleccionado}
                     esperan={quienesEsperan(nodoSeleccionado.id, grafo)}
                   />
+                ) : nodoSeleccionado.estado === EstadoNodo.CERRADO ? (
+                  <SeleccionDeCerrado nodo={nodoSeleccionado} posicion={posicionSeleccionado} />
                 ) : (
                   <SeleccionConBloqueo nodo={nodoSeleccionado} posicion={posicionSeleccionado} />
                 )}
