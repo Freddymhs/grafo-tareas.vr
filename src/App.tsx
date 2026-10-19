@@ -78,6 +78,8 @@ interface PropsVista {
   readonly colores: ReadonlyMap<string, string>
   readonly lineas?: number
   readonly conFecha?: ReadonlySet<string>
+  /** Lo que frena en la página, según la API (filtro 4). */
+  readonly frenan?: ReadonlySet<string> | null
   /** Lo que va fijo en la escena además del grafo: la fila de páginas y leyenda (FASE 15). */
   readonly fijo?: ReactNode
   /** Lo que se le dice al usuario mientras no hay mapa, o si algo falló. */
@@ -91,6 +93,7 @@ function Vista({
   colores,
   lineas = LINEAS_MINIMAS,
   conFecha = NINGUNO,
+  frenan = null,
   fijo,
   mensaje,
 }: PropsVista) {
@@ -140,6 +143,7 @@ function Vista({
             colores={colores}
             lineas={lineas}
             conFecha={conFecha}
+            frenan={frenan}
           />
           {fijo}
           <Movimiento objetivoOrbita={OBJETIVO_ORBITA} />
@@ -194,6 +198,7 @@ function VistaApi() {
       colores={mapa.colores}
       lineas={mapa.lineas}
       conFecha={mapa.conFecha}
+      frenan={mapa.frenan}
       fijo={
         <>
           <BarraSuperior

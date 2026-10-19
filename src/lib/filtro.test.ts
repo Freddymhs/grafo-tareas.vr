@@ -78,6 +78,24 @@ describe('encendidosPor — el filtro 4 deja solo lo que frena (Freddy, 2026-10-
       'para-decir',
     ])
   })
+
+  it('con lo que la API dice que frena: también el trabajo del que otro depende, y no la duda que no frena nada', () => {
+    const nodos = [
+      nodo('hu', { tipo: TipoNodo.HISTORIA }),
+      nodo('esquema'),
+      nodo('duda-que-frena', { tipo: TipoNodo.DUDA }),
+      nodo('duda-suelta', { tipo: TipoNodo.DUDA }),
+      nodo('para-decir', { tipo: TipoNodo.DAILY_ITEM }),
+      nodo('pieza'),
+    ]
+    const frenan = new Set(['esquema', 'duda-que-frena'])
+    expect([...(encendidosPor(Filtro.LO_QUE_FRENA, nodos, frenan) ?? [])].sort()).toEqual([
+      'duda-que-frena',
+      'esquema',
+      'hu',
+      'para-decir',
+    ])
+  })
 })
 
 describe('pendientes — lo que el filtro deja encendido: ni mergeado ni cerrado', () => {

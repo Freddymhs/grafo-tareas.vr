@@ -34,9 +34,20 @@ interface Props {
   readonly lineas: number
   /** Las tareas sin padre: llevan su fecha (FASE 15). */
   readonly conFecha: ReadonlySet<string>
+  /** Lo que frena en la página, según la API (filtro 4); `null` sin API o con una API anterior. */
+  readonly frenan: ReadonlySet<string> | null
 }
 
-export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas, conFecha }: Props) {
+export function Grafo({
+  grafo,
+  posiciones,
+  conApi,
+  etiquetas,
+  colores,
+  lineas,
+  conFecha,
+  frenan,
+}: Props) {
   // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
   // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
   const { aRamas, arbol, relaciones } = useMemo(() => {
@@ -68,8 +79,8 @@ export function Grafo({ grafo, posiciones, conApi, etiquetas, colores, lineas, c
   const porFiltro = !porSeleccion && filtro !== Filtro.TODO
   const iluminados = useMemo(() => {
     if (porSeleccion && familia.data) return new Set(familia.data.ids)
-    return porFiltro ? encendidosPor(filtro, grafo.nodos) : null
-  }, [porSeleccion, porFiltro, filtro, familia.data, grafo])
+    return porFiltro ? encendidosPor(filtro, grafo.nodos, frenan) : null
+  }, [porSeleccion, porFiltro, filtro, familia.data, grafo, frenan])
   const coloresVisibles = useMemo(
     () =>
       iluminados

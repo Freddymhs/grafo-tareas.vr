@@ -62,6 +62,8 @@ export type EstadoMapa =
       readonly lineas: number
       /** Las tareas sin padre (calculado sobre el grafo entero): llevan su fecha a la vista. */
       readonly conFecha: ReadonlySet<string>
+      /** Lo que frena en la página, según la API (filtro 4); `null` si la API todavía no lo manda. */
+      readonly frenan: ReadonlySet<string> | null
       /** Si guardar las posiciones nuevas falló: el mapa se ve igual, pero la próxima vez se recalcula. */
       readonly aviso: string | null
     }
@@ -101,6 +103,11 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const libro = total > 0 ? libros[indice] : null
   const pagina = libro ? caraVisible(libro, caraPedida) : null
   const otra = libro ? otraCara(libro, caraPedida) : null
+  // Una API anterior al filtro 4 no manda `frenan`: entonces el filtro vuelve a elegir por tipo.
+  const frenan = useMemo(
+    () => (pagina && Array.isArray(pagina.frenan) ? new Set(pagina.frenan) : null),
+    [pagina],
+  )
   const grafoPagina = useMemo(
     () => (grafo && pagina ? grafoDePagina(grafo, pagina.nodos) : null),
     [grafo, pagina],
@@ -166,6 +173,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     pagina: { titulo: pagina.titulo, indice, total, cara: pagina.cara, otra },
     lineas: ubicacion.lineas,
     conFecha,
+    frenan,
     aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,
   }
 }

@@ -41,15 +41,17 @@ export const TEXTO_DEL_FILTRO: Readonly<Record<Filtro, string | null>> = {
   [Filtro.LO_QUE_FRENA]: 'filtro 4 · lo que frena (1 = todo)',
 }
 /**
- * Lo que frena: lo que hay que contestar, a quién y lo que hay que decir —si se destraba, avanza lo demás— y la HU, que
- * es el ancla de la página. Sus hilos hacia lo que bloquean siguen encendidos (`hilosDelFiltro`): se ve qué destraba.
+ * Lo que frena lo dice la API (`frenan` de la página, C1): la duda, a quién espera y también el TRABAJO del que otro
+ * depende —el esquema de recepción frena a la 3.1—; por tipo solo se veían las dudas (Freddy, 2026-10-18: «¿no estamos
+ * olvidándonos de nada que sea bloqueante?»). Siempre se ven además la HU, el ancla, y lo «para decir». Sus hilos hacia
+ * lo que bloquean siguen encendidos (`hilosDelFiltro`): se ve qué destraba.
  */
-const LO_QUE_FRENA: ReadonlySet<TipoNodo> = new Set([
-  TipoNodo.DUDA,
-  TipoNodo.PERSONA,
+const SIEMPRE_EN_LO_QUE_FRENA: ReadonlySet<TipoNodo> = new Set([
   TipoNodo.DAILY_ITEM,
   TipoNodo.HISTORIA,
 ])
+/** Sin `frenan` (una API anterior, o el grafo sintético): las dudas y las personas, por tipo. */
+const FRENAN_POR_TIPO: ReadonlySet<TipoNodo> = new Set([TipoNodo.DUDA, TipoNodo.PERSONA])
 
 /** El filtro que pide mostrar `numero` con el filtro `actual` puesto: el mismo número lo apaga; `null`, ninguno. */
 export function filtroAlMostrar(numero: number, actual: Filtro): Filtro | null {
@@ -75,12 +77,19 @@ export function pendientes(nodos: readonly Nodo[]): ReadonlySet<string> {
   )
 }
 
-/** Lo que cada filtro deja encendido; `null` con «todo»: no se apaga nada. */
-export function encendidosPor(filtro: Filtro, nodos: readonly Nodo[]): ReadonlySet<string> | null {
+/** Lo que cada filtro deja encendido; `null` con «todo»: no se apaga nada. `frenan`: el de la página (API). */
+export function encendidosPor(
+  filtro: Filtro,
+  nodos: readonly Nodo[],
+  frenan: ReadonlySet<string> | null = null,
+): ReadonlySet<string> | null {
   if (filtro === Filtro.TODO) return null
   if (filtro === Filtro.PENDIENTE) return pendientes(nodos)
-  if (filtro === Filtro.LO_QUE_FRENA)
-    return pendientes(nodos.filter(({ tipo }) => LO_QUE_FRENA.has(tipo)))
+  if (filtro === Filtro.LO_QUE_FRENA) {
+    const frena = ({ id, tipo }: Nodo) =>
+      SIEMPRE_EN_LO_QUE_FRENA.has(tipo) || (frenan ? frenan.has(id) : FRENAN_POR_TIPO.has(tipo))
+    return pendientes(nodos.filter(frena))
+  }
   return pendientes(nodos.filter(({ tramite }) => !tramite))
 }
 
