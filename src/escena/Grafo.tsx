@@ -20,7 +20,7 @@ import { Etiquetas } from './Etiquetas'
 import { Medidor } from './Medidor'
 import { Nodos } from './Nodos'
 import { useEstadoVr } from '../lib/estado-vr'
-import { Filtro, encendidosPor, hilosDelFiltro } from '../lib/filtro'
+import { Filtro, encendidosPor, familiaFiltrada, hilosDelFiltro } from '../lib/filtro'
 import { ModoEtiquetas } from '../lib/parametros'
 import { PanelAcciones } from './PanelAcciones'
 import { quienesEsperan } from '../lib/seleccion'
@@ -79,14 +79,18 @@ export function Grafo({
     query: { enabled: conApi && seleccionado !== null },
   })
   // Un filtro (FASE 17) ilumina como una selección: lo que quedó por hacer encendido, lo resuelto (y con el 3, los
-  // trámites) apagado con el mismo contraste. Una selección manda sobre el filtro: se ve su familia.
+  // trámites) apagado con el mismo contraste. Una selección muestra su familia, recortada por el filtro: con el 1,
+  // entera (el histórico); con los demás, sin lo que ya se resolvió.
   const filtro = useEstadoVr((estado) => estado.filtro)
   const porSeleccion = seleccionado !== null && familia.data !== undefined
   const porFiltro = !porSeleccion && filtro !== Filtro.TODO
   const iluminados = useMemo(() => {
-    if (porSeleccion && familia.data) return new Set(familia.data.ids)
-    return porFiltro ? encendidosPor(filtro, grafo.nodos, frenan) : null
-  }, [porSeleccion, porFiltro, filtro, familia.data, grafo, frenan])
+    const delFiltro = encendidosPor(filtro, grafo.nodos, frenan)
+    if (porSeleccion && familia.data && seleccionado) {
+      return familiaFiltrada(familia.data.ids, delFiltro, seleccionado)
+    }
+    return porFiltro ? delFiltro : null
+  }, [porSeleccion, porFiltro, filtro, familia.data, grafo, frenan, seleccionado])
   const coloresVisibles = useMemo(
     () =>
       iluminados

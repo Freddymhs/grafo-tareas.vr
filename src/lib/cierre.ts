@@ -21,6 +21,25 @@ export function conMarca(nodo: ConEstado, texto: string): string {
   return esDudaContestada(nodo) ? `${MARCA_CONTESTADA} ${texto}` : texto
 }
 
+export interface ConteoDeDudas {
+  readonly abiertas: number
+  readonly contestadas: number
+}
+
+/** El avance de una página en dudas: cuántas quedan y cuántas se mataron (Freddy: «que estoy matando dudas»). */
+export function conteoDeDudas(nodos: readonly ConEstado[]): ConteoDeDudas {
+  const dudas = nodos.filter(({ tipo }) => tipo === TipoNodo.DUDA)
+  const contestadas = dudas.filter(esDudaContestada).length
+  return { abiertas: dudas.length - contestadas, contestadas }
+}
+
+/** La línea de la leyenda; una página sin dudas no la lleva. */
+export function textoDeDudas({ abiertas, contestadas }: ConteoDeDudas): string | null {
+  const sinDudas = abiertas + contestadas === 0
+  if (sinDudas) return null
+  return `dudas: ${abiertas} abiertas · ${MARCA_CONTESTADA} ${contestadas} contestadas`
+}
+
 /** «Contestada el 19-oct: <motivo>» con el cierre más reciente de la bitácora (lo más reciente primero). */
 export function resumenDeCierre(nodo: ConEstado, bitacora: readonly CambioResponseDto[]): string {
   const como = esDudaContestada(nodo) ? 'Contestada' : 'Cerrada'

@@ -3,6 +3,7 @@ import { EstadoNodo, TipoConexion, TipoNodo, type Nodo } from './dominio'
 import {
   Filtro,
   encendidosPor,
+  familiaFiltrada,
   filtroAlMostrar,
   filtroDeTexto,
   hilosDelFiltro,
@@ -16,6 +17,21 @@ const nodo = (id: string, extra: Partial<Nodo> = {}): Nodo => ({
   titulo: id,
   estado: EstadoNodo.ABIERTO,
   ...extra,
+})
+
+describe('familiaFiltrada — una selección con filtro enciende su familia, pero solo lo que el filtro deja (Freddy, 2026-10-19)', () => {
+  const familia = ['thomas', 'duda-abierta', 'duda-contestada']
+
+  it('con el 3, elegir a Thomas no enciende la duda que ya contestó: solo lo abierto y él', () => {
+    const encendidos = new Set(['duda-abierta'])
+    expect(familiaFiltrada(familia, encendidos, 'thomas')).toEqual(
+      new Set(['thomas', 'duda-abierta']),
+    )
+  })
+
+  it('con el 1 (todo) se ve la familia entera: ahí está el histórico', () => {
+    expect(familiaFiltrada(familia, null, 'thomas')).toEqual(new Set(familia))
+  })
 })
 
 describe('filtroAlMostrar — los dedos de la mano derecha eligen el filtro (Freddy, 2026-10-18)', () => {

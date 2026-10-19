@@ -3,6 +3,7 @@ import { XR, createXRStore } from '@react-three/xr'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { MeshBasicMaterial } from 'three'
+import { conteoDeDudas } from './lib/cierre'
 import { coloresPorNodo } from './lib/colores'
 import { LINEAS_MINIMAS } from './lib/constants/etiquetas'
 import { COLOR_FONDO } from './lib/constants/grafo'
@@ -206,6 +207,7 @@ function VistaApi() {
             indice={mapa.pagina.indice}
             cara={mapa.pagina.cara}
             otra={mapa.pagina.otra}
+            dudas={conteoDeDudas(mapa.grafo.nodos)}
           />
           <CambioDePagina total={mapa.pagina.total} />
           <GestoPelota total={mapa.pagina.total} depurar={parametros.depurar} />

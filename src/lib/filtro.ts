@@ -93,6 +93,20 @@ export function encendidosPor(
   return pendientes(nodos.filter(({ tramite }) => !tramite))
 }
 
+/**
+ * Una selección con un filtro puesto: su familia, pero solo lo que el filtro deja encendido, más ella misma. Sin esto,
+ * elegir a Thomas con el 3 encendía una duda que ya había contestado y parecía pendiente (Freddy, 2026-10-19).
+ * Con «todo» (`encendidos` null) se ve la familia entera: ahí está el histórico.
+ */
+export function familiaFiltrada(
+  familia: readonly string[],
+  encendidos: ReadonlySet<string> | null,
+  seleccionado: string,
+): ReadonlySet<string> {
+  if (!encendidos) return new Set(familia)
+  return new Set(familia.filter((id) => id === seleccionado || encendidos.has(id)))
+}
+
 interface Hilo {
   readonly id: string
   readonly origenId: string

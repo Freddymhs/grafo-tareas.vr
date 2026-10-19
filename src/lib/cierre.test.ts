@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CambioResponseDtoTipo, type CambioResponseDto } from './api/generado/modelos'
 import { EstadoNodo, TipoNodo } from './dominio'
-import { conMarca, resumenDeCierre } from './cierre'
+import { conMarca, conteoDeDudas, resumenDeCierre, textoDeDudas } from './cierre'
 
 const dudaCerrada = { tipo: TipoNodo.DUDA, estado: EstadoNodo.CERRADO }
 const tareaCerrada = { tipo: TipoNodo.TAREA, estado: EstadoNodo.CERRADO }
@@ -44,5 +44,24 @@ describe('resumenDeCierre — lo que dice la selección de algo cerrado: cuándo
       'Cerrada el 19-oct',
     )
     expect(resumenDeCierre(tareaCerrada, [])).toBe('Cerrada')
+  })
+})
+
+describe('conteoDeDudas / textoDeDudas — el avance de la página: cuántas dudas quedan y cuántas se mataron', () => {
+  it('cuenta solo las DUDA: abiertas y contestadas (cerradas)', () => {
+    const nodos = [
+      dudaCerrada,
+      dudaCerrada,
+      { tipo: TipoNodo.DUDA, estado: EstadoNodo.ABIERTO },
+      tareaCerrada,
+    ]
+    expect(conteoDeDudas(nodos)).toEqual({ abiertas: 1, contestadas: 2 })
+  })
+
+  it('el texto de la leyenda; una página sin dudas no lo lleva', () => {
+    expect(textoDeDudas({ abiertas: 7, contestadas: 4 })).toBe(
+      'dudas: 7 abiertas · ✓ 4 contestadas',
+    )
+    expect(textoDeDudas({ abiertas: 0, contestadas: 0 })).toBeNull()
   })
 })

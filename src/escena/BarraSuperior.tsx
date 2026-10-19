@@ -16,6 +16,7 @@ import {
   COLOR_PERSONA,
   COLOR_SIN_RAMA,
 } from '../lib/constants/grafo'
+import { type ConteoDeDudas, textoDeDudas } from '../lib/cierre'
 import { Cara, type Nodo } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import { type Filtro, TEXTO_DEL_FILTRO } from '../lib/filtro'
@@ -125,9 +126,17 @@ interface Props {
   readonly cara: Cara
   /** A qué cara lleva dar vuelta la hoja (`null`: la HU no tiene plan). */
   readonly otra: Cara | null
+  /** Las dudas de la cara que se ve: cuántas quedan y cuántas se contestaron (el avance, Freddy 2026-10-19). */
+  readonly dudas: ConteoDeDudas
 }
 
-export function BarraSuperior({ ramas, indice, cara, otra }: Props) {
+/** El avance en dudas va primero en la leyenda, en el color de las dudas. */
+const itemDeDudas = (dudas: ConteoDeDudas): readonly Item[] => {
+  const texto = textoDeDudas(dudas)
+  return texto ? [{ color: COLOR_DUDA, texto }, SEPARADOR] : []
+}
+
+export function BarraSuperior({ ramas, indice, cara, otra, dudas }: Props) {
   const paginas = useDerivadoControllerPaginas().data
   const libros = useMemo(() => librosDe(paginas ?? []), [paginas])
   const irALibro = useEstadoVr((estado) => estado.irALibro)
@@ -168,7 +177,14 @@ export function BarraSuperior({ ramas, indice, cara, otra }: Props) {
       })}
       <group position={[0, -BAJO_LAS_PESTANAS, 0]}>
         <Leyenda
-          items={[...itemDelFiltro(filtro), ...FIJOS, CERRADA, SEPARADOR, ...itemsDeRamas(ramas)]}
+          items={[
+            ...itemDelFiltro(filtro),
+            ...itemDeDudas(dudas),
+            ...FIJOS,
+            CERRADA,
+            SEPARADOR,
+            ...itemsDeRamas(ramas),
+          ]}
         />
       </group>
     </group>
