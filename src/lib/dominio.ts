@@ -64,6 +64,8 @@ export interface Nodo {
   readonly tramite?: boolean
   /** Es la FASE o la tarjeta de un PBI, y si está entero (`lib/pbi.ts`). */
   readonly pbi?: Pbi
+  /** Una pieza del plan sin task en el tracker (etiqueta del reparto): la leyenda del plan las cuenta. */
+  readonly porCrear?: boolean
 }
 
 export interface Conexion {

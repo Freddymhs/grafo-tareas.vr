@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ConexionResponseDto, NodoResponseDto } from './api/generado/modelos'
-import { ETIQUETA_MERGEADA, ETIQUETA_TRAMITE } from './constants/grafo'
+import { ETIQUETA_MERGEADA, ETIQUETA_POR_CREAR, ETIQUETA_TRAMITE } from './constants/grafo'
 import { aGrafo, posicionesGuardadas } from './desde-api'
 
 const nodo = (id: string, extra: Partial<NodoResponseDto> = {}): NodoResponseDto =>
@@ -68,6 +68,18 @@ describe('aGrafo', () => {
     ).nodos
     expect(conEtiqueta?.tramite).toBe(true)
     expect(sinEtiqueta?.tramite).toBeUndefined()
+  })
+
+  it('pieza por crear solo con la etiqueta del reparto (Freddy, 2026-10-19)', () => {
+    const [porCrear, conTask] = aGrafo(
+      [
+        nodo('p', { etiquetas: ['pieza', ETIQUETA_POR_CREAR] }),
+        nodo('q', { etiquetas: ['pieza'] }),
+      ],
+      [],
+    ).nodos
+    expect(porCrear?.porCrear).toBe(true)
+    expect(conTask?.porCrear).toBeUndefined()
   })
 })
 

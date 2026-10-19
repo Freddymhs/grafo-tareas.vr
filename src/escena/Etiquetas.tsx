@@ -18,7 +18,7 @@ import {
   TAMANO_TEXTO_HU,
   medidasEtiqueta,
 } from '../lib/constants/etiquetas'
-import { conMarca } from '../lib/cierre'
+import { conMarca, esDudaContestada } from '../lib/cierre'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
 import { textoConFecha } from '../lib/paginas'
 import { LARGO_APUNTADO, textoVisible } from '../lib/texto-visible'
@@ -28,6 +28,8 @@ const SEGUNDOS_ENTRE_CALCULOS = 0.25
 const COLOR_TEXTO = '#e2e8f0'
 const COLOR_BORDE = '#020617'
 const COLOR_TEXTO_APAGADO = '#334155'
+/** Una duda contestada no se pierde con un filtro: el nodo se apaga, su nombre queda en verde suave (Freddy, 2026-10-19). */
+const COLOR_TEXTO_CONTESTADA = '#6fbf8f'
 
 interface Props {
   readonly nodos: readonly Nodo[]
@@ -78,8 +80,12 @@ export function Etiquetas({
   })
 
   const porId = new Map(nodos.map((nodo) => [nodo.id, nodo]))
-  const colorDeTexto = (id: string) =>
-    iluminados && !iluminados.has(id) ? COLOR_TEXTO_APAGADO : COLOR_TEXTO
+  const colorDeTexto = (id: string) => {
+    const apagado = iluminados !== null && !iluminados.has(id)
+    if (!apagado) return COLOR_TEXTO
+    const nodo = porId.get(id)
+    return nodo && esDudaContestada(nodo) ? COLOR_TEXTO_CONTESTADA : COLOR_TEXTO_APAGADO
+  }
   const textoDe = (nodo: Nodo | undefined, id: string) => {
     if (!nodo) return id
     const texto =

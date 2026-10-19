@@ -13,7 +13,7 @@ const CAMPO_ESTADO = 'estado'
 
 type ConEstado = Pick<Nodo, 'tipo' | 'estado'>
 
-const esDudaContestada = ({ tipo, estado }: ConEstado) =>
+export const esDudaContestada = ({ tipo, estado }: ConEstado) =>
   tipo === TipoNodo.DUDA && estado === EstadoNodo.CERRADO
 
 /** El ✓ va delante del texto ya armado (con su fecha si la lleva), para no tapar el «19-oct ·» que lo ubica. */

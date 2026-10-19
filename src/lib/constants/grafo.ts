@@ -55,3 +55,5 @@ export const RADIO_NODO = 0.05
 export const ETIQUETA_MERGEADA = 'mergeada'
 /** La pone la API en los trámites de cierre (URL commit, evidencias, wiki): el filtro 3 los apaga (FASE 15 t3). */
 export const ETIQUETA_TRAMITE = 'complemento:tramite'
+/** La pone el reparto en una pieza del plan que todavía no tiene task en el tracker: candidata a PBI. */
+export const ETIQUETA_POR_CREAR = 'por-crear'

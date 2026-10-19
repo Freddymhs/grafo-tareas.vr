@@ -17,6 +17,7 @@ import {
   COLOR_SIN_RAMA,
 } from '../lib/constants/grafo'
 import { type ConteoDeDudas, textoDeDudas } from '../lib/cierre'
+import { textoDePiezas } from '../lib/piezas'
 import { Cara, type Nodo } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import { type Filtro, TEXTO_DEL_FILTRO } from '../lib/filtro'
@@ -128,6 +129,8 @@ interface Props {
   readonly otra: Cara | null
   /** Las dudas de la cara que se ve: cuántas quedan y cuántas se contestaron (el avance, Freddy 2026-10-19). */
   readonly dudas: ConteoDeDudas
+  /** Las piezas de la cara que todavía no tienen task: en el plan se dicen, para no leerlas como una fase. */
+  readonly piezasSinTask: number
 }
 
 /** El avance en dudas va primero en la leyenda, en el color de las dudas. */
@@ -136,7 +139,13 @@ const itemDeDudas = (dudas: ConteoDeDudas): readonly Item[] => {
   return texto ? [{ color: COLOR_DUDA, texto }, SEPARADOR] : []
 }
 
-export function BarraSuperior({ ramas, indice, cara, otra, dudas }: Props) {
+/** Solo en la cara plan: ahí las piezas son lo que falta crear; en lo real ya tienen su task. */
+const itemDePiezas = (cara: Cara, piezasSinTask: number): readonly Item[] => {
+  const texto = cara === Cara.PLAN ? textoDePiezas(piezasSinTask) : null
+  return texto ? [{ color: null, texto }, SEPARADOR] : []
+}
+
+export function BarraSuperior({ ramas, indice, cara, otra, dudas, piezasSinTask }: Props) {
   const paginas = useDerivadoControllerPaginas().data
   const libros = useMemo(() => librosDe(paginas ?? []), [paginas])
   const irALibro = useEstadoVr((estado) => estado.irALibro)
@@ -180,6 +189,7 @@ export function BarraSuperior({ ramas, indice, cara, otra, dudas }: Props) {
           items={[
             ...itemDelFiltro(filtro),
             ...itemDeDudas(dudas),
+            ...itemDePiezas(cara, piezasSinTask),
             ...FIJOS,
             CERRADA,
             SEPARADOR,
