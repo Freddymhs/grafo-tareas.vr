@@ -15,7 +15,7 @@ import {
   numeroDeLaMano,
   type CurvaturasMano,
 } from '../lib/conteo-dedos'
-import { esGestoDeMeta, esManoAlzada } from '../lib/pose-mano'
+import { esGestoDeMeta, esManoAlzada, esPellizco } from '../lib/pose-mano'
 import {
   MUESTRAS_DEPURACION,
   PASOS_DE_PROGRESO,
@@ -100,7 +100,9 @@ export function GestoNumero({
         puntaIndice,
         ojos: camera.position,
       })
-    const numero = meta ? NINGUN_NUMERO : numeroDeLaMano(curvaturas)
+    const pellizco =
+      puntaPulgar !== null && puntaIndice !== null && esPellizco(puntaPulgar, puntaIndice)
+    const numero = meta ? NINGUN_NUMERO : numeroDeLaMano(curvaturas, pellizco)
     const alzada = esManoAlzada(pose.transform.position.y, camera.position.y)
     const paso = avanzarNumero(gesto.current, { t: clock.elapsedTime, numero, alzada })
     gesto.current = paso.estado

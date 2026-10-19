@@ -16,7 +16,13 @@ import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
 import { TipoNodo, type Cara, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
-import { RADIO_PANORAMA, aberturaPara, lineasPara, separarNuevas } from '../lib/layout'
+import {
+  RADIO_PANORAMA,
+  aberturaPara,
+  lineasPara,
+  lineasQueCaben,
+  separarNuevas,
+} from '../lib/layout'
 import {
   caraVisible,
   grafoDePagina,
@@ -112,19 +118,24 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     return new Map([...todas].filter(([id]) => hogar.get(id) === pagina.id))
   }, [nodos.data, pagina, hogar])
   const abertura = aberturaPara(grafoPagina?.nodos.length ?? 0, radio)
-  const lineas = lineasPara(grafoPagina?.nodos.length ?? 0, radio, abertura)
   const sinAcomodo =
     grafoPagina !== null && grafoPagina.nodos.length > 0 && (guardadas.size === 0 || reordenar)
-  const layout = useLayout(sinAcomodo ? grafoPagina : null, radio, abertura, lineas)
+  const lineasPorEspacio = lineasPara(grafoPagina?.nodos.length ?? 0, radio, abertura)
+  const layout = useLayout(sinAcomodo ? grafoPagina : null, radio, abertura, lineasPorEspacio)
   const ubicacion = useMemo(() => {
     if (!grafoPagina) return null
-    if (sinAcomodo) return layout ? { posiciones: layout, nuevas: layout } : null
+    // Un acomodo nuevo usa las líneas que da el espacio.
+    if (sinAcomodo)
+      return layout ? { posiciones: layout, nuevas: layout, lineas: lineasPorEspacio } : null
     // Lo nuevo sin vecinos va al extremo derecho de la página, donde el acomodo pone las sueltas; después, lo que llega
-    // (nuevo o invitado de otra página) se separa sin mover lo guardado.
+    // (nuevo o invitado de otra página) se separa sin mover lo guardado. Uno guardado sube de líneas solo mientras sus
+    // posiciones —con lo que llegó— no se pisen (`lineasQueCaben`).
     const { nuevas } = ubicarFaltantes(grafoPagina, guardadas, abertura / 2)
-    const separadas = separarNuevas(grafoPagina, guardadas, nuevas, radio, lineas)
-    return { posiciones: new Map([...guardadas, ...separadas]), nuevas: separadas }
-  }, [grafoPagina, guardadas, sinAcomodo, layout, abertura, radio, lineas])
+    const separadas = separarNuevas(grafoPagina, guardadas, nuevas, radio, lineasPorEspacio)
+    const posiciones = new Map([...guardadas, ...separadas])
+    const lineas = lineasQueCaben([...posiciones.values()], lineasPorEspacio, radio)
+    return { posiciones, nuevas: separadas, lineas }
+  }, [grafoPagina, guardadas, sinAcomodo, layout, abertura, radio, lineasPorEspacio])
 
   const { mutate } = guardar
   useEffect(() => {
@@ -153,7 +164,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     colores,
     ramas,
     pagina: { titulo: pagina.titulo, indice, total, cara: pagina.cara, otra },
-    lineas,
+    lineas: ubicacion.lineas,
     conFecha,
     aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,
   }

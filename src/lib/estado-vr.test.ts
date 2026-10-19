@@ -108,6 +108,8 @@ describe('useEstadoVr', () => {
     useEstadoVr.getState().alternarFiltro()
     expect(useEstadoVr.getState().filtro).toBe(Filtro.SIN_TRAMITES)
     useEstadoVr.getState().alternarFiltro()
+    expect(useEstadoVr.getState().filtro).toBe(Filtro.LO_QUE_FRENA)
+    useEstadoVr.getState().alternarFiltro()
     expect(useEstadoVr.getState().filtro).toBe(Filtro.TODO)
     useEstadoVr.getState().alternarFiltro()
     expect(useEstadoVr.getState().filtro).toBe(Filtro.PENDIENTE)

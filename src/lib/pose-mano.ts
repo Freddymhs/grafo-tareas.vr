@@ -70,6 +70,11 @@ const cruz = (a: Punto, b: Punto): Punto => ({
 const largo = ({ x, y, z }: Punto) => Math.hypot(x, y, z)
 const coseno = (a: Punto, b: Punto) => (a.x * b.x + a.y * b.y + a.z * b.z) / (largo(a) * largo(b))
 
+/** El pulgar toca la punta del índice: el pellizco de Meta. El 1 con pellizco no es un 1 (`numeroDeLaMano`). */
+export function esPellizco(puntaPulgar: Punto, puntaIndice: Punto): boolean {
+  return largo(resta(puntaPulgar, puntaIndice)) <= PELLIZCO_MAXIMO_M
+}
+
 export interface PuntosDeMeta {
   readonly muneca: Punto
   readonly baseIndice: Punto
@@ -87,9 +92,8 @@ export interface PuntosDeMeta {
  */
 export function esGestoDeMeta(puntos: PuntosDeMeta): boolean {
   const { muneca, baseIndice, baseMenique, puntaPulgar, puntaIndice, ojos } = puntos
-  const esPellizco = largo(resta(puntaPulgar, puntaIndice)) <= PELLIZCO_MAXIMO_M
   const normalDeLaPalma = cruz(resta(baseIndice, muneca), resta(baseMenique, muneca))
   const palmaHaciaLaCara =
     coseno(normalDeLaPalma, resta(ojos, muneca)) >= PALMA_HACIA_LA_CARA_COSENO_MINIMO
-  return esPellizco && palmaHaciaLaCara
+  return esPellizco(puntaPulgar, puntaIndice) && palmaHaciaLaCara
 }

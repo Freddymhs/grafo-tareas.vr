@@ -28,23 +28,28 @@ function mano(estirados: readonly (keyof CurvaturasMano)[]): CurvaturasMano {
 }
 
 describe('numeroDeLaMano — cada número es una forma de mano, la de Freddy (2026-10-18)', () => {
-  it('2 índice y medio · 3 medio, anular y meñique · 4 los cuatro · 5 los cinco', () => {
+  it('1 índice · 2 índice y medio · 3 medio, anular y meñique · 4 los cuatro · 5 los cinco', () => {
+    expect(numeroDeLaMano(mano(['indice']))).toBe(1)
     expect(numeroDeLaMano(mano(['indice', 'medio']))).toBe(2)
     expect(numeroDeLaMano(mano(['medio', 'anular', 'menique']))).toBe(3)
     expect(numeroDeLaMano(mano(['indice', 'medio', 'anular', 'menique']))).toBe(4)
     expect(numeroDeLaMano(mano(['pulgar', 'indice', 'medio', 'anular', 'menique']))).toBe(5)
   })
 
-  it('en el 2 y el 3 el pulgar no importa (el visor lo lee con ruido); en el 4 y el 5 decide', () => {
+  it('en el 1, el 2 y el 3 el pulgar no importa (el visor lo lee con ruido); en el 4 y el 5 decide', () => {
+    expect(numeroDeLaMano(mano(['pulgar', 'indice']))).toBe(1)
     expect(numeroDeLaMano(mano(['pulgar', 'indice', 'medio']))).toBe(2)
     expect(numeroDeLaMano(mano(['pulgar', 'medio', 'anular', 'menique']))).toBe(3)
   })
 
+  it('el índice con el pulgar en su punta es el pellizco de Meta, no un 1; el 3 («OK») sí puede llevarlo (Freddy, 2026-10-18)', () => {
+    expect(numeroDeLaMano(mano(['indice']), true)).toBe(0)
+    expect(numeroDeLaMano(mano(['medio', 'anular', 'menique']), true)).toBe(3)
+    expect(numeroDeLaMano(mano(['indice', 'medio']), true)).toBe(2)
+  })
+
   it('lo que no es una de esas formas no es un número: el puño, contar «a lo ancho», un dedo suelto', () => {
     expect(numeroDeLaMano(mano([]))).toBe(0)
-    // El índice solo es la pose de apuntar con el rayo (Freddy en el visor, 2026-10-18): con o sin pulgar.
-    expect(numeroDeLaMano(mano(['indice']))).toBe(0)
-    expect(numeroDeLaMano(mano(['pulgar', 'indice']))).toBe(0)
     expect(numeroDeLaMano(mano(['indice', 'medio', 'anular']))).toBe(0)
     expect(numeroDeLaMano(mano(['menique']))).toBe(0)
     expect(numeroDeLaMano(mano(['pulgar']))).toBe(0)
@@ -58,7 +63,7 @@ describe('numeroDeLaMano — cada número es una forma de mano, la de Freddy (20
     const aMedias = (CURVATURA_PULGAR_ESTIRADO_MAXIMA + CURVATURA_ESTIRADO_MAXIMA) / 2
     const cuatro = mano(['indice', 'medio', 'anular', 'menique'])
     expect(numeroDeLaMano({ ...cuatro, pulgar: aMedias })).toBe(4)
-    expect(numeroDeLaMano({ ...mano(['medio']), indice: aMedias })).toBe(2)
+    expect(numeroDeLaMano({ ...mano([]), indice: aMedias })).toBe(1)
   })
 })
 

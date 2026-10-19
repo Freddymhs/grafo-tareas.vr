@@ -3,8 +3,11 @@
 
 /** Una etiqueta flotante: lo que se lee de un vistazo. */
 export const LARGO_ETIQUETA = 48
-/** El título del nodo seleccionado: más, pero no un párrafo. */
-export const LARGO_SELECCION = 120
+/**
+ * El título del nodo seleccionado: la pregunta entera. Con 120, una duda quedaba en «¿Cambia…» y había que adivinarla
+ * (Freddy en el visor, 2026-10-18; 23 de 115 títulos abiertos pasaban de 120). Solo un párrafo se corta.
+ */
+export const LARGO_SELECCION = 300
 /** El nodo bajo el rayo (FASE 15): el título entero, salvo los que son un párrafo. */
 export const LARGO_APUNTADO = 200
 

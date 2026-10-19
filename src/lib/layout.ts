@@ -200,6 +200,47 @@ export function lineasPara(nodos: number, radio: number, abertura: number): numb
   )
 }
 
+/** Cuántos pares de textos de `lineas` líneas se pisan con estas posiciones (el ancho, como arco de la pantalla). */
+export function textosQueSePisan(
+  posiciones: readonly Posicion[],
+  lineas: number,
+  radio: number,
+): number {
+  const { texto } = medidasEtiqueta(lineas)
+  const separados = (a: Posicion, b: Posicion) => {
+    const diferencia = Math.abs(anguloDe(a) - anguloDe(b))
+    const arco = Math.min(diferencia, VUELTA - diferencia) * radio
+    return arco >= texto.ancho || Math.abs(a.y - b.y) >= texto.alto
+  }
+  return posiciones.reduce(
+    (pares, a, i) => pares + posiciones.slice(i + 1).filter((b) => !separados(a, b)).length,
+    0,
+  )
+}
+
+/**
+ * Las líneas que caben en una página YA acomodada: `lineasPara` mide el espacio, pero lo guardado se acomodó con las
+ * líneas de ese día. Si la página perdió nodos (los descartes del 18-10), subía a 4 y pisaba etiquetas acomodadas para 2
+ * (Freddy en el visor, HU 20379: «están apilados, no se alcanza a leer»). Sube mientras los pares nuevos que se pisan no
+ * pasen de los que el acomodo mismo deja (el roce de esquinas del choque circular: hasta un 2 %).
+ */
+const PISADAS_TOLERABLES = 0.02
+
+export function lineasQueCaben(
+  guardadas: readonly Posicion[],
+  porEspacio: number,
+  radio: number,
+): number {
+  const permitidas =
+    textosQueSePisan(guardadas, LINEAS_MINIMAS, radio) +
+    Math.ceil(guardadas.length * PISADAS_TOLERABLES)
+  const candidatas = Array.from({ length: porEspacio - LINEAS_MINIMAS }, (_, i) => porEspacio - i)
+  return (
+    candidatas.find((lineas) => textosQueSePisan(guardadas, lineas, radio) <= permitidas) ??
+    LINEAS_MINIMAS
+  )
+}
+
 /** La abertura de una página: lo que sus celdas necesitan con aire, entre 180° y 270°. */
 export function aberturaPara(nodos: number, radio: number): number {
   const necesaria = areaNecesaria(nodos, CELDA) / (2 * ALTO_MEDIO) / radio

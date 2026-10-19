@@ -31,24 +31,31 @@ interface Forma {
   readonly dedos: readonly [boolean, boolean, boolean, boolean]
   /** El pulgar decide solo entre el 4 y el 5; en los demás, el visor lo lee con ruido y no se mira (`null`). */
   readonly pulgar: boolean | null
+  /** El 1 pide que el pulgar NO toque la punta del índice: ese pellizco es el de Meta, no un número (`null`: no se mira). */
+  readonly sinPellizco: boolean | null
 }
 
 /**
- * 2 índice y medio · 3 medio, anular y meñique (el «OK») · 4 los cuatro · 5 los cinco. El índice solo NO es un número:
- * es la pose de apuntar con el rayo, y el visor la contaba como 1 (Freddy en el visor, 2026-10-18).
+ * 1 índice · 2 índice y medio · 3 medio, anular y meñique (el «OK») · 4 los cuatro · 5 los cinco. El índice con el
+ * pulgar en su punta es el pellizco de Meta (clic del rayo, su menú) y el visor lo contaba como 1: ése no es un número
+ * (Freddy en el visor, 2026-10-18). El 3 sí junta pulgar e índice, y no se confunde: lleva los otros tres arriba.
  */
 const FORMAS: readonly Forma[] = [
-  { numero: 2, dedos: [true, true, false, false], pulgar: null },
-  { numero: 3, dedos: [false, true, true, true], pulgar: null },
-  { numero: 4, dedos: [true, true, true, true], pulgar: false },
-  { numero: 5, dedos: [true, true, true, true], pulgar: true },
+  { numero: 1, dedos: [true, false, false, false], pulgar: null, sinPellizco: true },
+  { numero: 2, dedos: [true, true, false, false], pulgar: null, sinPellizco: null },
+  { numero: 3, dedos: [false, true, true, true], pulgar: null, sinPellizco: null },
+  { numero: 4, dedos: [true, true, true, true], pulgar: false, sinPellizco: null },
+  { numero: 5, dedos: [true, true, true, true], pulgar: true, sinPellizco: null },
 ]
 
 /** La mano no muestra ningún número: el puño, una forma que no es de las nuestras, el gesto del menú de Meta. */
 export const NINGUN_NUMERO = 0
 
-/** El número que muestra la mano; `NINGUN_NUMERO` si no es ninguna de las formas. Un dedo perdido (NaN) no cuenta como estirado. */
-export function numeroDeLaMano(curvaturas: CurvaturasMano): number {
+/**
+ * El número que muestra la mano; `NINGUN_NUMERO` si no es ninguna de las formas. Un dedo perdido (NaN) no cuenta como
+ * estirado. `pellizco`: el pulgar toca la punta del índice (`esPellizco`).
+ */
+export function numeroDeLaMano(curvaturas: CurvaturasMano, pellizco = false): number {
   const { pulgar, indice, medio, anular, menique } = curvaturas
   const dedos = [indice, medio, anular, menique].map((c) =>
     estaEstirado(c, CURVATURA_ESTIRADO_MAXIMA),
@@ -57,7 +64,8 @@ export function numeroDeLaMano(curvaturas: CurvaturasMano): number {
   const forma = FORMAS.find(
     (f) =>
       f.dedos.every((estirado, i) => estirado === dedos[i]) &&
-      (f.pulgar === null || f.pulgar === pulgarEstirado),
+      (f.pulgar === null || f.pulgar === pulgarEstirado) &&
+      (f.sinPellizco === null || f.sinPellizco !== pellizco),
   )
   return forma?.numero ?? NINGUN_NUMERO
 }

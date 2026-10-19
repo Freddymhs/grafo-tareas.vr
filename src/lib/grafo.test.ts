@@ -11,7 +11,9 @@ import {
   calcularLayout,
   enCilindro,
   lineasPara,
+  lineasQueCaben,
   separarNuevas,
+  textosQueSePisan,
 } from './layout'
 import { generarGrafo } from './sintetico'
 
@@ -192,6 +194,36 @@ describe('lineasPara — más texto donde la página tiene espacio (FASE 15)', (
     )
     expect(lineas).toBe(4)
     expect(pisadas.length).toBeLessThanOrEqual(Math.ceil(celdas.length * 0.02))
+  })
+})
+
+describe('lineasQueCaben — una página acomodada no sube de líneas si eso pisa textos (Freddy, 2026-10-18)', () => {
+  // Lo que se fue sumando a una página (ubicado al vuelo, días distintos) queda más junto que un acomodo entero: una
+  // columna de 10 pelotas cada `paso` metros. El texto mide de alto 0,084 (2 líneas), 0,126 (3) o 0,168 (4).
+  const columna = (paso: number) =>
+    Array.from({ length: 10 }, (_, i) =>
+      enCilindro(0, ALTURA_OJOS - 0.6 + i * paso, RADIO_PANORAMA),
+    )
+
+  it('el caso de la HU 20379: a 0,12 m, con 3 o 4 líneas se pisan; se queda en 2', () => {
+    const juntas = columna(0.12)
+    expect(textosQueSePisan(juntas, 2, RADIO_PANORAMA)).toBe(0)
+    expect(textosQueSePisan(juntas, 4, RADIO_PANORAMA)).toBe(9)
+    expect(lineasQueCaben(juntas, 4, RADIO_PANORAMA)).toBe(2)
+  })
+
+  it('a 0,15 m caben 3 y no 4: sube hasta donde no agrega pisadas', () => {
+    expect(lineasQueCaben(columna(0.15), 4, RADIO_PANORAMA)).toBe(3)
+  })
+
+  it('nunca pide más de las que da el espacio', () => {
+    expect(lineasQueCaben(columna(0.5), 3, RADIO_PANORAMA)).toBe(3)
+  })
+
+  it('una página acomodada para 4 líneas se queda en 4', () => {
+    const chico = generarGrafo({ nodos: 50, semilla: SEMILLA_PRUEBA })
+    const posiciones = [...calcularLayout(chico, RADIO_PANORAMA, Math.PI, 4).values()]
+    expect(lineasQueCaben(posiciones, 4, RADIO_PANORAMA)).toBe(4)
   })
 })
 
