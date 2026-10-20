@@ -36,6 +36,8 @@ export const COLOR_HISTORIA = '#fde68a'
 export const COLOR_FASE = '#c4b5fd'
 /** El PBI que no encuentra a su otra mitad —tarjeta sin FASE, FASE sin task—: «es algo a resaltar siempre». */
 export const COLOR_PBI_A_MEDIAS = '#e879f9'
+/** El borde de la FASE sin task: lo que no está en Azure (`lib/borde.ts`). Naranjo, para que salte sobre el magenta. */
+export const COLOR_BORDE_SIN_TASK = '#f97316'
 /** Lo que se dice en un ritual del área (DAILY_ITEM: la daily, la retro): no espera respuesta, se cuenta. */
 export const COLOR_PARA_DECIR = '#22d3ee'
 export const COLOR_ARISTA = '#64748b'

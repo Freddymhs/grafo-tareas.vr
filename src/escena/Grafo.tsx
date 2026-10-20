@@ -15,7 +15,9 @@ import {
   type Grafo as GrafoDominio,
   type Posicion,
 } from '../lib/dominio'
+import { idsConBorde } from '../lib/borde'
 import { Aristas } from './Aristas'
+import { Bordes } from './Bordes'
 import { Etiquetas } from './Etiquetas'
 import { Medidor } from './Medidor'
 import { Nodos } from './Nodos'
@@ -117,6 +119,7 @@ export function Grafo({
       fueraDeLaFamilia: grafo.conexiones.filter((c) => !adentro(c)),
     }
   }, [grafo, iluminados, porFiltro])
+  const conBorde = useMemo(() => idsConBorde(grafo.nodos, iluminados), [grafo, iluminados])
   const posicionSeleccionado = seleccionado ? posiciones?.get(seleccionado) : undefined
   const nodoSeleccionado = seleccionado
     ? grafo.nodos.find(({ id }) => id === seleccionado)
@@ -139,6 +142,13 @@ export function Grafo({
             resaltados={resaltados}
             onSeleccionar={tocarNodo}
             onApuntar={apuntar}
+          />
+          <Bordes
+            nodos={grafo.nodos}
+            ids={conBorde}
+            posiciones={posiciones}
+            seleccionado={seleccionado}
+            resaltados={resaltados}
           />
           {iluminados ? (
             <>

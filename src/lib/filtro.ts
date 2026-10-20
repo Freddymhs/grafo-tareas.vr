@@ -16,7 +16,7 @@ export type Filtro = (typeof Filtro)[keyof typeof Filtro]
 
 /**
  * Se cuenta de menor a mayor (Freddy, 2026-10-18): 1 = ver todo (el filtro apagado, por defecto), 2 = pendiente, 3 =
- * pendiente sin trámites, 4 = lo que frena; el 5 queda para lo que venga. El pellizco de Meta no es un 1
+ * pendiente sin trámites, 4 = solo bloqueantes (lo que frena); el 5 queda para lo que venga. El pellizco de Meta no es un 1
  * (`numeroDeLaMano`). Mostrar otra vez el número del filtro puesto también lo apaga, y el botón B los recorre. La mano
  * abierta (5) es la de descanso: como «por defecto» se dispararía sin querer.
  */
@@ -38,7 +38,8 @@ export const TEXTO_DEL_FILTRO: Readonly<Record<Filtro, string | null>> = {
   [Filtro.TODO]: null,
   [Filtro.PENDIENTE]: 'filtro 2 · pendiente (1 = todo)',
   [Filtro.SIN_TRAMITES]: 'filtro 3 · pendiente sin trámites (1 = todo)',
-  [Filtro.LO_QUE_FRENA]: 'filtro 4 · lo que frena (1 = todo)',
+  // «Lo que frena» no se entendía en el visor (Freddy, 2026-10-19): se ven solo las dudas y esperas que bloquean algo.
+  [Filtro.LO_QUE_FRENA]: 'filtro 4 · solo bloqueantes (1 = todo)',
 }
 /**
  * Lo que frena lo dice la API (`frenan` de la página, C1): la duda, a quién espera y también el TRABAJO del que otro

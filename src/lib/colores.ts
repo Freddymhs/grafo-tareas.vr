@@ -12,10 +12,11 @@ import {
   COLOR_SIN_RAMA,
 } from './constants/grafo'
 import { Pbi, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
+import { esPbiIncompleto } from './pbi'
 
 function colorDe(nodo: Nodo, primeraRama: ReadonlyMap<string, string>): string {
   // Un PBI es morado aunque su tarjeta esté en un carril: «es un PBI» pesa más que la zona de código.
-  if (nodo.pbi === Pbi.A_MEDIAS) return COLOR_PBI_A_MEDIAS
+  if (esPbiIncompleto(nodo.pbi)) return COLOR_PBI_A_MEDIAS
   if (nodo.pbi === Pbi.ENTERO) return COLOR_FASE
   switch (nodo.tipo) {
     case TipoNodo.RAMA:

@@ -56,7 +56,7 @@ describe('coloresPorNodo', () => {
       nodos: [
         { ...nodo('entero', TipoNodo.TAREA), pbi: Pbi.ENTERO },
         { ...nodo('a-medias', TipoNodo.TAREA), pbi: Pbi.A_MEDIAS },
-        { ...nodo('fase-sin-task', TipoNodo.FASE), pbi: Pbi.A_MEDIAS },
+        { ...nodo('fase-sin-task', TipoNodo.FASE), pbi: Pbi.SIN_TASK },
         nodo('para-decir', TipoNodo.DAILY_ITEM),
         nodo('verde', TipoNodo.RAMA, '#22c55e'),
       ],

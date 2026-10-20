@@ -59,8 +59,8 @@ describe('quienesEsperan — a una persona la esperan; no la frena nada (Freddy,
 describe('avisoDePbi — qué mitad le falta a un PBI a medias', () => {
   it('la tarjeta sin FASE, la FASE sin task; un PBI entero no avisa', () => {
     expect(avisoDePbi({ tipo: TipoNodo.TAREA, pbi: Pbi.A_MEDIAS })).toBe('PBI a medias: sin FASE')
-    expect(avisoDePbi({ tipo: TipoNodo.FASE, pbi: Pbi.A_MEDIAS })).toBe(
-      'PBI a medias: FASE sin task',
+    expect(avisoDePbi({ tipo: TipoNodo.FASE, pbi: Pbi.SIN_TASK })).toBe(
+      'FASE sin task en Azure: créala y anota su número en la FASE',
     )
     expect(avisoDePbi({ tipo: TipoNodo.FASE, pbi: Pbi.ENTERO })).toBeNull()
     expect(avisoDePbi({ tipo: TipoNodo.TAREA })).toBeNull()

@@ -8,6 +8,7 @@ import { useMemo } from 'react'
 import { Shape } from 'three'
 import { useDerivadoControllerPaginas } from '../lib/api/generado/derivado/derivado'
 import {
+  COLOR_BORDE_SIN_TASK,
   COLOR_DUDA,
   COLOR_FASE,
   COLOR_HISTORIA,
@@ -61,6 +62,7 @@ const FIJOS: readonly Item[] = [
   { color: COLOR_HISTORIA, texto: 'HU' },
   { color: COLOR_FASE, texto: 'PBI' },
   { color: COLOR_PBI_A_MEDIAS, texto: 'PBI a medias' },
+  { color: COLOR_BORDE_SIN_TASK, texto: 'borde = sin task en Azure' },
   { color: COLOR_DUDA, texto: 'duda' },
   { color: COLOR_PERSONA, texto: 'persona' },
   { color: COLOR_PARA_DECIR, texto: 'para decir' },

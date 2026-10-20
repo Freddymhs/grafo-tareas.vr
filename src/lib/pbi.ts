@@ -1,10 +1,15 @@
 // Qué nodo es un PBI y si está entero (Freddy en el visor, 2026-10-18: [26750] «es un PBI… la única diferencia es que no
 // tiene una fase», y se veía gris, perdido). Un PBI tiene dos mitades: su FASE, el documento, y su tarjeta `[<id>]`, la
 // proyección del tablero (contrato de PORTAR.md). Las dos se ven moradas; la que no encuentra a la otra —una tarjeta
-// sin FASE, que se trabaja sin haberla pensado; una FASE sin task, que se piensa sin PBI— se resalta. Se lee del
-// título, como lo escriben el adaptador `tarjeta` y el importador de fases. Lo cerrado no está a medias: ya no es un
-// riesgo, es historia. Puro.
+// sin FASE, que se trabaja sin haberla pensado; una FASE sin task, que se piensa sin PBI— se resalta. La FASE sin task
+// es además lo único que no está en Azure: va aparte, con borde (Freddy, 2026-10-19). Se lee del título, como lo
+// escriben el adaptador `tarjeta` y el importador de fases. Lo cerrado no está a medias: ya no es un riesgo, es
+// historia. Puro.
 import { EstadoNodo, Pbi, TipoNodo, type Nodo } from './dominio'
+
+/** Lo que se resalta (color y tamaño): el PBI al que le falta una mitad, esté o no en Azure. */
+export const esPbiIncompleto = (pbi: Pbi | undefined) =>
+  pbi === Pbi.A_MEDIAS || pbi === Pbi.SIN_TASK
 
 /** `[26750] …`, también con emojis delante (`🟣 [25682] …`). Una pieza del plan empieza con su ronda (`4️⃣`): no es tarjeta. */
 const TASK_DE_TARJETA = /^[^\p{L}\p{N}[]*\[(\d+)\]/u
@@ -20,10 +25,12 @@ export function pbisDe(nodos: readonly ConTitulo[]): ReadonlyMap<string, Pbi> {
   )
   const pbiSegun = (encontroSuMitad: boolean, estado: EstadoNodo) =>
     encontroSuMitad || estado === EstadoNodo.CERRADO ? Pbi.ENTERO : Pbi.A_MEDIAS
+  const faseSegun = (tieneTask: boolean, estado: EstadoNodo) =>
+    tieneTask || estado === EstadoNodo.CERRADO ? Pbi.ENTERO : Pbi.SIN_TASK
 
   const pbis = new Map<string, Pbi>()
   fases.forEach(({ id, titulo, estado }) =>
-    pbis.set(id, pbiSegun(TASK_DE_FASE.test(titulo), estado)),
+    pbis.set(id, faseSegun(TASK_DE_FASE.test(titulo), estado)),
   )
   nodos
     .filter(({ tipo }) => tipo === TipoNodo.TAREA)

@@ -49,10 +49,13 @@ describe('pbisDe — morado = PBI, y el que no encuentra a su otra mitad se resa
     expect(pbis.get('t26317')).toBe(Pbi.ENTERO)
   })
 
-  it('la tarjeta sin FASE (se trabaja sin pensarla) y la FASE sin task (se piensa sin PBI): a medias', () => {
+  it('la tarjeta sin FASE (se trabaja sin pensarla): a medias; está en Azure, le falta el plan', () => {
     expect(pbis.get('t26750')).toBe(Pbi.A_MEDIAS)
     expect(pbis.get('t25682')).toBe(Pbi.A_MEDIAS)
-    expect(pbis.get('fase36')).toBe(Pbi.A_MEDIAS)
+  })
+
+  it('la FASE sin task: sin task, porque no está en Azure (Freddy, 2026-10-19: «una fase que no tiene su registro de PBI»)', () => {
+    expect(pbis.get('fase36')).toBe(Pbi.SIN_TASK)
   })
 
   it('no es PBI lo que solo nombra un número, ni una pieza del plan que empieza con su ronda', () => {

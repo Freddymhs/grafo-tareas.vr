@@ -36,10 +36,14 @@ export const Cara = {
 } as const
 export type Cara = (typeof Cara)[keyof typeof Cara]
 
-/** Un PBI tiene dos mitades, su FASE y su tarjeta `[<id>]` (`lib/pbi.ts`): entero si se encuentran; si no, a medias. */
+/**
+ * Un PBI tiene dos mitades, su FASE y su tarjeta `[<id>]` (`lib/pbi.ts`): entero si se encuentran. La tarjeta sin FASE está
+ * a medias (está en Azure, le falta el plan); la FASE sin task está sin task: no está en Azure, y lleva borde (`lib/borde.ts`).
+ */
 export const Pbi = {
   ENTERO: 'entero',
   A_MEDIAS: 'a-medias',
+  SIN_TASK: 'sin-task',
 } as const
 export type Pbi = (typeof Pbi)[keyof typeof Pbi]
 

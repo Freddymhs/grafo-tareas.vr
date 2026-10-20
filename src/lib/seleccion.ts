@@ -34,6 +34,7 @@ export function resumenDeQuienEspera(titulos: readonly string[]): string {
 
 /** Qué mitad le falta a un PBI a medias (`lib/pbi.ts`); `null` si no es uno. */
 export function avisoDePbi({ pbi, tipo }: Pick<Nodo, 'pbi' | 'tipo'>): string | null {
+  if (pbi === Pbi.SIN_TASK) return 'FASE sin task en Azure: créala y anota su número en la FASE'
   if (pbi !== Pbi.A_MEDIAS) return null
   return tipo === TipoNodo.FASE ? 'PBI a medias: FASE sin task' : 'PBI a medias: sin FASE'
 }
