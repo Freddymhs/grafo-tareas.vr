@@ -5,7 +5,6 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { MeshBasicMaterial } from 'three'
 import { conteoDeDudas } from './lib/cierre'
 import { contarPiezasSinTask } from './lib/piezas'
-import { textoDelDia } from './lib/dia'
 import { coloresPorNodo } from './lib/colores'
 import { LINEAS_MINIMAS } from './lib/constants/etiquetas'
 import { COLOR_FONDO } from './lib/constants/grafo'
@@ -211,7 +210,6 @@ function VistaApi() {
             otra={mapa.pagina.otra}
             dudas={conteoDeDudas(mapa.grafo.nodos)}
             piezasSinTask={contarPiezasSinTask(mapa.grafo.nodos)}
-            delDia={textoDelDia(mapa.grafo.nodos)}
           />
           <CambioDePagina total={mapa.pagina.total} />
           <GestoPelota total={mapa.pagina.total} depurar={parametros.depurar} />

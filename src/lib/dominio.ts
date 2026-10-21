@@ -72,8 +72,6 @@ export interface Nodo {
   readonly porCrear?: boolean
   /** Lo ya pedido que espera a otro (etiqueta del complemento `espera`): abierta, se lee «espera ·» delante. */
   readonly espera?: boolean
-  /** Su lugar en el orden del día (1 la primera), si Freddy la puso en AHORA: el lente «hoy» (`lib/dia.ts`). */
-  readonly hoy?: number
 }
 
 export interface Conexion {

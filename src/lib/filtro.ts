@@ -1,11 +1,9 @@
 // El filtro de la VR (FASE 17, idea de Freddy): con la mano derecha muestra un número y la página cambia de lente. Hay
-// cuatro: «pendiente», que apaga lo resuelto (lo mergeado y lo cerrado) como se apaga lo que queda fuera de una
-// selección, para que salte lo que quedó colgando; «pendiente sin trámites», que además apaga los trámites de cierre (URL
-// commit, evidencias, wiki: Freddy, 2026-10-18, «más un estorbo y carga cognitiva que datos valiosos»); «lo que frena»,
-// que deja solo lo que destraba al resto (Freddy en el plan de la HU 20379, 18-10: «elijo filtro 4 y veo las dudas que
-// tengo que abarcar hoy»); y «hoy», lo que puso en AHORA de Herdr y lo que lo frena (`lib/dia.ts`, 21-10). Qué está
-// mergeado, cerrado, es trámite o va hoy lo dice la API; acá solo se elige qué se apaga. Puro.
-import { encendidosDelDia } from './dia'
+// dos: «pendiente», que apaga lo resuelto (lo mergeado y lo cerrado) como se apaga lo que queda fuera de una selección,
+// para que salte lo que quedó colgando; y «pendiente sin trámites», que además apaga los trámites de cierre (URL commit,
+// evidencias, wiki: Freddy, 2026-10-18, «más un estorbo y carga cognitiva que datos valiosos»); y «lo que frena», que
+// deja solo lo que destraba al resto (Freddy en el plan de la HU 20379, 18-10: «elijo filtro 4 y veo las dudas que tengo
+// que abarcar hoy»). Qué está mergeado, cerrado o es trámite lo dice la API; acá solo se elige qué se apaga. Puro.
 import { EstadoNodo, TipoConexion, TipoNodo, type Nodo } from './dominio'
 
 export const Filtro = {
@@ -13,7 +11,6 @@ export const Filtro = {
   PENDIENTE: 'pendiente',
   SIN_TRAMITES: 'sin-tramites',
   LO_QUE_FRENA: 'lo-que-frena',
-  HOY: 'hoy',
 } as const
 export type Filtro = (typeof Filtro)[keyof typeof Filtro]
 
@@ -29,16 +26,12 @@ const POR_NUMERO: Readonly<Record<number, Filtro>> = {
   3: Filtro.SIN_TRAMITES,
   4: Filtro.LO_QUE_FRENA,
 }
-/**
- * El botón B del control derecho recorre los filtros en este orden y vuelve a empezar. «Hoy» va al final y no tiene
- * dedo: el 5 es la mano de descanso, y los cuatro números ya son de los otros filtros.
- */
+/** El botón B del control derecho recorre los filtros en este orden y vuelve a empezar. */
 const ORDEN: readonly Filtro[] = [
   Filtro.TODO,
   Filtro.PENDIENTE,
   Filtro.SIN_TRAMITES,
   Filtro.LO_QUE_FRENA,
-  Filtro.HOY,
 ]
 /** Lo que dice la leyenda mientras un filtro está puesto: qué se ve y con qué dedos se sale. */
 export const TEXTO_DEL_FILTRO: Readonly<Record<Filtro, string | null>> = {
@@ -47,7 +40,6 @@ export const TEXTO_DEL_FILTRO: Readonly<Record<Filtro, string | null>> = {
   [Filtro.SIN_TRAMITES]: 'filtro 3 · pendiente sin trámites (1 = todo)',
   // «Lo que frena» no se entendía en el visor (Freddy, 2026-10-19): se ven solo las dudas y esperas que bloquean algo.
   [Filtro.LO_QUE_FRENA]: 'filtro 4 · solo bloqueantes (1 = todo)',
-  [Filtro.HOY]: 'hoy · lo que pusiste en AHORA y lo que lo frena (1 = todo)',
 }
 /**
  * Lo que frena lo dice la API (`frenan` de la página, C1): la duda, a quién espera y también el TRABAJO del que otro
@@ -86,18 +78,13 @@ export function pendientes(nodos: readonly Nodo[]): ReadonlySet<string> {
   )
 }
 
-/**
- * Lo que cada filtro deja encendido; `null` con «todo»: no se apaga nada. `frenan`: el de la página (API). `conexiones`:
- * solo las usa «hoy», para encender lo que frena a lo del día.
- */
+/** Lo que cada filtro deja encendido; `null` con «todo»: no se apaga nada. `frenan`: el de la página (API). */
 export function encendidosPor(
   filtro: Filtro,
   nodos: readonly Nodo[],
   frenan: ReadonlySet<string> | null = null,
-  conexiones: readonly Hilo[] = [],
 ): ReadonlySet<string> | null {
   if (filtro === Filtro.TODO) return null
-  if (filtro === Filtro.HOY) return encendidosDelDia(nodos, conexiones)
   if (filtro === Filtro.PENDIENTE) return pendientes(nodos)
   if (filtro === Filtro.LO_QUE_FRENA) {
     const frena = ({ id, tipo }: Nodo) =>

@@ -48,15 +48,13 @@ describe('filtroAlMostrar — los dedos de la mano derecha eligen el filtro (Fre
     expect(filtroAlMostrar(3, Filtro.SIN_TRAMITES)).toBe(Filtro.TODO)
   })
 
-  it('el botón B recorre todo → pendiente → sin trámites → lo que frena → hoy → todo; `?filtro=` acepta los mismos nombres', () => {
+  it('el botón B recorre todo → pendiente → sin trámites → lo que frena → todo; `?filtro=` acepta los mismos nombres', () => {
     expect(siguienteFiltro(Filtro.TODO)).toBe(Filtro.PENDIENTE)
     expect(siguienteFiltro(Filtro.PENDIENTE)).toBe(Filtro.SIN_TRAMITES)
     expect(siguienteFiltro(Filtro.SIN_TRAMITES)).toBe(Filtro.LO_QUE_FRENA)
-    expect(siguienteFiltro(Filtro.LO_QUE_FRENA)).toBe(Filtro.HOY)
-    expect(siguienteFiltro(Filtro.HOY)).toBe(Filtro.TODO)
+    expect(siguienteFiltro(Filtro.LO_QUE_FRENA)).toBe(Filtro.TODO)
     expect(filtroDeTexto('sin-tramites')).toBe(Filtro.SIN_TRAMITES)
     expect(filtroDeTexto('lo-que-frena')).toBe(Filtro.LO_QUE_FRENA)
-    expect(filtroDeTexto('hoy')).toBe(Filtro.HOY)
     expect(filtroDeTexto('cualquiera')).toBe(Filtro.TODO)
     expect(filtroDeTexto(null)).toBe(Filtro.TODO)
   })

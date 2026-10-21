@@ -21,7 +21,7 @@ import { type ConteoDeDudas, textoDeDudas } from '../lib/cierre'
 import { textoDePiezas } from '../lib/piezas'
 import { Cara, type Nodo } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
-import { Filtro, TEXTO_DEL_FILTRO } from '../lib/filtro'
+import { type Filtro, TEXTO_DEL_FILTRO } from '../lib/filtro'
 import { librosDe } from '../lib/paginas'
 import { ALTO_MEDIO, ALTURA_OJOS, RADIO_PANORAMA } from '../lib/layout'
 import { textoVisible } from '../lib/texto-visible'
@@ -133,12 +133,7 @@ interface Props {
   readonly dudas: ConteoDeDudas
   /** Las piezas de la cara que todavía no tienen task: en el plan se dicen, para no leerlas como una fase. */
   readonly piezasSinTask: number
-  /** Las tarjetas del día en esta HU, con su lugar (`textoDelDia`): con el lente «hoy», una segunda línea. */
-  readonly delDia: readonly string[]
 }
-
-/** Con «hoy», el orden del día va debajo de la leyenda: en una sola línea con los colores no cabía (21-10). */
-const BAJO_LA_LEYENDA = TAMANO_LEYENDA * 1.8
 
 /** El avance en dudas va primero en la leyenda, en el color de las dudas. */
 const itemDeDudas = (dudas: ConteoDeDudas): readonly Item[] => {
@@ -152,7 +147,7 @@ const itemDePiezas = (cara: Cara, piezasSinTask: number): readonly Item[] => {
   return texto ? [{ color: null, texto }, SEPARADOR] : []
 }
 
-export function BarraSuperior({ ramas, indice, cara, otra, dudas, piezasSinTask, delDia }: Props) {
+export function BarraSuperior({ ramas, indice, cara, otra, dudas, piezasSinTask }: Props) {
   const paginas = useDerivadoControllerPaginas().data
   const libros = useMemo(() => librosDe(paginas ?? []), [paginas])
   const irALibro = useEstadoVr((estado) => estado.irALibro)
@@ -203,11 +198,6 @@ export function BarraSuperior({ ramas, indice, cara, otra, dudas, piezasSinTask,
             ...itemsDeRamas(ramas),
           ]}
         />
-        {filtro === Filtro.HOY ? (
-          <group position={[0, -BAJO_LA_LEYENDA, 0]}>
-            <Leyenda items={delDia.map((texto) => ({ color: null, texto }))} />
-          </group>
-        ) : null}
       </group>
     </group>
   )
