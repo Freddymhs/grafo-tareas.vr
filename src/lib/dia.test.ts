@@ -50,6 +50,16 @@ describe('encendidosDelDia — el lente «hoy»: lo del día y lo que lo frena (
     )
   })
 
+  it('depender de algo ya mergeado no lo frena; la misma regla que la API (21-10)', () => {
+    const fase38 = nodo('FASE 38 · Notificaciones · 26309', {
+      tipo: TipoNodo.FASE,
+      mergeada: true,
+    })
+    const nodos = [hu, tarjeta, fase, fase38]
+    const conexiones = [hilo(fase.id, fase38.id, TipoConexion.DEPENDE_DE)]
+    expect(encendidosDelDia(nodos, conexiones).has(fase38.id)).toBe(false)
+  })
+
   it('sin nada para hoy en esta HU, solo queda la HU', () => {
     expect([...encendidosDelDia([hu, otraTarjeta], [])]).toEqual([hu.id])
   })

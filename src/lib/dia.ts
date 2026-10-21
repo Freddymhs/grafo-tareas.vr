@@ -44,10 +44,17 @@ export function encendidosDelDia(
   const abiertos = new Set(
     nodos.filter(({ estado }) => estado !== EstadoNodo.CERRADO).map(({ id }) => id),
   )
+  const mergeadas = new Set(nodos.filter(({ mergeada }) => mergeada).map(({ id }) => id))
+  // Depender de algo ya mergeado está cumplido: la misma regla que la API (`dependenciaCumplida`).
+  const cumplida = ({ tipo, destinoId }: Hilo) =>
+    tipo === TipoConexion.DEPENDE_DE && mergeadas.has(destinoId)
   const frenos = conexiones
     .filter(
-      ({ origenId, destinoId, tipo }) =>
-        FRENAN.has(tipo) && mitades.has(origenId) && abiertos.has(destinoId),
+      (hilo) =>
+        FRENAN.has(hilo.tipo) &&
+        mitades.has(hilo.origenId) &&
+        abiertos.has(hilo.destinoId) &&
+        !cumplida(hilo),
     )
     .map(({ destinoId }) => destinoId)
   const historias = nodos.filter(({ tipo }) => tipo === TipoNodo.HISTORIA).map(({ id }) => id)
