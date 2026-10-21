@@ -5,9 +5,17 @@ import {
   ETIQUETA_MERGEADA,
   ETIQUETA_POR_CREAR,
   ETIQUETA_TRAMITE,
+  PREFIJO_HOY,
 } from './constants/grafo'
 import type { Grafo, Posicion } from './dominio'
 import { pbisDe } from './pbi'
+
+/** `hoy:2` → 2; sin la etiqueta, o con algo que no es un lugar, no va hoy. */
+function lugarDelDia(etiquetas: readonly string[]): number | undefined {
+  const etiqueta = etiquetas.find((e) => e.startsWith(PREFIJO_HOY))
+  const lugar = Number(etiqueta?.slice(PREFIJO_HOY.length))
+  return Number.isInteger(lugar) && lugar > 0 ? lugar : undefined
+}
 
 export function aGrafo(
   nodos: readonly NodoResponseDto[],
@@ -22,6 +30,7 @@ export function aGrafo(
       const tramite = (etiquetas ?? []).includes(ETIQUETA_TRAMITE)
       const porCrear = (etiquetas ?? []).includes(ETIQUETA_POR_CREAR)
       const espera = (etiquetas ?? []).includes(ETIQUETA_ESPERA)
+      const hoy = lugarDelDia(etiquetas ?? [])
       const pbi = pbis.get(id)
       return {
         id,
@@ -35,6 +44,7 @@ export function aGrafo(
         ...(pbi ? { pbi } : {}),
         ...(porCrear ? { porCrear } : {}),
         ...(espera ? { espera } : {}),
+        ...(hoy ? { hoy } : {}),
       }
     }),
     // Una conexión hacia un nodo que no vino (otra página, o borrado entre las dos lecturas) no se dibuja.

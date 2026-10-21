@@ -87,7 +87,7 @@ export function Grafo({
   const porSeleccion = seleccionado !== null && familia.data !== undefined
   const porFiltro = !porSeleccion && filtro !== Filtro.TODO
   const iluminados = useMemo(() => {
-    const delFiltro = encendidosPor(filtro, grafo.nodos, frenan)
+    const delFiltro = encendidosPor(filtro, grafo.nodos, frenan, grafo.conexiones)
     if (porSeleccion && familia.data && seleccionado) {
       return familiaFiltrada(familia.data.ids, delFiltro, seleccionado)
     }

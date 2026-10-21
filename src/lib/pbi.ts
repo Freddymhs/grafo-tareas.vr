@@ -18,6 +18,13 @@ const TASK_DE_FASE = / · (\d+)$/
 
 type ConTitulo = Pick<Nodo, 'id' | 'tipo' | 'titulo' | 'estado'>
 
+/** La task de la que es mitad: la tarjeta `[<id>]` o la FASE `… · <id>`; lo demás no tiene. */
+export function taskDe({ tipo, titulo }: Pick<Nodo, 'tipo' | 'titulo'>): string | undefined {
+  if (tipo === TipoNodo.FASE) return TASK_DE_FASE.exec(titulo)?.[1]
+  if (tipo === TipoNodo.TAREA) return TASK_DE_TARJETA.exec(titulo)?.[1]
+  return undefined
+}
+
 export function pbisDe(nodos: readonly ConTitulo[]): ReadonlyMap<string, Pbi> {
   const fases = nodos.filter(({ tipo }) => tipo === TipoNodo.FASE)
   const tasksConFase = new Set(

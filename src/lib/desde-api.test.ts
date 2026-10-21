@@ -98,6 +98,20 @@ describe('aGrafo', () => {
     expect(espera?.espera).toBe(true)
     expect(duda?.espera).toBeUndefined()
   })
+
+  it('el lugar del día sale de `hoy:<n>`; sin número válido, no va hoy (Freddy, 2026-10-21)', () => {
+    const [segunda, fuera, rota] = aGrafo(
+      [
+        nodo('s', { etiquetas: ['board', 'hoy:2'] }),
+        nodo('f', { etiquetas: ['board'] }),
+        nodo('r', { etiquetas: ['hoy:x'] }),
+      ],
+      [],
+    ).nodos
+    expect(segunda?.hoy).toBe(2)
+    expect(fuera?.hoy).toBeUndefined()
+    expect(rota?.hoy).toBeUndefined()
+  })
 })
 
 describe('posicionesGuardadas', () => {

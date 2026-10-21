@@ -61,3 +61,5 @@ export const ETIQUETA_TRAMITE = 'complemento:tramite'
 export const ETIQUETA_POR_CREAR = 'por-crear'
 /** Lo ya pedido que espera a que otro entregue o valide (complemento `espera` de roles.yaml): «está en su cancha». */
 export const ETIQUETA_ESPERA = 'complemento:espera'
+/** El lugar en el orden del día, `hoy:<n>` (AHORA de Herdr): lo escribe `PUT /nodos/orden-del-dia`; el lente «hoy» lo lee. */
+export const PREFIJO_HOY = 'hoy:'
