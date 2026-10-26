@@ -1,6 +1,6 @@
-// Girar la pelota (FASE 15, idea de Freddy): un giro horizontal rápido de la mano izquierda cambia de HU — a la derecha
-// la siguiente, a la izquierda la anterior. Puro: recibe el giro acumulado de la mano alrededor del eje vertical
-// (`escena/GestoPelota.tsx` lo saca de la orientación de la muñeca) y decide.
+// Girar la pelota (FASE 15, idea de Freddy): un giro horizontal rápido de la mano izquierda cambia de HU — a la izquierda
+// la siguiente, a la derecha la anterior (Freddy, 2026-10-26: al revés le resultaba menos natural). Puro: recibe el giro
+// acumulado de la mano alrededor del eje vertical (`escena/GestoPelota.tsx` lo saca de la orientación de la muñeca) y decide.
 // Calibrado con Freddy en el visor (2026-10-17, 91 s grabados con `?depurar`): sus giros son de 100° a 160° en menos de
 // medio segundo, y la mano VUELVE sola enseguida (+114° y −110° al segundo). Por eso: un umbral alto que solo un giro
 // decidido alcanza, y el regreso no deshace el cambio. Y solo con la mano como agarrando una pelota (pedido de Freddy:
@@ -69,7 +69,7 @@ export function avanzarGesto(
     }
   }
 
-  const evento: EventoGesto = giro > 0 ? 'siguiente' : 'anterior'
+  const evento: EventoGesto = giro > 0 ? 'anterior' : 'siguiente'
   const { ultimo } = estado
   const esElRegreso =
     ultimo !== null && ultimo.evento !== evento && t - ultimo.t < BLOQUEO_REGRESO_S

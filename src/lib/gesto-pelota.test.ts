@@ -34,9 +34,9 @@ function giro(grados: number, segundos: number, desde = 0, inicio = 0): MuestraM
 }
 
 describe('avanzarGesto — girar la pelota cambia de HU (FASE 15)', () => {
-  it('un giro rápido a la derecha pasa a la siguiente; a la izquierda, a la anterior', () => {
-    expect(recorrer(giro(100, 0.3)).eventos).toEqual(['siguiente'])
-    expect(recorrer(giro(-100, 0.3)).eventos).toEqual(['anterior'])
+  it('un giro rápido a la izquierda pasa a la siguiente; a la derecha, a la anterior (Freddy, 2026-10-26: invertido)', () => {
+    expect(recorrer(giro(100, 0.3)).eventos).toEqual(['anterior'])
+    expect(recorrer(giro(-100, 0.3)).eventos).toEqual(['siguiente'])
   })
 
   it('un giro lento no cuenta: es mover la mano, no el gesto', () => {
@@ -51,23 +51,23 @@ describe('avanzarGesto — girar la pelota cambia de HU (FASE 15)', () => {
   it('la mano vuelve sola después de girar: ese regreso no deshace el cambio (medido en Freddy, +114° y −110°)', () => {
     const ida = giro(110, 0.3)
     const vuelta = giro(-110, 0.3, 110 * GRADO, 0.8)
-    expect(recorrer([...ida, ...vuelta]).eventos).toEqual(['siguiente'])
+    expect(recorrer([...ida, ...vuelta]).eventos).toEqual(['anterior'])
   })
 
-  it('pasado el bloqueo, girar al otro lado sí vuelve a la anterior', () => {
+  it('pasado el bloqueo, girar al otro lado sí cuenta el gesto contrario', () => {
     const ida = giro(110, 0.3)
     const otra = giro(-110, 0.3, 110 * GRADO, BLOQUEO_REGRESO_S + 0.5)
-    expect(recorrer([...ida, ...otra]).eventos).toEqual(['siguiente', 'anterior'])
+    expect(recorrer([...ida, ...otra]).eventos).toEqual(['anterior', 'siguiente'])
   })
 
   it('un giro largo es una sola página: después de cambiar hay una pausa', () => {
-    expect(recorrer(giro(170, 0.4)).eventos).toEqual(['siguiente'])
+    expect(recorrer(giro(170, 0.4)).eventos).toEqual(['anterior'])
     const despues = giro(100, 0.3, 0, ENFRIAMIENTO_S + 0.6)
-    expect(recorrer([...giro(100, 0.3), ...despues]).eventos).toEqual(['siguiente', 'siguiente'])
+    expect(recorrer([...giro(100, 0.3), ...despues]).eventos).toEqual(['anterior', 'anterior'])
   })
 
   it('cruzar la espalda (±180°) no se lee como una vuelta entera', () => {
-    expect(recorrer(giro(100, 0.3, 160 * GRADO)).eventos).toEqual(['siguiente'])
+    expect(recorrer(giro(100, 0.3, 160 * GRADO)).eventos).toEqual(['anterior'])
   })
 
   it('el progreso crece con el giro, para que se vea que te entendió', () => {
