@@ -9,6 +9,7 @@ import { useConexionesControllerFindAll } from '../lib/api/generado/conexiones/c
 import {
   useDerivadoControllerPaginas,
   useDerivadoControllerPlan,
+  useDerivadoControllerUltimoCambio,
 } from '../lib/api/generado/derivado/derivado'
 import {
   useNodosControllerFindAll,
@@ -16,6 +17,7 @@ import {
 } from '../lib/api/generado/nodos/nodos'
 import { centrarEn } from '../lib/centrar'
 import { coloresPorNodo } from '../lib/colores'
+import { textoDelUltimoCambio } from '../lib/ultimo-cambio'
 import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
 import { Cara, TipoNodo, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
@@ -72,6 +74,8 @@ export type EstadoMapa =
       readonly frenan: ReadonlySet<string> | null
       /** En la cara plan: el número de cada pieza en su carril y los carriles que espera (`GET /derivado/plan`). */
       readonly marcas: ReadonlyMap<string, MarcaDelPlan>
+      /** Lo último que cambió en la página (`GET /derivado/ultimo-cambio`), para leer bajo las pestañas. */
+      readonly ultimoCambio: string | null
       /** Si guardar las posiciones nuevas falló: el mapa se ve igual, pero la próxima vez se recalcula. */
       readonly aviso: string | null
     }
@@ -172,6 +176,16 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     [ubicacion, historia],
   )
 
+  const cambio = useDerivadoControllerUltimoCambio(
+    { pagina: pagina?.id ?? '' },
+    { query: { enabled: pagina !== null } },
+  ).data?.ultimo
+  const tituloCambiado = cambio
+    ? grafo?.nodos.find(({ id }) => id === cambio.nodoId)?.titulo
+    : undefined
+  const textoDeLaPagina =
+    cambio && tituloCambiado ? textoDelUltimoCambio(cambio, tituloCambiado) : null
+
   const { mutate } = guardar
   useEffect(() => {
     if (!ubicacion || !pagina) return
@@ -204,6 +218,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     conFecha,
     frenan,
     marcas,
+    ultimoCambio: textoDeLaPagina,
     aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,
   }
 }

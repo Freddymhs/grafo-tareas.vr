@@ -217,6 +217,7 @@ function VistaApi() {
             otra={mapa.pagina.otra}
             dudas={conteoDeDudas(mapa.grafo.nodos)}
             piezasSinTask={contarPiezasSinTask(mapa.grafo.nodos)}
+            ultimoCambio={mapa.ultimoCambio}
           />
           <CambioDePagina total={mapa.pagina.total} />
           <GestoPelota total={mapa.pagina.total} depurar={parametros.depurar} />

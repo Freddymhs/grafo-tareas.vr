@@ -23,12 +23,14 @@ import type {
   CarrilDto,
   DerivadoControllerDiaParams,
   DerivadoControllerPlanParams,
+  DerivadoControllerUltimoCambioParams,
   DiaResponseDto,
   ErrorResponseDto,
   FamiliaResponseDto,
   LiberaResponseDto,
   NodoResumenDto,
   PaginaDto,
+  UltimoCambioResponseDto,
 } from '../modelos'
 
 import { cliente } from '../../cliente'
@@ -313,6 +315,156 @@ export function useDerivadoControllerDia<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getDerivadoControllerDiaQueryOptions(params, options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  return withQueryKey(query, queryOptions.queryKey)
+}
+
+export const getDerivadoControllerUltimoCambioUrl = (
+  params: DerivadoControllerUltimoCambioParams,
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/derivado/ultimo-cambio?${stringifiedParams}`
+    : `/api/v1/derivado/ultimo-cambio`
+}
+
+/**
+ * @summary Lo último que cambió en una página: qué nodo, cuándo y qué pasó («pasó a Trabajo»)
+ */
+export const derivadoControllerUltimoCambio = async (
+  params: DerivadoControllerUltimoCambioParams,
+  options?: Parameters<typeof cliente>[1],
+): Promise<UltimoCambioResponseDto> => {
+  return cliente<UltimoCambioResponseDto>(getDerivadoControllerUltimoCambioUrl(params), {
+    ...options,
+    method: 'GET',
+  })
+}
+
+export const getDerivadoControllerUltimoCambioQueryKey = (
+  params?: DerivadoControllerUltimoCambioParams,
+) => {
+  return [`/api/v1/derivado/ultimo-cambio`, ...(params ? [params] : [])] as const
+}
+
+export const getDerivadoControllerUltimoCambioQueryOptions = <
+  TData = Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+  TError = unknown,
+>(
+  params: DerivadoControllerUltimoCambioParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = queryOptions?.queryKey ?? getDerivadoControllerUltimoCambioQueryKey(params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>> = ({
+    signal,
+  }) => derivadoControllerUltimoCambio(params, { signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DerivadoControllerUltimoCambioQueryResult = NonNullable<
+  Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>
+>
+export type DerivadoControllerUltimoCambioQueryError = unknown
+
+export function useDerivadoControllerUltimoCambio<
+  TData = Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+  TError = unknown,
+>(
+  params: DerivadoControllerUltimoCambioParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+          TError,
+          Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDerivadoControllerUltimoCambio<
+  TData = Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+  TError = unknown,
+>(
+  params: DerivadoControllerUltimoCambioParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+          TError,
+          Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDerivadoControllerUltimoCambio<
+  TData = Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+  TError = unknown,
+>(
+  params: DerivadoControllerUltimoCambioParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lo último que cambió en una página: qué nodo, cuándo y qué pasó («pasó a Trabajo»)
+ */
+
+export function useDerivadoControllerUltimoCambio<
+  TData = Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>,
+  TError = unknown,
+>(
+  params: DerivadoControllerUltimoCambioParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerUltimoCambio>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDerivadoControllerUltimoCambioQueryOptions(params, options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>

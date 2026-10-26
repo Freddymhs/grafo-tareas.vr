@@ -133,6 +133,8 @@ interface Props {
   readonly dudas: ConteoDeDudas
   /** Las piezas de la cara que todavía no tienen task: en el plan se dicen, para no leerlas como una fase. */
   readonly piezasSinTask: number
+  /** Lo último que cambió en la página (`lib/ultimo-cambio.ts`): bajo la leyenda, para que nada sorprenda. */
+  readonly ultimoCambio?: string | null
 }
 
 /** El avance en dudas va primero en la leyenda, en el color de las dudas. */
@@ -147,7 +149,15 @@ const itemDePiezas = (cara: Cara, piezasSinTask: number): readonly Item[] => {
   return texto ? [{ color: null, texto }, SEPARADOR] : []
 }
 
-export function BarraSuperior({ ramas, indice, cara, otra, dudas, piezasSinTask }: Props) {
+export function BarraSuperior({
+  ramas,
+  indice,
+  cara,
+  otra,
+  dudas,
+  piezasSinTask,
+  ultimoCambio = null,
+}: Props) {
   const paginas = useDerivadoControllerPaginas().data
   const libros = useMemo(() => librosDe(paginas ?? []), [paginas])
   const irALibro = useEstadoVr((estado) => estado.irALibro)
@@ -186,6 +196,17 @@ export function BarraSuperior({ ramas, indice, cara, otra, dudas, piezasSinTask 
           </group>
         )
       })}
+      {ultimoCambio ? (
+        <Text
+          position={[0, -BAJO_LAS_PESTANAS - 2 * TAMANO_LEYENDA, 0]}
+          fontSize={TAMANO_LEYENDA}
+          color={COLOR_TEXTO}
+          anchorX="center"
+          anchorY="top"
+        >
+          {ultimoCambio}
+        </Text>
+      ) : null}
       <group position={[0, -BAJO_LAS_PESTANAS, 0]}>
         <Leyenda
           items={[

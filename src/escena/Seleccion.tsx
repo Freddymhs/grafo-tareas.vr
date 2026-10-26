@@ -17,6 +17,11 @@ const TAMANO_DETALLE = 0.04
 const TAMANO_RESUMEN = 0.045
 const COLOR_RESUMEN = '#7dd3fc'
 const DESPLAZAMIENTO_Y = 0.16
+/**
+ * Hacia la cabeza, delante de la esfera seleccionada (la más grande: RADIO_NODO × 2,2 = 0,11): el texto que baja
+ * —resumen, bloqueo— quedaba detrás de la pelota y no se leía (Freddy, 2026-10-26).
+ */
+const DELANTE_DE_LA_ESFERA = 0.15
 const ANCHO_MAXIMO = 1.2
 const COLOR_TITULO = '#ffffff'
 /** Ámbar suave con borde oscuro: el rojo sobre el fondo oscuro no se leía (Freddy, 2026-10-18). */
@@ -46,35 +51,42 @@ export function Seleccion({ nodo, posicion, detalle }: Props) {
     : 0
   return (
     <Billboard position={[x, y + DESPLAZAMIENTO_Y, z]}>
-      <Text fontSize={TAMANO_TITULO} color={COLOR_TITULO} anchorY="bottom" maxWidth={ANCHO_MAXIMO}>
-        {`${conMarca(nodo, textoVisible(nodo.titulo, LARGO_SELECCION))} · ${nodo.estado}`}
-      </Text>
-      {resumen ? (
+      <group position={[0, 0, DELANTE_DE_LA_ESFERA]}>
         <Text
-          position={[0, -SEPARACION, 0]}
-          fontSize={TAMANO_RESUMEN}
-          color={COLOR_RESUMEN}
-          anchorY="top"
+          fontSize={TAMANO_TITULO}
+          color={COLOR_TITULO}
+          anchorY="bottom"
           maxWidth={ANCHO_MAXIMO}
-          outlineWidth={BORDE}
-          outlineColor={COLOR_BORDE}
         >
-          {resumen}
+          {`${conMarca(nodo, textoVisible(nodo.titulo, LARGO_SELECCION))} · ${nodo.estado}`}
         </Text>
-      ) : null}
-      {detalle ? (
-        <Text
-          position={[0, -SEPARACION - bajoElResumen, 0]}
-          fontSize={TAMANO_DETALLE}
-          color={detalle.color}
-          anchorY="top"
-          maxWidth={ANCHO_MAXIMO}
-          outlineWidth={BORDE}
-          outlineColor={COLOR_BORDE}
-        >
-          {detalle.texto}
-        </Text>
-      ) : null}
+        {resumen ? (
+          <Text
+            position={[0, -SEPARACION, 0]}
+            fontSize={TAMANO_RESUMEN}
+            color={COLOR_RESUMEN}
+            anchorY="top"
+            maxWidth={ANCHO_MAXIMO}
+            outlineWidth={BORDE}
+            outlineColor={COLOR_BORDE}
+          >
+            {resumen}
+          </Text>
+        ) : null}
+        {detalle ? (
+          <Text
+            position={[0, -SEPARACION - bajoElResumen, 0]}
+            fontSize={TAMANO_DETALLE}
+            color={detalle.color}
+            anchorY="top"
+            maxWidth={ANCHO_MAXIMO}
+            outlineWidth={BORDE}
+            outlineColor={COLOR_BORDE}
+          >
+            {detalle.texto}
+          </Text>
+        ) : null}
+      </group>
     </Billboard>
   )
 }
