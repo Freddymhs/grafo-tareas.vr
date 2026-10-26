@@ -1,8 +1,8 @@
-// El panel del nodo seleccionado (FASE 7): cerrar o reabrir, y conectar apuntando al otro nodo con el rayo. Una pieza
-// abierta del plan, además, se toma: pasa a Trabajo (2026-10-26).
+// El panel del nodo seleccionado (FASE 7): cerrar o reabrir, y conectar apuntando al otro nodo con el rayo. Tomar una
+// pieza del plan no va acá: la toma `/flow:pbi:get` al empezar la task, con su columna y su FASE (Freddy, 2026-10-26).
 import { Billboard, Text } from '@react-three/drei'
 import { TEXTO_CONEXION } from '../lib/constants/conexiones'
-import { Cara, EstadoNodo, TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
+import { EstadoNodo, type Nodo, type Posicion } from '../lib/dominio'
 import { CONEXIONES_DESDE_VR, useEstadoVr } from '../lib/estado-vr'
 import { ALTO_BOTON, Boton3D } from './Boton3D'
 import { useAccionesVr } from './useAccionesVr'
@@ -26,18 +26,14 @@ export function PanelAcciones({ nodo, posicion }: Props) {
   const aviso = useEstadoVr((estado) => estado.aviso)
   const empezarConexion = useEstadoVr((estado) => estado.empezarConexion)
   const cancelar = useEstadoVr((estado) => estado.cancelar)
-  const { cerrar, reabrir, tomar, ocupado } = useAccionesVr()
+  const { cerrar, reabrir, ocupado } = useAccionesVr()
   const cerrado = nodo.estado === EstadoNodo.CERRADO
-  const esPiezaAbiertaDelPlan = nodo.cara === Cara.PLAN && nodo.tipo === TipoNodo.TAREA && !cerrado
   const { x, y, z } = posicion
 
   const botones =
     modo.tipo === 'conectando'
       ? [{ texto: 'Cancelar', onTocar: cancelar }]
       : [
-          ...(esPiezaAbiertaDelPlan
-            ? [{ texto: 'Tomar → Trabajo', onTocar: () => tomar(nodo.id) }]
-            : []),
           {
             texto: cerrado ? 'Reabrir' : 'Cerrar',
             onTocar: () => (cerrado ? reabrir(nodo.id) : cerrar(nodo.id)),

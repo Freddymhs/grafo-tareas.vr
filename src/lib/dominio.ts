@@ -72,8 +72,6 @@ export interface Nodo {
   readonly porCrear?: boolean
   /** Lo ya pedido que espera a otro (etiqueta del complemento `espera`): abierta, se lee «espera ·» delante. */
   readonly espera?: boolean
-  /** La cara de su HU (FASE 17): una pieza del plan se puede «tomar» y pasa al trabajo. El sintético no la tiene. */
-  readonly cara?: Cara
   /** De qué trata, en una línea con las palabras del humano (2026-10-26): se lee al seleccionarlo. */
   readonly resumen?: string
 }
