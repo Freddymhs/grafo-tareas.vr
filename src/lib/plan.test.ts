@@ -30,29 +30,34 @@ const carril = (titulo: string, color: string | null, nodos: PiezaDelPlanDto[]):
 describe('marcasDelPlan — el número y las líneas que espera, tal como los manda la API', () => {
   // La HU 24576 del 26-10 (`GET /derivado/plan`).
   const plan = [
-    carril('A · Detalle', AZUL, [pieza('26957', 1, [{ carril: 'A · Detalle', color: AZUL }])]),
+    carril('A · Detalle', AZUL, [
+      pieza('26957', 1, [{ carril: 'A · Detalle', color: AZUL, espera: null }]),
+    ]),
     carril('B · Revisión', VERDE, [
-      pieza('26958', 1, [{ carril: 'B · Revisión', color: VERDE }]),
-      pieza('26960', 2, [{ carril: 'B · Revisión', color: VERDE }]),
+      pieza('26958', 1, [{ carril: 'B · Revisión', color: VERDE, espera: null }]),
+      pieza('26960', 2, [{ carril: 'B · Revisión', color: VERDE, espera: null }]),
     ]),
     carril('C · Áreas', AMARILLO, [
       pieza('26963', 1, [
-        { carril: 'C · Áreas', color: AMARILLO },
-        { carril: 'A · Detalle', color: AZUL },
+        { carril: 'C · Áreas', color: AMARILLO, espera: null },
+        { carril: 'A · Detalle', color: AZUL, espera: 1 },
       ]),
     ]),
   ]
 
-  it('cada pieza lleva su orden; la que espera a otro carril, el color de esa línea', () => {
+  it('cada pieza lleva su orden; la que espera a otro carril, el color de esa línea y el número que espera', () => {
     const marcas = marcasDelPlan(plan)
     expect(marcas.get('26960')).toEqual({ orden: 2, esperas: [] })
-    expect(marcas.get('26963')).toEqual({ orden: 1, esperas: [AZUL] })
+    expect(marcas.get('26963')).toEqual({ orden: 1, esperas: [{ color: AZUL, numero: 1 }] })
   })
 
   it('«Sin carril» no tiene pelotita propia: todo lo que trae son esperas', () => {
     const sinCarril = carril('Sin carril', null, [
-      pieza('x', 1, [{ carril: 'A · Detalle', color: AZUL }]),
+      pieza('x', 1, [{ carril: 'A · Detalle', color: AZUL, espera: 2 }]),
     ])
-    expect(marcasDelPlan([sinCarril]).get('x')).toEqual({ orden: 1, esperas: [AZUL] })
+    expect(marcasDelPlan([sinCarril]).get('x')).toEqual({
+      orden: 1,
+      esperas: [{ color: AZUL, numero: 2 }],
+    })
   })
 })
