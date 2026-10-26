@@ -35,8 +35,11 @@ export function Nodos({
   // pasar de una página chica a una grande dejaba las esferas de más sin posición, encima de la cabeza (en el visor,
   // 2026-10-18: HU 20379 → HU 19565, sin esferas y 20 FPS). La capacidad es la de la API; si un grafo la pasa, se rearma.
   const capacidad = Math.max(LIMITE_GRAFO, nodos.length)
+  // Sin culling: three calcula la esfera que envuelve a TODAS las instancias una sola vez y no la rehace al cambiar de
+  // página. Quedaba la de la página anterior y, mirando de frente, se descartaban todas las esferas juntas (en el
+  // visor, 2026-10-26: HU 24576 Plan, solo etiquetas; medido: esfera en x≈2, nodos en x −1,2…0,6).
   return (
-    <Instances key={capacidad} limit={capacidad} range={nodos.length}>
+    <Instances key={capacidad} limit={capacidad} range={nodos.length} frustumCulled={false}>
       <sphereGeometry args={[RADIO_NODO, SEGMENTOS_ESFERA, SEGMENTOS_ESFERA]} />
       <meshStandardMaterial />
       {nodos.map((nodo) => {

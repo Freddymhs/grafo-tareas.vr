@@ -24,8 +24,9 @@ export function Aristas({ conexiones, posiciones, opacidad }: Props) {
     return new Float32Array(valores)
   }, [conexiones, posiciones])
 
+  // Sin culling, por lo mismo que `Nodos`: la esfera de la geometría se calcula una vez y no sigue a las posiciones.
   return (
-    <lineSegments>
+    <lineSegments frustumCulled={false}>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
