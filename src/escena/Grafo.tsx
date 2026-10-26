@@ -161,13 +161,18 @@ export function Grafo({
     if (toque.accion === 'conectar' && conApi) conectar(toque)
   }
 
+  // Un filtro oculta lo que deja fuera, no lo apaga (26-10): la página llena quedaba
+  // «muy enredada» (Freddy, HU 20379: 114 nodos). Vale igual en las dos caras. La selección sigue apagando.
+  const ocultos = porFiltro && iluminados ? iluminados : null
+  const nodosVisibles = ocultos ? grafo.nodos.filter(({ id }) => ocultos.has(id)) : grafo.nodos
+
   return (
     <>
       <Medidor nodos={grafo.nodos.length} conexiones={grafo.conexiones.length} />
       {posiciones ? (
         <>
           <Nodos
-            nodos={grafo.nodos}
+            nodos={nodosVisibles}
             posiciones={posiciones}
             colores={coloresVisibles}
             seleccionado={seleccionado}
@@ -176,7 +181,7 @@ export function Grafo({
             onApuntar={apuntar}
           />
           <MarcasDelPlan
-            nodos={grafo.nodos}
+            nodos={nodosVisibles}
             posiciones={posiciones}
             marcas={marcas}
             colores={coloresVisibles}
@@ -184,7 +189,7 @@ export function Grafo({
             resaltados={resaltados}
           />
           <Bordes
-            nodos={grafo.nodos}
+            nodos={nodosVisibles}
             ids={conBorde}
             posiciones={posiciones}
             seleccionado={seleccionado}
@@ -197,11 +202,13 @@ export function Grafo({
                 posiciones={posiciones}
                 opacidad={OPACIDAD_ILUMINADA}
               />
-              <Aristas
-                conexiones={fueraDeLaFamilia}
-                posiciones={posiciones}
-                opacidad={OPACIDAD_APAGADA}
-              />
+              {ocultos ? null : (
+                <Aristas
+                  conexiones={fueraDeLaFamilia}
+                  posiciones={posiciones}
+                  opacidad={OPACIDAD_APAGADA}
+                />
+              )}
             </>
           ) : (
             <>
@@ -230,7 +237,7 @@ export function Grafo({
             frenan={frenan}
           />
           <Etiquetas
-            nodos={grafo.nodos}
+            nodos={nodosVisibles}
             posiciones={posiciones}
             excluir={seleccionado}
             todas={etiquetas === ModoEtiquetas.TODAS}
