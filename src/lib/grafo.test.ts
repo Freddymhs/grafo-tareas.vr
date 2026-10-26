@@ -166,9 +166,10 @@ describe('aberturaPara — cuánta pantalla necesita una página', () => {
 describe('lineasPara — más texto donde la página tiene espacio (FASE 15)', () => {
   it('pocas pelotas: 4 líneas; muchas: 2; nunca más de lo que cabe', () => {
     expect(lineasPara(20, RADIO_PANORAMA, Math.PI)).toBe(4)
-    expect(lineasPara(98, RADIO_PANORAMA, aberturaPara(98, RADIO_PANORAMA))).toBe(2)
+    // Con la banda de 2,7 m (26-10) una página de ~100 todavía lleva 4; desde ~150, 2.
+    expect(lineasPara(150, RADIO_PANORAMA, aberturaPara(150, RADIO_PANORAMA))).toBe(2)
     expect(lineasPara(60, RADIO_PANORAMA, Math.PI)).toBeGreaterThanOrEqual(
-      lineasPara(98, RADIO_PANORAMA, Math.PI),
+      lineasPara(150, RADIO_PANORAMA, Math.PI),
     )
   })
 

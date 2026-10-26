@@ -19,3 +19,32 @@ export function centrarEn(
     }),
   )
 }
+
+/** Hasta dónde llega cada lado: casi el borde de la media vuelta de adelante, con aire para la última etiqueta. */
+const BORDE = (85 * Math.PI) / 180
+/** Una página chica no se desparrama por toda la pantalla: a lo más se abre la mitad más. */
+const ESTIRAR_MAXIMO = 1.5
+
+/**
+ * Con la HU al frente, la red quedaba corrida a un lado y el otro vacío (26-10, HU 20379:
+ * de −89° a +60°; «estamos desaprovechando el ancho»). Cada lado se abre por separado hasta el borde, sin mover la HU ni
+ * las alturas. Solo la vista.
+ */
+export function abrirHaciaLosBordes(
+  posiciones: ReadonlyMap<string, Posicion>,
+): ReadonlyMap<string, Posicion> {
+  const angulos = [...posiciones.values()].map(anguloDe)
+  const derecha = Math.max(0, ...angulos)
+  const izquierda = Math.min(0, ...angulos)
+  const factor = (extremo: number) =>
+    extremo === 0 ? 1 : Math.min(ESTIRAR_MAXIMO, Math.max(1, BORDE / Math.abs(extremo)))
+  const aLaDerecha = factor(derecha)
+  const aLaIzquierda = factor(izquierda)
+  return new Map(
+    [...posiciones].map(([id, posicion]) => {
+      const angulo = anguloDe(posicion)
+      const estirado = angulo * (angulo >= 0 ? aLaDerecha : aLaIzquierda)
+      return [id, enCilindro(estirado, posicion.y, Math.hypot(posicion.x, posicion.z))] as const
+    }),
+  )
+}

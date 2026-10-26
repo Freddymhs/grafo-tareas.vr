@@ -29,7 +29,8 @@ import { ALTO_BOTON, ANCHO_BOTON, Boton3D } from './Boton3D'
 
 /** Delante de la pantalla (no la atraviesa) y justo encima de su banda. */
 const DISTANCIA = RADIO_PANORAMA - 0.5
-const ALTURA = ALTURA_OJOS + ALTO_MEDIO + 0.1
+/** 35 cm sobre la banda: con 10 cm, en la banda alta los nodos de arriba la tapaban (26-10). */
+const ALTURA = ALTURA_OJOS + ALTO_MEDIO + 0.35
 const SEPARACION_PESTANAS = 0.03
 const BAJO_LAS_PESTANAS = ALTO_BOTON + 0.035
 const TAMANO_LEYENDA = 0.026

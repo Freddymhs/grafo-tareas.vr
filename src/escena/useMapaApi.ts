@@ -15,7 +15,7 @@ import {
   useNodosControllerFindAll,
   useNodosControllerGuardarPosiciones,
 } from '../lib/api/generado/nodos/nodos'
-import { centrarEn } from '../lib/centrar'
+import { abrirHaciaLosBordes, centrarEn } from '../lib/centrar'
 import { coloresPorNodo } from '../lib/colores'
 import { textoDelUltimoCambio } from '../lib/ultimo-cambio'
 import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
@@ -172,7 +172,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   }, [grafoPagina, guardadas, sinAcomodo, layout, abertura, radio, lineasPorEspacio])
   const historia = pagina?.historiaId ?? null
   const posicionesVista = useMemo(
-    () => (ubicacion ? centrarEn(ubicacion.posiciones, historia) : null),
+    () => (ubicacion ? abrirHaciaLosBordes(centrarEn(ubicacion.posiciones, historia)) : null),
     [ubicacion, historia],
   )
 

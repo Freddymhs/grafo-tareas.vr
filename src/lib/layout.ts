@@ -32,11 +32,12 @@ const FUERZA_RAMA = 0.02
 const CARGA = -0.05
 const ALCANCE_CARGA = 2
 const VUELTAS_CHOQUE = 3
-export const ALTURA_OJOS = 1.6
-/** Distancia (m) de la pantalla al usuario. Se calibra con `?radio=` (FASE 15). */
-export const RADIO_PANORAMA = 3
+/** El centro de la banda: los ojos de Freddy sentado (26-10; antes 1,6, de pie, y se miraba hacia arriba). */
+export const ALTURA_OJOS = 1.3
+/** Distancia (m) de la pantalla al usuario (26-10: 3,4; con 3 la página no cabía en los 180° de adelante). Se calibra con `?radio=`. */
+export const RADIO_PANORAMA = 3.4
 /** Media altura (m) de la banda: de ALTURA_OJOS − ALTO_MEDIO a ALTURA_OJOS + ALTO_MEDIO. */
-export const ALTO_MEDIO = 1
+export const ALTO_MEDIO = 1.35
 const GRADO = Math.PI / 180
 /** Hueco entre lo conectado y las sueltas, a cada lado, para que se vean como dos zonas. */
 const HUECO = 10 * GRADO
