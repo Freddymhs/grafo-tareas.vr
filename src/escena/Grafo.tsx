@@ -125,6 +125,12 @@ export function Grafo({
       fueraDeLaFamilia: grafo.conexiones.filter((c) => !adentro(c)),
     }
   }, [grafo, iluminados, porFiltro])
+  // El pulso sigue a lo que se ve: con un filtro o una selección, solo late en lo encendido (Freddy, 26-10: «no obedecen
+  // a los filtros»).
+  const relacionesIluminadas = useMemo(
+    () => deLaFamilia.filter(({ tipo }) => tipo !== TipoConexion.PERTENECE_A),
+    [deLaFamilia],
+  )
   const conBorde = useMemo(() => idsConBorde(grafo.nodos, iluminados), [grafo, iluminados])
   const conNumero = useMemo(() => new Set(marcas.keys()), [marcas])
   const posicionSeleccionado = seleccionado ? posiciones?.get(seleccionado) : undefined
@@ -189,7 +195,11 @@ export function Grafo({
               />
             </>
           )}
-          <Pulsos conexiones={relaciones} posiciones={posiciones} frenan={frenan} />
+          <Pulsos
+            conexiones={iluminados ? relacionesIluminadas : relaciones}
+            posiciones={posiciones}
+            frenan={frenan}
+          />
           <Etiquetas
             nodos={grafo.nodos}
             posiciones={posiciones}
