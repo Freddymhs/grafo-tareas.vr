@@ -6,15 +6,19 @@
 // demás se ubica junto a sus vecinos sin pisarla. Los colores salen del grafo entero: las ramas no son contenido de página.
 import { useEffect, useMemo, useRef } from 'react'
 import { useConexionesControllerFindAll } from '../lib/api/generado/conexiones/conexiones'
-import { useDerivadoControllerPaginas } from '../lib/api/generado/derivado/derivado'
+import {
+  useDerivadoControllerPaginas,
+  useDerivadoControllerPlan,
+} from '../lib/api/generado/derivado/derivado'
 import {
   useNodosControllerFindAll,
   useNodosControllerGuardarPosiciones,
 } from '../lib/api/generado/nodos/nodos'
+import { centrarEn } from '../lib/centrar'
 import { coloresPorNodo } from '../lib/colores'
 import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
-import { TipoNodo, type Cara, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
+import { Cara, TipoNodo, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import {
   RADIO_PANORAMA,
@@ -32,6 +36,7 @@ import {
   ramasDePagina,
   sinPadre,
 } from '../lib/paginas'
+import { marcasDelPlan, type MarcaDelPlan } from '../lib/plan'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
 
@@ -52,6 +57,7 @@ export type EstadoMapa =
       readonly estado: 'listo'
       /** Solo la página que se ve. */
       readonly grafo: Grafo
+      /** Para la vista: la página girada con su HU al frente (`centrarEn`); lo guardado no cambia. */
       readonly posiciones: ReadonlyMap<string, Posicion>
       /** Del grafo entero: la rama de una tarjeta no está en su página. */
       readonly colores: ReadonlyMap<string, string>
@@ -64,12 +70,15 @@ export type EstadoMapa =
       readonly conFecha: ReadonlySet<string>
       /** Lo que frena en la página, según la API (filtro 4); `null` si la API todavía no lo manda. */
       readonly frenan: ReadonlySet<string> | null
+      /** En la cara plan: el número de cada pieza en su carril y los carriles que espera (`GET /derivado/plan`). */
+      readonly marcas: ReadonlyMap<string, MarcaDelPlan>
       /** Si guardar las posiciones nuevas falló: el mapa se ve igual, pero la próxima vez se recalcula. */
       readonly aviso: string | null
     }
 
 const SIN_GUARDADAS: ReadonlyMap<string, Posicion> = new Map()
 const NINGUNO: ReadonlySet<string> = new Set()
+const SIN_MARCAS: ReadonlyMap<string, MarcaDelPlan> = new Map()
 
 export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMapa {
   const nodos = useNodosControllerFindAll({ limit: LIMITE_GRAFO })
@@ -103,6 +112,18 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const libro = total > 0 ? libros[indice] : null
   const pagina = libro ? caraVisible(libro, caraPedida) : null
   const otra = libro ? otraCara(libro, caraPedida) : null
+  const enPlan = pagina?.cara === Cara.PLAN
+  const plan = useDerivadoControllerPlan(enPlan ? { libro: pagina.libro } : undefined, {
+    query: { enabled: enPlan },
+  })
+  // Una API anterior al número del plan no manda `orden`: entonces no se dibuja nada encima de las piezas.
+  const marcas = useMemo(
+    () =>
+      enPlan && plan.data?.every(({ nodos }) => nodos.every(({ orden }) => orden !== undefined))
+        ? marcasDelPlan(plan.data)
+        : SIN_MARCAS,
+    [enPlan, plan.data],
+  )
   // Una API anterior al filtro 4 no manda `frenan`: entonces el filtro vuelve a elegir por tipo.
   const frenan = useMemo(
     () => (pagina && Array.isArray(pagina.frenan) ? new Set(pagina.frenan) : null),
@@ -143,6 +164,11 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     const lineas = lineasQueCaben([...posiciones.values()], lineasPorEspacio, radio)
     return { posiciones, nuevas: separadas, lineas }
   }, [grafoPagina, guardadas, sinAcomodo, layout, abertura, radio, lineasPorEspacio])
+  const historia = pagina?.historiaId ?? null
+  const posicionesVista = useMemo(
+    () => (ubicacion ? centrarEn(ubicacion.posiciones, historia) : null),
+    [ubicacion, historia],
+  )
 
   const { mutate } = guardar
   useEffect(() => {
@@ -163,17 +189,19 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   }
   if (!grafo || !colores || !lista) return { estado: 'cargando', mensaje: 'Leyendo el grafo…' }
   if (!pagina || !grafoPagina) return { estado: 'error', mensaje: 'El grafo no tiene páginas' }
-  if (!ubicacion) return { estado: 'cargando', mensaje: `Acomodando ${pagina.titulo}…` }
+  if (!ubicacion || !posicionesVista)
+    return { estado: 'cargando', mensaje: `Acomodando ${pagina.titulo}…` }
   return {
     estado: 'listo',
     grafo: grafoPagina,
-    posiciones: ubicacion.posiciones,
+    posiciones: posicionesVista,
     colores,
     ramas,
     pagina: { titulo: pagina.titulo, indice, total, cara: pagina.cara, otra },
     lineas: ubicacion.lineas,
     conFecha,
     frenan,
+    marcas,
     aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,
   }
 }
