@@ -22,6 +22,7 @@ import { Etiquetas } from './Etiquetas'
 import { MarcasDelPlan } from './MarcasDelPlan'
 import { Medidor } from './Medidor'
 import { Nodos } from './Nodos'
+import { Pulsos } from './Pulsos'
 import { useEstadoVr } from '../lib/estado-vr'
 import { Filtro, encendidosPor, familiaFiltrada, hilosDelFiltro } from '../lib/filtro'
 import { ModoEtiquetas } from '../lib/parametros'
@@ -188,6 +189,7 @@ export function Grafo({
               />
             </>
           )}
+          <Pulsos conexiones={relaciones} posiciones={posiciones} frenan={frenan} />
           <Etiquetas
             nodos={grafo.nodos}
             posiciones={posiciones}
