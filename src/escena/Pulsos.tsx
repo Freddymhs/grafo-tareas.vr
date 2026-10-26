@@ -1,6 +1,6 @@
 // Las líneas como camino (idea de Freddy, 26-10). Por cada relación que todavía frena —depende de, bloqueada
 // por, espera respuesta de— un punto de luz viaja desde lo que hay que hacer antes hacia lo que lo espera: el ojo sigue
-// el movimiento y lee «primero esto, después aquello» sin texto (idea de Freddy). Qué frena lo dice la API (`frenan` de
+// el movimiento y lee «primero esto, después aquello» sin texto. Qué frena lo dice la API (`frenan` de
 // la página); acá solo se anima. Sirve en toda página y en las dos caras.
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
