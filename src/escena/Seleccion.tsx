@@ -1,4 +1,4 @@
-// El nodo seleccionado: su título y qué lo bloquea —a una persona, quién la espera; a un PBI a medias, qué mitad le
+// El nodo seleccionado: su título, de qué trata (su resumen, con las palabras del humano) y qué lo bloquea —a una persona, quién la espera; a un PBI a medias, qué mitad le
 // falta; a algo cerrado, cuándo y con qué respuesta se cerró—. El "qué lo bloquea" lo responde la API
 // (`GET /nodos/:id/bloqueado`, decisión C1); en el sintético de la FASE 1 no hay API y no se muestra.
 
@@ -6,12 +6,16 @@ import { Billboard, Text } from '@react-three/drei'
 import { useDerivadoControllerBloqueado } from '../lib/api/generado/derivado/derivado'
 import { usePulidoControllerCambiosDe } from '../lib/api/generado/pulido/pulido'
 import { conMarca, resumenDeCierre } from '../lib/cierre'
+import { altoDeTexto } from '../lib/constants/etiquetas'
 import type { Nodo, Posicion } from '../lib/dominio'
 import { avisoDePbi, resumenDeEspera, resumenDeQuienEspera } from '../lib/seleccion'
 import { LARGO_SELECCION, textoVisible } from '../lib/texto-visible'
 
 const TAMANO_TITULO = 0.06
 const TAMANO_DETALLE = 0.04
+/** Lo que se lee en voz alta en la reunión: un poco más grande que el detalle, y en celeste para distinguirlo. */
+const TAMANO_RESUMEN = 0.045
+const COLOR_RESUMEN = '#7dd3fc'
 const DESPLAZAMIENTO_Y = 0.16
 const ANCHO_MAXIMO = 1.2
 const COLOR_TITULO = '#ffffff'
@@ -36,14 +40,31 @@ interface Props {
 
 export function Seleccion({ nodo, posicion, detalle }: Props) {
   const { x, y, z } = posicion
+  const { resumen } = nodo
+  const bajoElResumen = resumen
+    ? altoDeTexto(resumen, TAMANO_RESUMEN, ANCHO_MAXIMO) + SEPARACION
+    : 0
   return (
     <Billboard position={[x, y + DESPLAZAMIENTO_Y, z]}>
       <Text fontSize={TAMANO_TITULO} color={COLOR_TITULO} anchorY="bottom" maxWidth={ANCHO_MAXIMO}>
         {`${conMarca(nodo, textoVisible(nodo.titulo, LARGO_SELECCION))} · ${nodo.estado}`}
       </Text>
-      {detalle ? (
+      {resumen ? (
         <Text
           position={[0, -SEPARACION, 0]}
+          fontSize={TAMANO_RESUMEN}
+          color={COLOR_RESUMEN}
+          anchorY="top"
+          maxWidth={ANCHO_MAXIMO}
+          outlineWidth={BORDE}
+          outlineColor={COLOR_BORDE}
+        >
+          {resumen}
+        </Text>
+      ) : null}
+      {detalle ? (
+        <Text
+          position={[0, -SEPARACION - bajoElResumen, 0]}
           fontSize={TAMANO_DETALLE}
           color={detalle.color}
           anchorY="top"

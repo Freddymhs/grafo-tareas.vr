@@ -13,6 +13,8 @@ export interface CreateNodoDto {
   tipo: CreateNodoDtoTipo
   titulo: string
   descripcion?: string
+  /** Una línea, con las palabras del humano: de qué trata el nodo (la VR la muestra al seleccionarlo) */
+  resumen?: string
   estado?: CreateNodoDtoEstado
   /** De qué cara de su HU es (FASE 17): REAL = lo que se trabaja; PLAN = lo que se intuyó (Draft trabajo) */
   cara?: CreateNodoDtoCara

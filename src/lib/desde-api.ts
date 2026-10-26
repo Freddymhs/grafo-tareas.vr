@@ -17,27 +17,30 @@ export function aGrafo(
   // Sobre todos los nodos, no sobre una página: la FASE de una tarjeta puede estar en otra.
   const pbis = pbisDe(nodos)
   return {
-    nodos: nodos.map(({ id, tipo, titulo, estado, color, fechaOrigen, etiquetas, cara }) => {
-      const mergeada = (etiquetas ?? []).includes(ETIQUETA_MERGEADA)
-      const tramite = (etiquetas ?? []).includes(ETIQUETA_TRAMITE)
-      const porCrear = (etiquetas ?? []).includes(ETIQUETA_POR_CREAR)
-      const espera = (etiquetas ?? []).includes(ETIQUETA_ESPERA)
-      const pbi = pbis.get(id)
-      return {
-        id,
-        tipo,
-        titulo,
-        estado,
-        ...(color ? { color } : {}),
-        fecha: fechaOrigen,
-        ...(mergeada ? { mergeada } : {}),
-        ...(tramite ? { tramite } : {}),
-        ...(pbi ? { pbi } : {}),
-        ...(porCrear ? { porCrear } : {}),
-        ...(espera ? { espera } : {}),
-        cara,
-      }
-    }),
+    nodos: nodos.map(
+      ({ id, tipo, titulo, estado, color, fechaOrigen, etiquetas, cara, resumen }) => {
+        const mergeada = (etiquetas ?? []).includes(ETIQUETA_MERGEADA)
+        const tramite = (etiquetas ?? []).includes(ETIQUETA_TRAMITE)
+        const porCrear = (etiquetas ?? []).includes(ETIQUETA_POR_CREAR)
+        const espera = (etiquetas ?? []).includes(ETIQUETA_ESPERA)
+        const pbi = pbis.get(id)
+        return {
+          id,
+          tipo,
+          titulo,
+          estado,
+          ...(color ? { color } : {}),
+          fecha: fechaOrigen,
+          ...(mergeada ? { mergeada } : {}),
+          ...(tramite ? { tramite } : {}),
+          ...(pbi ? { pbi } : {}),
+          ...(porCrear ? { porCrear } : {}),
+          ...(espera ? { espera } : {}),
+          cara,
+          ...(resumen ? { resumen } : {}),
+        }
+      },
+    ),
     // Una conexión hacia un nodo que no vino (otra página, o borrado entre las dos lecturas) no se dibuja.
     conexiones: conexiones
       .filter(({ origenId, destinoId }) => ids.has(origenId) && ids.has(destinoId))

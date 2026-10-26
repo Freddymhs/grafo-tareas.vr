@@ -11,6 +11,8 @@ import type { UpdateNodoDtoEstado } from './updateNodoDtoEstado'
 export interface UpdateNodoDto {
   titulo?: string
   descripcion?: string
+  /** Una línea, con las palabras del humano: de qué trata el nodo (la VR la muestra al seleccionarlo) */
+  resumen?: string
   estado?: UpdateNodoDtoEstado
   /** De qué cara de su HU es (FASE 17): REAL = lo que se trabaja; PLAN = lo que se intuyó (Draft trabajo) */
   cara?: UpdateNodoDtoCara

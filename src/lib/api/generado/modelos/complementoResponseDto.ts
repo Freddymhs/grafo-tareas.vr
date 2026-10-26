@@ -27,6 +27,8 @@ export interface ComplementoResponseDto {
   /** @nullable */
   descripcion?: string | null
   /** @nullable */
+  resumen?: string | null
+  /** @nullable */
   externoOrigen?: string | null
   /** @nullable */
   externoId?: string | null

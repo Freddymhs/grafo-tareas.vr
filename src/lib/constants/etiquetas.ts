@@ -45,6 +45,18 @@ export function medidasEtiqueta(lineas: number): {
   }
 }
 
+/** Lo que mide de ancho una letra, en tamaños de letra: sale de las 24 letras que caben en ANCHO_ETIQUETA. */
+const ANCHO_LETRA = ANCHO_ETIQUETA / (LETRAS_POR_LINEA * TAMANO_TEXTO)
+/** La división en coma flotante da 23,999…: sin esto, en el ancho medido de 24 letras cabían 23. */
+const TOLERANCIA = 1e-9
+
+/** Cuánto baja un texto de `tamano` que parte en líneas de `ancho`: para poner otro debajo sin medirlo en el visor. */
+export function altoDeTexto(texto: string, tamano: number, ancho: number): number {
+  const letrasPorLinea = Math.max(1, Math.floor(ancho / (tamano * ANCHO_LETRA) + TOLERANCIA))
+  const lineas = Math.max(1, Math.ceil(texto.length / letrasPorLinea))
+  return lineas * tamano * INTERLINEADO
+}
+
 /** La de dos líneas: el caso de una página llena. */
 export const TEXTO = medidasEtiqueta(LINEAS_MINIMAS).texto
 export const CELDA = medidasEtiqueta(LINEAS_MINIMAS).celda
