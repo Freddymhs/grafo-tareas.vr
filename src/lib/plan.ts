@@ -2,6 +2,7 @@
 // cada OTRO carril que espera, con el número de la tarjeta que espera ahí. Todo lo calcula la API (`GET /derivado/plan`:
 // `orden` y `pelotitas`); acá solo se pasa a lo que dibuja la escena. Puro.
 import type { CarrilDto } from './api/generado/modelos'
+import type { Grafo } from './dominio'
 
 export interface MarcaDelPlan {
   /** Su lugar en la cadena de su carril: 1 = no espera a nada de su carril. */
@@ -26,4 +27,20 @@ export function marcasDelPlan(carriles: readonly CarrilDto[]): ReadonlyMap<strin
       }),
     ),
   )
+}
+
+/**
+ * En la cara plan, una pieza ya tomada lleva su tarjeta `[<task>]` y, hasta que tenga su FASE, la VR la marca como PBI a
+ * medias: morada y grande. Ese aviso es del trabajo; en el plan tapaba la línea («se ve morado, se ve gigante… ya no lo
+ * entiendo», Freddy, 2026-10-26). Acá las piezas con número se ven como lo que son en el plan: una pieza de su línea.
+ */
+export function sinAvisoDePbi(grafo: Grafo, marcas: ReadonlyMap<string, MarcaDelPlan>): Grafo {
+  if (marcas.size === 0) return grafo
+  return {
+    ...grafo,
+    nodos: grafo.nodos.map((nodo) => {
+      if (!marcas.has(nodo.id) || nodo.pbi === undefined) return nodo
+      return { ...nodo, pbi: undefined }
+    }),
+  }
 }

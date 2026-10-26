@@ -36,7 +36,7 @@ import {
   ramasDePagina,
   sinPadre,
 } from '../lib/paginas'
-import { marcasDelPlan, type MarcaDelPlan } from '../lib/plan'
+import { marcasDelPlan, sinAvisoDePbi, type MarcaDelPlan } from '../lib/plan'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
 
@@ -93,7 +93,6 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     () => (nodos.data && conexiones.data ? aGrafo(nodos.data.data, conexiones.data) : null),
     [nodos.data, conexiones.data],
   )
-  const colores = useMemo(() => (grafo ? coloresPorNodo(grafo) : null), [grafo])
   // Solo las TAREAS: la HU se reconoce por su nombre, y lo que viene de los archivos FASE (una duda) no tiene fecha
   // de origen real (la suya es la de la importación) y mostrarla engañaría.
   const conFecha = useMemo(() => {
@@ -129,9 +128,12 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     () => (pagina && Array.isArray(pagina.frenan) ? new Set(pagina.frenan) : null),
     [pagina],
   )
+  // En el plan se lee la línea: las piezas van con el color de su carril, sin el aviso de PBI a medias (`sinAvisoDePbi`).
+  const grafoVista = useMemo(() => (grafo ? sinAvisoDePbi(grafo, marcas) : null), [grafo, marcas])
+  const colores = useMemo(() => (grafoVista ? coloresPorNodo(grafoVista) : null), [grafoVista])
   const grafoPagina = useMemo(
-    () => (grafo && pagina ? grafoDePagina(grafo, pagina.nodos) : null),
-    [grafo, pagina],
+    () => (grafoVista && pagina ? grafoDePagina(grafoVista, pagina.nodos) : null),
+    [grafoVista, pagina],
   )
   // La leyenda, por página: solo las ramas que colorean lo que se ve.
   const ramas = useMemo(() => {

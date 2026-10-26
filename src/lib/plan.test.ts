@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CarrilDto, PiezaDelPlanDto } from './api/generado/modelos'
-import { marcasDelPlan } from './plan'
+import { Pbi, TipoNodo, EstadoNodo, type Grafo } from './dominio'
+import { marcasDelPlan, sinAvisoDePbi } from './plan'
 
 const AZUL = '#0ea5e9'
 const VERDE = '#14b8a6'
@@ -59,5 +60,34 @@ describe('marcasDelPlan — el número y las líneas que espera, tal como los ma
       orden: 1,
       esperas: [{ color: AZUL, numero: 2 }],
     })
+  })
+})
+
+describe('sinAvisoDePbi — en el plan se lee la línea, no el aviso de PBI a medias', () => {
+  const tomada = {
+    id: '26958',
+    tipo: TipoNodo.TAREA,
+    titulo: '[26958]',
+    estado: EstadoNodo.ABIERTO,
+    pbi: Pbi.A_MEDIAS,
+  }
+  const otra = {
+    id: 'otra',
+    tipo: TipoNodo.TAREA,
+    titulo: '[1]',
+    estado: EstadoNodo.ABIERTO,
+    pbi: Pbi.A_MEDIAS,
+  }
+  const grafo: Grafo = { nodos: [tomada, otra], conexiones: [] }
+  const marcas = new Map([['26958', { orden: 1, esperas: [] }]])
+
+  it('la pieza con número pierde el aviso; lo que no es pieza del plan lo conserva', () => {
+    const vista = sinAvisoDePbi(grafo, marcas)
+    expect(vista.nodos[0].pbi).toBeUndefined()
+    expect(vista.nodos[1].pbi).toBe(Pbi.A_MEDIAS)
+  })
+
+  it('fuera del plan (sin marcas) el grafo queda igual', () => {
+    expect(sinAvisoDePbi(grafo, new Map())).toBe(grafo)
   })
 })
