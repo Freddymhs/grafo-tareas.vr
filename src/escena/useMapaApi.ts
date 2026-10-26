@@ -4,6 +4,7 @@
 // nodos sin posición) o con `reordenar`, el layout de la página en el Worker → PUT de sus nodos. Después, las guardadas, y lo nuevo junto a sus vecinos (`ubicarFaltantes`).
 // Un nodo que también está en otra página (una persona que bloquea en dos HU) se guarda en la primera («hogar») y en las
 // demás se ubica junto a sus vecinos sin pisarla. Los colores salen del grafo entero: las ramas no son contenido de página.
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
 import { useConexionesControllerFindAll } from '../lib/api/generado/conexiones/conexiones'
 import {
@@ -91,6 +92,12 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const indicePedido = useEstadoVr((estado) => estado.libro)
   const caraPedida = useEstadoVr((estado) => estado.cara)
   const guardar = useNodosControllerGuardarPosiciones()
+  // Se refresca al mirar algo nuevo (26-10) —otra HU, la otra cara—, no con un reloj: casi
+  // nunca cambia nada mientras se mira, y así no se gasta (Freddy). Entrar a la VR también refresca (App.tsx).
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    void queryClient.invalidateQueries()
+  }, [indicePedido, caraPedida, queryClient])
   const guardadoPara = useRef<string | null>(null)
 
   const grafo = useMemo(

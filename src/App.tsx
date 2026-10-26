@@ -1,6 +1,6 @@
 import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore } from '@react-three/xr'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
 import { MeshBasicMaterial } from 'three'
 import { conteoDeDudas } from './lib/cierre'
@@ -105,8 +105,11 @@ function Vista({
   mensaje,
 }: PropsVista) {
   const [errorVr, setErrorVr] = useState<string | null>(null)
+  const queryClient = useQueryClient()
   const entrarEnVr = () => {
     setErrorVr(null)
+    // Entrar trae lo último: si se salió y se volvió a entrar, no se queda con lo de antes.
+    void queryClient.invalidateQueries()
     xrStore.enterVR().catch((error: unknown) => setErrorVr(registrarError('entrar en VR', error)))
   }
 
