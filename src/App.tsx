@@ -28,6 +28,7 @@ import { Movimiento } from './escena/Movimiento'
 import { useLayout } from './escena/useLayout'
 import { useMapaApi } from './escena/useMapaApi'
 import { VoltearConControl } from './escena/VoltearConControl'
+import type { MarcaDelPlan } from './lib/plan'
 
 // El rayo sólido y hasta la pantalla curva, con la mano y con el control: el de serie se desvanece y llega a 1 m, y
 // «me cuesta mucho» apuntar (Freddy en el visor, 2026-10-18).
@@ -72,6 +73,7 @@ const REINTENTOS = 1
 const GRAFO_VACIO: GrafoDominio = { nodos: [], conexiones: [] }
 const SIN_COLORES: ReadonlyMap<string, string> = new Map()
 const NINGUNO: ReadonlySet<string> = new Set()
+const SIN_MARCAS: ReadonlyMap<string, MarcaDelPlan> = new Map()
 
 interface PropsVista {
   readonly grafo: GrafoDominio
@@ -82,6 +84,8 @@ interface PropsVista {
   readonly conFecha?: ReadonlySet<string>
   /** Lo que frena en la página, según la API (filtro 4). */
   readonly frenan?: ReadonlySet<string> | null
+  /** En la cara plan: el número de cada pieza y los carriles que espera. */
+  readonly marcas?: ReadonlyMap<string, MarcaDelPlan>
   /** Lo que va fijo en la escena además del grafo: la fila de páginas y leyenda (FASE 15). */
   readonly fijo?: ReactNode
   /** Lo que se le dice al usuario mientras no hay mapa, o si algo falló. */
@@ -96,6 +100,7 @@ function Vista({
   lineas = LINEAS_MINIMAS,
   conFecha = NINGUNO,
   frenan = null,
+  marcas = SIN_MARCAS,
   fijo,
   mensaje,
 }: PropsVista) {
@@ -146,6 +151,7 @@ function Vista({
             lineas={lineas}
             conFecha={conFecha}
             frenan={frenan}
+            marcas={marcas}
           />
           {fijo}
           <Movimiento objetivoOrbita={OBJETIVO_ORBITA} />
@@ -201,6 +207,7 @@ function VistaApi() {
       lineas={mapa.lineas}
       conFecha={mapa.conFecha}
       frenan={mapa.frenan}
+      marcas={mapa.marcas}
       fijo={
         <>
           <BarraSuperior

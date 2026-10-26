@@ -69,3 +69,23 @@ export function colorApagado(hex: string): string {
   const fondo = canales(COLOR_FONDO)
   return aHex(canales(hex).map((valor, i) => valor + (fondo[i] - valor) * APAGADO))
 }
+
+/** El texto que se lee sobre un color: oscuro o blanco, el de más contraste (WCAG). */
+const TEXTO_OSCURO = '#020617'
+const TEXTO_CLARO = '#ffffff'
+const luminancia = (hex: string) => {
+  const [r, g, b] = canales(hex).map((valor) => {
+    const c = valor / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contraste = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+
+/** El número dentro de la pelotita del plan (Freddy, 2026-10-26): legible sobre el color de cualquier carril. */
+export function colorDeTextoSobre(fondo: string): string {
+  const deFondo = luminancia(fondo)
+  return contraste(deFondo, luminancia(TEXTO_OSCURO)) >= contraste(deFondo, luminancia(TEXTO_CLARO))
+    ? TEXTO_OSCURO
+    : TEXTO_CLARO
+}

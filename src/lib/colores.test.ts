@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { colorApagado, coloresPorNodo } from './colores'
+import { colorApagado, colorDeTextoSobre, coloresPorNodo } from './colores'
 import {
   COLOR_FASE,
   COLOR_HISTORIA,
@@ -78,5 +78,20 @@ describe('colorApagado — lo que queda fuera de la familia seleccionada (FASE 1
     expect(apagado).toMatch(/^#[0-9a-f]{6}$/)
     expect(brillo(apagado)).toBeLessThan(brillo(original) / 2)
     expect(apagado).not.toBe('#020617')
+  })
+})
+
+describe('colorDeTextoSobre — el número del plan se lee en el color de cualquier carril', () => {
+  it('sobre los tres carriles de la 24576 (azul, verde, amarillo) va oscuro', () => {
+    expect(['#0ea5e9', '#14b8a6', '#eab308'].map(colorDeTextoSobre)).toEqual([
+      '#020617',
+      '#020617',
+      '#020617',
+    ])
+  })
+
+  it('sobre un color oscuro va blanco', () => {
+    expect(colorDeTextoSobre('#1e3a8a')).toBe('#ffffff')
+    expect(colorDeTextoSobre('#020617')).toBe('#ffffff')
   })
 })

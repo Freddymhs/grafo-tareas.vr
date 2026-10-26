@@ -19,11 +19,13 @@ import { idsConBorde } from '../lib/borde'
 import { Aristas } from './Aristas'
 import { Bordes } from './Bordes'
 import { Etiquetas } from './Etiquetas'
+import { MarcasDelPlan } from './MarcasDelPlan'
 import { Medidor } from './Medidor'
 import { Nodos } from './Nodos'
 import { useEstadoVr } from '../lib/estado-vr'
 import { Filtro, encendidosPor, familiaFiltrada, hilosDelFiltro } from '../lib/filtro'
 import { ModoEtiquetas } from '../lib/parametros'
+import type { MarcaDelPlan } from '../lib/plan'
 import { PanelAcciones } from './PanelAcciones'
 import { quienesEsperan } from '../lib/seleccion'
 import { Seleccion, SeleccionConBloqueo, SeleccionDeCerrado, SeleccionDePersona } from './Seleccion'
@@ -44,6 +46,8 @@ interface Props {
   readonly conFecha: ReadonlySet<string>
   /** Lo que frena en la página, según la API (filtro 4); `null` sin API o con una API anterior. */
   readonly frenan: ReadonlySet<string> | null
+  /** En la cara plan: el número de cada pieza y los carriles que espera (vacío en lo real y en el sintético). */
+  readonly marcas: ReadonlyMap<string, MarcaDelPlan>
 }
 
 export function Grafo({
@@ -55,6 +59,7 @@ export function Grafo({
   lineas,
   conFecha,
   frenan,
+  marcas,
 }: Props) {
   // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
   // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
@@ -120,6 +125,7 @@ export function Grafo({
     }
   }, [grafo, iluminados, porFiltro])
   const conBorde = useMemo(() => idsConBorde(grafo.nodos, iluminados), [grafo, iluminados])
+  const conNumero = useMemo(() => new Set(marcas.keys()), [marcas])
   const posicionSeleccionado = seleccionado ? posiciones?.get(seleccionado) : undefined
   const nodoSeleccionado = seleccionado
     ? grafo.nodos.find(({ id }) => id === seleccionado)
@@ -142,6 +148,14 @@ export function Grafo({
             resaltados={resaltados}
             onSeleccionar={tocarNodo}
             onApuntar={apuntar}
+          />
+          <MarcasDelPlan
+            nodos={grafo.nodos}
+            posiciones={posiciones}
+            marcas={marcas}
+            colores={coloresVisibles}
+            seleccionado={seleccionado}
+            resaltados={resaltados}
           />
           <Bordes
             nodos={grafo.nodos}
@@ -183,6 +197,7 @@ export function Grafo({
             lineas={lineas}
             iluminados={iluminados}
             conFecha={conFecha}
+            conNumero={conNumero}
           />
           {nodoSeleccionado && posicionSeleccionado ? (
             conApi ? (

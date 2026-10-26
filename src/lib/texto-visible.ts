@@ -20,3 +20,14 @@ export function textoVisible(texto: string, largo: number): string {
   const limpio = texto.replace(SIN_GLIFO, '').replace(ESPACIOS, ' ').trim()
   return limpio.length > largo ? `${limpio.slice(0, largo - 1).trimEnd()}…` : limpio
 }
+
+/**
+ * El título de una pieza del plan sin la tecla de su ronda delante («1️⃣ Detalle…» → «Detalle…»). En la cara plan el
+ * número es el de la pelotita, su orden en el carril; la ronda es de toda la HU y con los dos a la vista «no sé si el 1
+ * azul corresponde al 1 verde» (Freddy, 2026-10-26).
+ */
+const TECLA_DE_RONDA = /^\s*\d\u{FE0F}?\u{20E3}\s*/u
+
+export function sinRonda(titulo: string): string {
+  return titulo.replace(TECLA_DE_RONDA, '')
+}

@@ -21,7 +21,7 @@ import {
 import { conMarca, esDudaContestada } from '../lib/cierre'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
 import { textoConFecha } from '../lib/paginas'
-import { LARGO_APUNTADO, textoVisible } from '../lib/texto-visible'
+import { LARGO_APUNTADO, sinRonda, textoVisible } from '../lib/texto-visible'
 
 export const ETIQUETAS_CERCANAS = 12
 const SEGUNDOS_ENTRE_CALCULOS = 0.25
@@ -44,6 +44,8 @@ interface Props {
   readonly iluminados: ReadonlySet<string> | null
   /** Las tareas sin padre: su etiqueta empieza con la fecha («14-oct · …», FASE 15). */
   readonly conFecha: ReadonlySet<string>
+  /** Las piezas del plan con su número en la pelotita: su etiqueta va sin la tecla de la ronda (`sinRonda`). */
+  readonly conNumero: ReadonlySet<string>
 }
 
 function mismosIds(a: readonly string[], b: readonly string[]): boolean {
@@ -59,6 +61,7 @@ export function Etiquetas({
   lineas,
   iluminados,
   conFecha,
+  conNumero,
 }: Props) {
   const { largo } = medidasEtiqueta(lineas)
   const [cercanos, setCercanos] = useState<readonly string[]>([])
@@ -88,8 +91,8 @@ export function Etiquetas({
   }
   const textoDe = (nodo: Nodo | undefined, id: string) => {
     if (!nodo) return id
-    const texto =
-      nodo.fecha && conFecha.has(id) ? textoConFecha(nodo.titulo, nodo.fecha) : nodo.titulo
+    const titulo = conNumero.has(id) ? sinRonda(nodo.titulo) : nodo.titulo
+    const texto = nodo.fecha && conFecha.has(id) ? textoConFecha(titulo, nodo.fecha) : titulo
     return conMarca(nodo, texto)
   }
   const historias = nodos
