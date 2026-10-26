@@ -1,5 +1,8 @@
 import { useMemo } from 'react'
-import { useDerivadoControllerFamilia } from '../lib/api/generado/derivado/derivado'
+import {
+  useDerivadoControllerFamilia,
+  useDerivadoControllerHoyPuedo,
+} from '../lib/api/generado/derivado/derivado'
 import { colorApagado } from '../lib/colores'
 import {
   OPACIDAD_APAGADA,
@@ -31,6 +34,10 @@ import { PanelAcciones } from './PanelAcciones'
 import { quienesEsperan } from '../lib/seleccion'
 import { Seleccion, SeleccionConBloqueo, SeleccionDeCerrado, SeleccionDePersona } from './Seleccion'
 import { useAccionesVr } from './useAccionesVr'
+
+/** El comienzo del camino: casi blanco, para que se distinga del gris de las demás relaciones. */
+const COLOR_COMIENZO = '#e2e8f0'
+const OPACIDAD_TENUE = 0.35
 
 interface Props {
   readonly grafo: GrafoDominio
@@ -75,6 +82,18 @@ export function Grafo({
       relaciones: grafo.conexiones.filter(({ tipo }) => tipo !== TipoConexion.PERTENECE_A),
     }
   }, [grafo])
+  // El peso de la línea (idea de Freddy, 26-10). La que sale de algo que se puede hacer ya —lo abierto que
+  // nada bloquea, según la API— es el comienzo del camino: clara y fuerte; las demás, tenues.
+  const hoyPuedo = useDerivadoControllerHoyPuedo({ query: { enabled: conApi } }).data
+  const { relacionesDelComienzo, relacionesTenues } = useMemo(() => {
+    const libres = new Set((hoyPuedo ?? []).map(({ id }) => id))
+    const esComienzo = ({ destinoId }: { destinoId: string }) =>
+      libres.has(destinoId) && (frenan?.has(destinoId) ?? false)
+    return {
+      relacionesDelComienzo: relaciones.filter(esComienzo),
+      relacionesTenues: relaciones.filter((c) => !esComienzo(c)),
+    }
+  }, [relaciones, hoyPuedo, frenan])
   const seleccionado = useEstadoVr((estado) => estado.seleccionado)
   const resaltados = useEstadoVr((estado) => estado.resaltados)
   const tocar = useEstadoVr((estado) => estado.tocar)
@@ -186,7 +205,17 @@ export function Grafo({
             </>
           ) : (
             <>
-              <Aristas conexiones={relaciones} posiciones={posiciones} opacidad={OPACIDAD_ARISTA} />
+              <Aristas
+                conexiones={relacionesTenues}
+                posiciones={posiciones}
+                opacidad={OPACIDAD_TENUE}
+              />
+              <Aristas
+                conexiones={relacionesDelComienzo}
+                posiciones={posiciones}
+                opacidad={OPACIDAD_ARISTA}
+                color={COLOR_COMIENZO}
+              />
               <Aristas conexiones={arbol} posiciones={posiciones} opacidad={OPACIDAD_ESTRUCTURA} />
               <Aristas
                 conexiones={aRamas}

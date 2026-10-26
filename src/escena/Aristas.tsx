@@ -10,9 +10,11 @@ interface Props {
   readonly conexiones: readonly Conexion[]
   readonly posiciones: ReadonlyMap<string, Posicion>
   readonly opacidad: number
+  /** El color de estas líneas; sin él, el de siempre. */
+  readonly color?: string
 }
 
-export function Aristas({ conexiones, posiciones, opacidad }: Props) {
+export function Aristas({ conexiones, posiciones, opacidad, color = COLOR_ARISTA }: Props) {
   const vertices = useMemo(() => {
     const valores = conexiones.flatMap(({ origenId, destinoId }) => {
       const origen = posiciones.get(origenId)
@@ -34,7 +36,7 @@ export function Aristas({ conexiones, posiciones, opacidad }: Props) {
           count={vertices.length / COMPONENTES_POR_VERTICE}
         />
       </bufferGeometry>
-      <lineBasicMaterial color={COLOR_ARISTA} transparent opacity={opacidad} />
+      <lineBasicMaterial color={color} transparent opacity={opacidad} />
     </lineSegments>
   )
 }
