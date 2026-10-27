@@ -72,6 +72,8 @@ export interface Nodo {
   readonly porCrear?: boolean
   /** Lo ya pedido que espera a otro (etiqueta del complemento `espera`): abierta, se lee «espera ·» delante. */
   readonly espera?: boolean
+  /** En el plan: una pieza que ya pasó a trabajo (26-10). Va sin esfera y lo pendiente no la cuenta: ya se decidió. */
+  readonly tomada?: boolean
   /** De qué trata, en una línea con las palabras del humano (2026-10-26): se lee al seleccionarlo. */
   readonly resumen?: string
 }

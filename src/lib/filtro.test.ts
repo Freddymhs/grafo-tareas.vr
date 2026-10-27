@@ -162,3 +162,10 @@ describe('hilosDelFiltro — un hilo brilla si lleva a algo pendiente (Freddy, 2
     expect([...hilosDelFiltro(ciclo, new Set())]).toEqual([])
   })
 })
+
+describe('pendiente en el plan — lo tomado ya se decidió', () => {
+  it('una pieza tomada no está pendiente aunque siga abierta', () => {
+    const abierta = { id: 'a', tipo: TipoNodo.TAREA, titulo: 'a', estado: EstadoNodo.ABIERTO }
+    expect([...pendientes([abierta, { ...abierta, id: 't', tomada: true }])]).toEqual(['a'])
+  })
+})

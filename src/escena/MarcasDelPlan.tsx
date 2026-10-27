@@ -4,7 +4,7 @@
 // de frente a la cabeza, delante de cada esfera, con el texto que más contrasta con su color.
 import { Billboard, Text } from '@react-three/drei'
 import { colorDeTextoSobre } from '../lib/colores'
-import { COLOR_SIN_RAMA, RADIO_NODO } from '../lib/constants/grafo'
+import { COLOR_FONDO, COLOR_SIN_RAMA, RADIO_NODO } from '../lib/constants/grafo'
 import type { Nodo, Posicion } from '../lib/dominio'
 import { escalaDe } from '../lib/escala-nodo'
 import type { MarcaDelPlan } from '../lib/plan'
@@ -43,7 +43,8 @@ export function MarcasDelPlan({
     const posicion = posiciones.get(nodo.id)
     if (!marca || !posicion) return null
     const radio = RADIO_NODO * escalaDe(nodo, seleccionado, resaltados)
-    const fondo = colores.get(nodo.id) ?? COLOR_SIN_RAMA
+    // Sin esfera (tomada), el número va sobre el fondo de la escena.
+    const fondo = nodo.tomada ? COLOR_FONDO : (colores.get(nodo.id) ?? COLOR_SIN_RAMA)
     return (
       <Billboard key={nodo.id} position={[posicion.x, posicion.y, posicion.z]}>
         <Text

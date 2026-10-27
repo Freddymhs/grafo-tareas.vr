@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CarrilDto, PiezaDelPlanDto } from './api/generado/modelos'
 import { Pbi, TipoNodo, EstadoNodo, type Grafo } from './dominio'
-import { marcasDelPlan, sinAvisoDePbi } from './plan'
+import { marcasDelPlan, vistaDelPlan } from './plan'
 
 const AZUL = '#0ea5e9'
 const VERDE = '#14b8a6'
@@ -48,8 +48,12 @@ describe('marcasDelPlan — el número y las líneas que espera, tal como los ma
 
   it('cada pieza lleva su orden; la que espera a otro carril, el color de esa línea y el número que espera', () => {
     const marcas = marcasDelPlan(plan)
-    expect(marcas.get('26960')).toEqual({ orden: 2, esperas: [] })
-    expect(marcas.get('26963')).toEqual({ orden: 1, esperas: [{ color: AZUL, numero: 1 }] })
+    expect(marcas.get('26960')).toEqual({ orden: 2, esperas: [], tomada: false })
+    expect(marcas.get('26963')).toEqual({
+      orden: 1,
+      esperas: [{ color: AZUL, numero: 1 }],
+      tomada: false,
+    })
   })
 
   it('«Sin carril» no tiene pelotita propia: todo lo que trae son esperas', () => {
@@ -59,11 +63,12 @@ describe('marcasDelPlan — el número y las líneas que espera, tal como los ma
     expect(marcasDelPlan([sinCarril]).get('x')).toEqual({
       orden: 1,
       esperas: [{ color: AZUL, numero: 2 }],
+      tomada: false,
     })
   })
 })
 
-describe('sinAvisoDePbi — en el plan se lee la línea, no el aviso de PBI a medias', () => {
+describe('vistaDelPlan — en el plan se lee la línea, no el aviso de PBI a medias', () => {
   const tomada = {
     id: '26958',
     tipo: TipoNodo.TAREA,
@@ -79,15 +84,31 @@ describe('sinAvisoDePbi — en el plan se lee la línea, no el aviso de PBI a me
     pbi: Pbi.A_MEDIAS,
   }
   const grafo: Grafo = { nodos: [tomada, otra], conexiones: [] }
-  const marcas = new Map([['26958', { orden: 1, esperas: [] }]])
+  const marcas = new Map([['26958', { orden: 1, esperas: [], tomada: true }]])
 
   it('la pieza con número pierde el aviso; lo que no es pieza del plan lo conserva', () => {
-    const vista = sinAvisoDePbi(grafo, marcas)
+    const vista = vistaDelPlan(grafo, marcas)
     expect(vista.nodos[0].pbi).toBeUndefined()
     expect(vista.nodos[1].pbi).toBe(Pbi.A_MEDIAS)
   })
 
+  it('la tomada queda marcada: apagada y fuera de lo pendiente', () => {
+    expect(vistaDelPlan(grafo, marcas).nodos[0].tomada).toBe(true)
+  })
+
   it('fuera del plan (sin marcas) el grafo queda igual', () => {
-    expect(sinAvisoDePbi(grafo, new Map())).toBe(grafo)
+    expect(vistaDelPlan(grafo, new Map())).toBe(grafo)
+  })
+})
+
+describe('tomada — una pieza que ya pasó a trabajo sigue en su línea del plan, apagada', () => {
+  it('la API la manda en la cara real: se marca tomada', () => {
+    const enCurso = {
+      ...pieza('26958', 1, [{ carril: 'B · Revisión', color: VERDE, espera: null }]),
+      cara: 'REAL' as const,
+    }
+    expect(marcasDelPlan([carril('B · Revisión', VERDE, [enCurso])]).get('26958')?.tomada).toBe(
+      true,
+    )
   })
 })

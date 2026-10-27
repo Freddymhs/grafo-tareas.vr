@@ -165,6 +165,9 @@ export function Grafo({
   // «muy enredada» (Freddy, HU 20379: 114 nodos). Vale igual en las dos caras. La selección sigue apagando.
   const ocultos = porFiltro && iluminados ? iluminados : null
   const nodosVisibles = ocultos ? grafo.nodos.filter(({ id }) => ocultos.has(id)) : grafo.nodos
+  // Una pieza ya tomada no lleva esfera: queda su número, su etiqueta y sus líneas, como un hueco en su línea del plan.
+  // Se lee «ya salió» sin cortar el camino (Freddy, 26-10: «ocultar la pelotita y ya»).
+  const esferas = nodosVisibles.filter(({ tomada }) => !tomada)
 
   return (
     <>
@@ -172,7 +175,7 @@ export function Grafo({
       {posiciones ? (
         <>
           <Nodos
-            nodos={nodosVisibles}
+            nodos={esferas}
             posiciones={posiciones}
             colores={coloresVisibles}
             seleccionado={seleccionado}

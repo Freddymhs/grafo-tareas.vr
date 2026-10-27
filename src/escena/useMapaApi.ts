@@ -39,7 +39,7 @@ import {
   ramasDePagina,
   sinPadre,
 } from '../lib/paginas'
-import { marcasDelPlan, sinAvisoDePbi, type MarcaDelPlan } from '../lib/plan'
+import { marcasDelPlan, vistaDelPlan, type MarcaDelPlan } from '../lib/plan'
 import { ubicarFaltantes } from '../lib/ubicar'
 import { useLayout } from './useLayout'
 
@@ -139,8 +139,8 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     () => (pagina && Array.isArray(pagina.frenan) ? new Set(pagina.frenan) : null),
     [pagina],
   )
-  // En el plan se lee la línea: las piezas van con el color de su carril, sin el aviso de PBI a medias (`sinAvisoDePbi`).
-  const grafoVista = useMemo(() => (grafo ? sinAvisoDePbi(grafo, marcas) : null), [grafo, marcas])
+  // En el plan se lee la línea: las piezas con el color de su carril, sin el aviso de PBI a medias; lo tomado, marcado.
+  const grafoVista = useMemo(() => (grafo ? vistaDelPlan(grafo, marcas) : null), [grafo, marcas])
   const colores = useMemo(() => (grafoVista ? coloresPorNodo(grafoVista) : null), [grafoVista])
   const grafoPagina = useMemo(
     () => (grafoVista && pagina ? grafoDePagina(grafoVista, pagina.nodos) : null),

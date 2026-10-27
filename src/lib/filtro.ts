@@ -69,11 +69,16 @@ export function siguienteFiltro(actual: Filtro): Filtro {
   return ORDEN[(ORDEN.indexOf(actual) + 1) % ORDEN.length]
 }
 
-/** Lo que «pendiente» deja encendido: lo que ni se mergeó ni se cerró. */
+/**
+ * Lo que «pendiente» deja encendido: lo que falta. En el trabajo, lo que ni se mergeó ni se cerró; en el plan, además, lo
+ * que falta tomar: una pieza tomada ya se decidió y vive en el trabajo (Freddy, 2026-10-26).
+ */
 export function pendientes(nodos: readonly Nodo[]): ReadonlySet<string> {
   return new Set(
     nodos
-      .filter(({ mergeada, estado }) => !mergeada && estado !== EstadoNodo.CERRADO)
+      .filter(
+        ({ mergeada, tomada, estado }) => !mergeada && !tomada && estado !== EstadoNodo.CERRADO,
+      )
       .map(({ id }) => id),
   )
 }

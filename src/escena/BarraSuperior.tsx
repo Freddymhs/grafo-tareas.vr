@@ -70,6 +70,8 @@ const FIJOS: readonly Item[] = [
   { color: COLOR_SIN_RAMA, texto: 'sin rama' },
 ]
 const CERRADA: Item = { color: COLOR_SIN_RAMA, texto: 'chica = cerrada', escala: ESCALA_CERRADA }
+/** En el plan, lo ya tomado no lleva esfera (26-10): la leyenda lo dice como dice «chica = cerrada». */
+const TOMADA: Item = { color: null, texto: 'sin esfera = tomada' }
 /** Mientras un filtro está puesto (FASE 17): qué se está viendo y con qué dedos se sale. */
 const itemDelFiltro = (filtro: Filtro): readonly Item[] => {
   const texto = TEXTO_DEL_FILTRO[filtro]
@@ -216,6 +218,7 @@ export function BarraSuperior({
             ...itemDePiezas(cara, piezasSinTask),
             ...FIJOS,
             CERRADA,
+            ...(cara === Cara.PLAN ? [TOMADA] : []),
             SEPARADOR,
             ...itemsDeRamas(ramas),
           ]}
