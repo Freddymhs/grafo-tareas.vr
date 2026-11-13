@@ -68,7 +68,7 @@ describe('leerParametros', () => {
     expect(leerParametros('?filtro=cualquiera').filtro).toBe(Filtro.TODO)
   })
 
-  it('`?espacio=` y `?proyecto=` abren con esa pestaña (FASE 24); sin ellos, «Todo»', () => {
+  it('`?espacio=` y `?proyecto=` abren con esa pestaña (FASE 24); sin ellos, ninguna pedida', () => {
     expect(leerParametros('?espacio=e1&proyecto=p1')).toMatchObject({
       espacio: 'e1',
       proyecto: 'p1',

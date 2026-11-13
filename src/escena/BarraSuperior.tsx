@@ -2,7 +2,8 @@
 // línea de pestañas y una de leyenda, fija al frente sobre la pantalla curva. La pestaña se toca con el rayo; X / Y del
 // control izquierdo hacen lo mismo sin apuntar (`CambioDePagina`). Las páginas las arma la API; acá solo se muestran.
 // La HU que tiene plan (FASE 17) lleva la esquina de su pestaña doblada: la hoja tiene otra cara. Vista por el plan, la
-// pestaña se pone ámbar y dice «plan N»; tocar la pestaña de la HU que se ve da vuelta la hoja.
+// pestaña se pone ámbar y dice «plan N»; tocar la pestaña de la HU que se ve da vuelta la hoja. Fuera del método (FASE 26,
+// D3) no hay HU: la leyenda es la de los tipos del espacio (`leyendaDeTipos`).
 import { Text } from '@react-three/drei'
 import { useMemo } from 'react'
 import { Shape } from 'three'
@@ -22,11 +23,13 @@ import { textoDePiezas } from '../lib/piezas'
 import { Cara, type Nodo } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import { type Filtro, TEXTO_DEL_FILTRO } from '../lib/filtro'
+import { CERRADA, type ItemLeyenda, leyendaDeTipos } from '../lib/leyenda'
 import { librosDe } from '../lib/paginas'
 import { textoVisible } from '../lib/texto-visible'
 import { ALTO_BOTON, ANCHO_BOTON, Boton3D } from './Boton3D'
 import { ALTURA_BARRA, DISTANCIA_BARRA } from './medidas-barra'
 import { useAlcanceVr } from './useAlcanceVr'
+import { useFiltroVr } from './useFiltroVr'
 
 const SEPARACION_PESTANAS = 0.03
 const BAJO_LAS_PESTANAS = ALTO_BOTON + 0.035
@@ -34,7 +37,6 @@ const TAMANO_LEYENDA = 0.026
 /** Ancho aproximado de una letra de la leyenda: alcanza para repartir los ítems sin medir el texto. */
 const ANCHO_LETRA = TAMANO_LEYENDA * 0.55
 const RADIO_PUNTO = 0.016
-const ESCALA_CERRADA = 0.5
 const AIRE_ITEM = 0.05
 const LARGO_RAMA = 22
 const COLOR_TEXTO = '#cbd5e1'
@@ -50,13 +52,7 @@ const ESQUINA = new Shape()
   .closePath()
 const DELANTE_DE_LA_PESTANA = 0.002
 
-interface Item {
-  readonly color: string | null
-  readonly texto: string
-  readonly escala?: number
-}
-
-const FIJOS: readonly Item[] = [
+const FIJOS: readonly ItemLeyenda[] = [
   { color: COLOR_HISTORIA, texto: 'HU' },
   { color: COLOR_FASE, texto: 'PBI' },
   { color: COLOR_PBI_A_MEDIAS, texto: 'PBI a medias' },
@@ -66,17 +62,16 @@ const FIJOS: readonly Item[] = [
   { color: COLOR_PARA_DECIR, texto: 'para decir' },
   { color: COLOR_SIN_RAMA, texto: 'sin rama' },
 ]
-const CERRADA: Item = { color: COLOR_SIN_RAMA, texto: 'chica = cerrada', escala: ESCALA_CERRADA }
 /** En el plan, lo ya tomado no lleva esfera (26-10): la leyenda lo dice como dice «chica = cerrada». */
-const TOMADA: Item = { color: null, texto: 'sin esfera = tomada' }
+const TOMADA: ItemLeyenda = { color: null, texto: 'sin esfera = tomada' }
 /** Mientras un filtro está puesto (FASE 17): qué se está viendo y con qué dedos se sale. */
-const itemDelFiltro = (filtro: Filtro): readonly Item[] => {
+const itemDelFiltro = (filtro: Filtro): readonly ItemLeyenda[] => {
   const texto = TEXTO_DEL_FILTRO[filtro]
   return texto ? [{ color: null, texto }, SEPARADOR] : []
 }
 
 /** Solo las ramas con nombre (los carriles del Draft): los círculos sin nombre (solo emoji) no explican nada. */
-function itemsDeRamas(ramas: readonly Nodo[]): readonly Item[] {
+function itemsDeRamas(ramas: readonly Nodo[]): readonly ItemLeyenda[] {
   return ramas
     .map(({ color, titulo }) => ({
       color: color ?? COLOR_SIN_RAMA,
@@ -86,12 +81,12 @@ function itemsDeRamas(ramas: readonly Nodo[]): readonly Item[] {
 }
 
 /** Entre lo que significa cada tipo de pelota y los colores de las ramas. */
-const SEPARADOR: Item = { color: null, texto: '│' }
+const SEPARADOR: ItemLeyenda = { color: null, texto: '│' }
 
-const anchoDe = ({ color, texto }: Item) =>
+const anchoDe = ({ color, texto }: ItemLeyenda) =>
   (color ? 2 * RADIO_PUNTO + 0.01 : 0) + texto.length * ANCHO_LETRA + AIRE_ITEM
 
-function Leyenda({ items }: { readonly items: readonly Item[] }) {
+function Leyenda({ items }: { readonly items: readonly ItemLeyenda[] }) {
   const anchos = items.map(anchoDe)
   const total = anchos.reduce((suma, ancho) => suma + ancho, 0)
   const inicios = anchos.map((_, i) => -total / 2 + anchos.slice(0, i).reduce((s, a) => s + a, 0))
@@ -138,13 +133,13 @@ interface Props {
 }
 
 /** El avance en dudas va primero en la leyenda, en el color de las dudas. */
-const itemDeDudas = (dudas: ConteoDeDudas): readonly Item[] => {
+const itemDeDudas = (dudas: ConteoDeDudas): readonly ItemLeyenda[] => {
   const texto = textoDeDudas(dudas)
   return texto ? [{ color: COLOR_DUDA, texto }, SEPARADOR] : []
 }
 
 /** Solo en la cara plan: ahí las piezas son lo que falta crear; en lo real ya tienen su task. */
-const itemDePiezas = (cara: Cara, piezasSinTask: number): readonly Item[] => {
+const itemDePiezas = (cara: Cara, piezasSinTask: number): readonly ItemLeyenda[] => {
   const texto = cara === Cara.PLAN ? textoDePiezas(piezasSinTask) : null
   return texto ? [{ color: null, texto }, SEPARADOR] : []
 }
@@ -158,7 +153,8 @@ export function BarraSuperior({
   piezasSinTask,
   ultimoCambio = null,
 }: Props) {
-  const { alcance, verificado, conMetodo } = useAlcanceVr()
+  const { alcance, verificado, conMetodo, tipos } = useAlcanceVr()
+  const { filtro } = useFiltroVr()
   const paginas = useDerivadoControllerPaginas(
     alcance.espacioId ? { espacio: alcance.espacioId } : undefined,
     { query: { enabled: verificado && conMetodo } },
@@ -166,7 +162,6 @@ export function BarraSuperior({
   const libros = useMemo(() => librosDe(paginas ?? []), [paginas])
   const irALibro = useEstadoVr((estado) => estado.irALibro)
   const verCara = useEstadoVr((estado) => estado.verCara)
-  const filtro = useEstadoVr((estado) => estado.filtro)
   const anchoPestanas = libros.length * (ANCHO_BOTON + SEPARACION_PESTANAS) - SEPARACION_PESTANAS
   const x = (lugar: number) =>
     -anchoPestanas / 2 + ANCHO_BOTON / 2 + lugar * (ANCHO_BOTON + SEPARACION_PESTANAS)
@@ -213,16 +208,20 @@ export function BarraSuperior({
       ) : null}
       <group position={[0, -BAJO_LAS_PESTANAS, 0]}>
         <Leyenda
-          items={[
-            ...itemDelFiltro(filtro),
-            ...itemDeDudas(dudas),
-            ...itemDePiezas(cara, piezasSinTask),
-            ...FIJOS,
-            CERRADA,
-            ...(cara === Cara.PLAN ? [TOMADA] : []),
-            SEPARADOR,
-            ...itemsDeRamas(ramas),
-          ]}
+          items={
+            conMetodo
+              ? [
+                  ...itemDelFiltro(filtro),
+                  ...itemDeDudas(dudas),
+                  ...itemDePiezas(cara, piezasSinTask),
+                  ...FIJOS,
+                  CERRADA,
+                  ...(cara === Cara.PLAN ? [TOMADA] : []),
+                  SEPARADOR,
+                  ...itemsDeRamas(ramas),
+                ]
+              : [...itemDelFiltro(filtro), ...leyendaDeTipos(tipos ?? [])]
+          }
         />
       </group>
     </group>

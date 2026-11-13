@@ -18,7 +18,6 @@ import {
   useNodosControllerGuardarPosiciones,
 } from '../lib/api/generado/nodos/nodos'
 import { paginaUnica } from '../lib/alcance'
-import { useTiposControllerListarNodo } from '../lib/api/generado/tipos/tipos'
 import { abrirHaciaLosBordes, centrarEn } from '../lib/centrar'
 import { coloresPorNodo } from '../lib/colores'
 import { textoDelUltimoCambio } from '../lib/ultimo-cambio'
@@ -106,7 +105,9 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     params: paramsAlcance,
     espacio,
     proyecto,
+    tipos,
     verificado: alcanceVerificado,
+    fallo: falloDeAlcance,
     conMetodo,
   } = useAlcanceVr()
   useEffect(() => {
@@ -144,17 +145,12 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
       rotuloFantasma(proyectoId, proyectoActivo ?? undefined, directorio) ?? '',
     [proyectoActivo, directorio],
   )
-  const tipos = useTiposControllerListarNodo(alcance.espacioId ?? SIN_ID, {
-    query: { enabled: alcanceVerificado && alcance.espacioId !== null },
-  })
   const colorPorTipo = useMemo(
     () =>
       new Map(
-        (tipos.data ?? []).flatMap(({ nombre, color }) =>
-          color ? [[nombre, color] as const] : [],
-        ),
+        (tipos ?? []).flatMap(({ nombre, color }) => (color ? [[nombre, color] as const] : [])),
       ),
-    [tipos.data],
+    [tipos],
   )
 
   const grafo = useMemo(
@@ -291,7 +287,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     mutate({ data: { posiciones: aGuardar } })
   }, [ubicacion, pagina, hogar, fantasmas, mutate])
 
-  if (nodos.isError || conexiones.isError || paginasDelMetodo.isError) {
+  if (falloDeAlcance || nodos.isError || conexiones.isError || paginasDelMetodo.isError) {
     return { estado: 'error', mensaje: `No se pudo leer la API en ${API_URL}` }
   }
   if (!grafo || !colores || !lista) return { estado: 'cargando', mensaje: 'Leyendo el grafo…' }

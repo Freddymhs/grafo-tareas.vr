@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { colorApagado, colorDeTextoSobre, coloresPorNodo } from './colores'
+import { colorApagado, colorDeTextoSobre, colorDeTipo, coloresPorNodo } from './colores'
 import {
+  COLOR_DUDA,
   COLOR_FASE,
   COLOR_HISTORIA,
   COLOR_PARA_DECIR,
@@ -120,5 +121,28 @@ describe('coloresPorNodo con el color de cada tipo (FASE 24, D11)', () => {
     const colores = coloresPorNodo(grafo, colorPorTipo)
     expect(colores.get('t')).toBe(COLOR_SIN_RAMA)
     expect(colores.get('p')).toBe(coloresPorNodo(grafo).get('p'))
+  })
+})
+
+describe('colorDeTipo — el punto de cada tipo en la leyenda, del mismo color que sus nodos (FASE 26, D3)', () => {
+  it('un tipo que el método no conoce, con el color de su tipo; sin color, el de hoy', () => {
+    expect(colorDeTipo({ nombre: 'MAQUINA', color: '#22c55e' })).toBe('#22c55e')
+    expect(colorDeTipo({ nombre: 'FAMILIA', color: null })).toBe(COLOR_SIN_RAMA)
+  })
+
+  it('un tipo del método conserva su color de siempre aunque el espacio le dé otro', () => {
+    expect(colorDeTipo({ nombre: TipoNodo.DUDA, color: '#000000' })).toBe(COLOR_DUDA)
+    expect(colorDeTipo({ nombre: TipoNodo.TAREA, color: '#000000' })).toBe(COLOR_SIN_RAMA)
+  })
+
+  it('coincide con el color de un nodo de ese tipo sin rama', () => {
+    const colorPorTipo = new Map([['MAQUINA', '#22c55e']])
+    const grafo: Grafo = {
+      nodos: [nodo('m', 'MAQUINA'), nodo('p', TipoNodo.PERSONA)],
+      conexiones: [],
+    }
+    const colores = coloresPorNodo(grafo, colorPorTipo)
+    expect(colorDeTipo({ nombre: 'MAQUINA', color: '#22c55e' })).toBe(colores.get('m'))
+    expect(colorDeTipo({ nombre: TipoNodo.PERSONA })).toBe(colores.get('p'))
   })
 })

@@ -4,6 +4,7 @@
 // evidencias, wiki: Freddy, 2026-10-18, «más un estorbo y carga cognitiva que datos valiosos»); y «lo que frena», que
 // deja solo lo que destraba al resto (Freddy en el plan de la HU 20379, 18-10: «elijo filtro 4 y veo las dudas que tengo
 // que abarcar hoy»). Qué está mergeado, cerrado o es trámite lo dice la API; acá solo se elige qué se apaga. Puro.
+import type { TipoNodoResponseDto } from './api/generado/modelos'
 import { EstadoNodo, TipoConexion, TipoNodo, type Nodo } from './dominio'
 
 export const Filtro = {
@@ -18,7 +19,8 @@ export type Filtro = (typeof Filtro)[keyof typeof Filtro]
  * Se cuenta de menor a mayor (Freddy, 2026-10-18): 1 = ver todo (el filtro apagado, por defecto), 2 = pendiente, 3 =
  * pendiente sin trámites, 4 = solo bloqueantes (lo que frena); el 5 queda para lo que venga. El pellizco de Meta no es un 1
  * (`numeroDeLaMano`). Mostrar otra vez el número del filtro puesto también lo apaga, y el botón B los recorre. La mano
- * abierta (5) es la de descanso: como «por defecto» se dispararía sin querer.
+ * abierta (5) es la de descanso: como «por defecto» se dispararía sin querer. Un número cuyo filtro el espacio no tiene
+ * (`filtrosDelEspacio`) no hace nada.
  */
 const POR_NUMERO: Readonly<Record<number, Filtro>> = {
   1: Filtro.TODO,
@@ -26,13 +28,35 @@ const POR_NUMERO: Readonly<Record<number, Filtro>> = {
   3: Filtro.SIN_TRAMITES,
   4: Filtro.LO_QUE_FRENA,
 }
-/** El botón B del control derecho recorre los filtros en este orden y vuelve a empezar. */
-const ORDEN: readonly Filtro[] = [
+/** Los filtros de un espacio con método, en el orden en que los recorre el botón B; también los nombres de `?filtro=`. */
+const DEL_METODO: readonly Filtro[] = [
   Filtro.TODO,
   Filtro.PENDIENTE,
   Filtro.SIN_TRAMITES,
   Filtro.LO_QUE_FRENA,
 ]
+/** Sin método no hay trámites de cierre en Azure: el 3 no existe. */
+const CON_CICLO: readonly Filtro[] = [Filtro.TODO, Filtro.PENDIENTE, Filtro.LO_QUE_FRENA]
+/** Sin método y sin tipos con ciclo nada está pendiente ni cerrado: no hay filtros. */
+const NINGUNO: readonly Filtro[] = []
+
+/**
+ * Qué filtros tiene un espacio (FASE 26, D3): con método, los cuatro; sin método, 1, 2 y 4 si algún tipo tiene ciclo, y
+ * ninguno si no (Mis máquinas). La única fuente de la regla: la consultan los dedos, el botón B y la leyenda.
+ */
+export function filtrosDelEspacio(
+  conMetodo: boolean,
+  tipos: readonly Pick<TipoNodoResponseDto, 'tieneCiclo'>[],
+): readonly Filtro[] {
+  if (conMetodo) return DEL_METODO
+  return tipos.some(({ tieneCiclo }) => tieneCiclo) ? CON_CICLO : NINGUNO
+}
+
+/** El filtro que se aplica: el puesto si el espacio lo tiene; si no, «todo» (el puesto vuelve al volver a su espacio). */
+export function filtroVigente(puesto: Filtro, filtros: readonly Filtro[]): Filtro {
+  return filtros.includes(puesto) ? puesto : Filtro.TODO
+}
+
 /** Lo que dice la leyenda mientras un filtro está puesto: qué se ve y con qué dedos se sale. */
 export const TEXTO_DEL_FILTRO: Readonly<Record<Filtro, string | null>> = {
   [Filtro.TODO]: null,
@@ -54,19 +78,29 @@ const SIEMPRE_EN_LO_QUE_FRENA: ReadonlySet<string> = new Set([
 /** Sin `frenan` (una API anterior, o el grafo sintético): las dudas y las personas, por tipo. */
 const FRENAN_POR_TIPO: ReadonlySet<string> = new Set([TipoNodo.DUDA, TipoNodo.PERSONA])
 
-/** El filtro que pide mostrar `numero` con el filtro `actual` puesto: el mismo número lo apaga; `null`, ninguno. */
-export function filtroAlMostrar(numero: number, actual: Filtro): Filtro | null {
+/**
+ * El filtro que pide mostrar `numero` con el filtro `actual` puesto, entre los del espacio: el mismo número lo apaga;
+ * `null`, ninguno (un número sin filtro, o uno que el espacio no tiene).
+ */
+export function filtroAlMostrar(
+  numero: number,
+  actual: Filtro,
+  filtros: readonly Filtro[],
+): Filtro | null {
   const pedido = POR_NUMERO[numero]
-  if (pedido === undefined) return null
+  if (pedido === undefined || !filtros.includes(pedido)) return null
   return pedido === actual ? Filtro.TODO : pedido
 }
 
 export function filtroDeTexto(texto: string | null): Filtro {
-  return ORDEN.find((filtro) => filtro === texto) ?? Filtro.TODO
+  return DEL_METODO.find((filtro) => filtro === texto) ?? Filtro.TODO
 }
 
-export function siguienteFiltro(actual: Filtro): Filtro {
-  return ORDEN[(ORDEN.indexOf(actual) + 1) % ORDEN.length]
+/** El botón B: el filtro siguiente del espacio, dando la vuelta. Uno que el espacio no tiene cuenta como «todo». */
+export function siguienteFiltro(actual: Filtro, filtros: readonly Filtro[]): Filtro {
+  if (filtros.length === 0) return Filtro.TODO
+  const posicion = Math.max(0, filtros.indexOf(actual))
+  return filtros[(posicion + 1) % filtros.length]
 }
 
 /**

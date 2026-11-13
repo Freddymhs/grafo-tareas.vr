@@ -56,6 +56,8 @@ interface Props {
   readonly frenan: ReadonlySet<string> | null
   /** En la cara plan: el número de cada pieza y los carriles que espera (vacío en lo real y en el sintético). */
   readonly marcas: ReadonlyMap<string, MarcaDelPlan>
+  /** El filtro que se aplica: el puesto, si el espacio lo tiene (`useFiltroVr`). */
+  readonly filtro: Filtro
 }
 
 export function Grafo({
@@ -68,6 +70,7 @@ export function Grafo({
   conFecha,
   frenan,
   marcas,
+  filtro,
 }: Props) {
   // Tres capas: lo que bloquea (relaciones, fuerte), el árbol tarjeta → FASE → HU (FASE 13, visible) y la
   // pertenencia a una rama de color (tenue: el color del nodo ya la dice).
@@ -108,7 +111,6 @@ export function Grafo({
   // Un filtro (FASE 17) ilumina como una selección: lo que quedó por hacer encendido, lo resuelto (y con el 3, los
   // trámites) apagado con el mismo contraste. Una selección muestra su familia, recortada por el filtro: con el 1,
   // entera (el histórico); con los demás, sin lo que ya se resolvió.
-  const filtro = useEstadoVr((estado) => estado.filtro)
   const porSeleccion = seleccionado !== null && familia.data !== undefined
   const porFiltro = !porSeleccion && filtro !== Filtro.TODO
   const iluminados = useMemo(() => {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Cara, TipoConexion } from './dominio'
-import { Filtro } from './filtro'
+import { Filtro, filtrosDelEspacio } from './filtro'
 import { decidirToque, useEstadoVr } from './estado-vr'
 
 const NORMAL = { tipo: 'normal' } as const
@@ -121,16 +121,26 @@ describe('useEstadoVr', () => {
   })
 
   it('el filtro (FASE 17): se elige con la mano, el control lo alterna, y cambiar de HU no lo suelta', () => {
+    const delMetodo = filtrosDelEspacio(true, [])
     useEstadoVr.getState().verFiltro(Filtro.PENDIENTE)
     useEstadoVr.getState().cambiarLibro(1, 2)
     expect(useEstadoVr.getState().filtro).toBe(Filtro.PENDIENTE)
-    useEstadoVr.getState().alternarFiltro()
+    useEstadoVr.getState().alternarFiltro(delMetodo)
     expect(useEstadoVr.getState().filtro).toBe(Filtro.SIN_TRAMITES)
-    useEstadoVr.getState().alternarFiltro()
+    useEstadoVr.getState().alternarFiltro(delMetodo)
     expect(useEstadoVr.getState().filtro).toBe(Filtro.LO_QUE_FRENA)
-    useEstadoVr.getState().alternarFiltro()
+    useEstadoVr.getState().alternarFiltro(delMetodo)
     expect(useEstadoVr.getState().filtro).toBe(Filtro.TODO)
-    useEstadoVr.getState().alternarFiltro()
+    useEstadoVr.getState().alternarFiltro(delMetodo)
     expect(useEstadoVr.getState().filtro).toBe(Filtro.PENDIENTE)
+  })
+
+  it('el botón B recorre solo los filtros del espacio: sin método se salta el 3, sin filtros no cambia (FASE 26)', () => {
+    useEstadoVr.getState().verFiltro(Filtro.PENDIENTE)
+    useEstadoVr.getState().alternarFiltro(filtrosDelEspacio(false, [{ tieneCiclo: true }]))
+    expect(useEstadoVr.getState().filtro).toBe(Filtro.LO_QUE_FRENA)
+    useEstadoVr.getState().verFiltro(Filtro.TODO)
+    useEstadoVr.getState().alternarFiltro(filtrosDelEspacio(false, [{ tieneCiclo: false }]))
+    expect(useEstadoVr.getState().filtro).toBe(Filtro.TODO)
   })
 })

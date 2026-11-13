@@ -6,6 +6,8 @@ import {
   familiaFiltrada,
   filtroAlMostrar,
   filtroDeTexto,
+  filtroVigente,
+  filtrosDelEspacio,
   hilosDelFiltro,
   pendientes,
   siguienteFiltro,
@@ -34,29 +36,87 @@ describe('familiaFiltrada — una selección con filtro enciende su familia, per
   })
 })
 
+const DEL_METODO = filtrosDelEspacio(true, [])
+const CON_CICLO = filtrosDelEspacio(false, [{ tieneCiclo: true }, { tieneCiclo: false }])
+const SIN_CICLO = filtrosDelEspacio(false, [{ tieneCiclo: false }, { tieneCiclo: false }])
+
+describe('filtrosDelEspacio — qué filtros tiene cada espacio (FASE 26, D3)', () => {
+  it('con método (SIGSA), los cuatro de siempre', () => {
+    expect(DEL_METODO).toEqual([
+      Filtro.TODO,
+      Filtro.PENDIENTE,
+      Filtro.SIN_TRAMITES,
+      Filtro.LO_QUE_FRENA,
+    ])
+  })
+
+  it('sin método, con algún tipo con ciclo: 1, 2 y 4; el 3 (trámites de Azure) no existe', () => {
+    expect(CON_CICLO).toEqual([Filtro.TODO, Filtro.PENDIENTE, Filtro.LO_QUE_FRENA])
+  })
+
+  it('sin método y sin ningún tipo con ciclo (Mis máquinas): ninguno', () => {
+    expect(SIN_CICLO).toEqual([])
+    expect(filtrosDelEspacio(false, [])).toEqual([])
+  })
+})
+
+describe('filtroVigente — un filtro que el espacio no tiene no se aplica (FASE 26, D3)', () => {
+  it('el puesto, si el espacio lo tiene; si no, «todo»', () => {
+    expect(filtroVigente(Filtro.PENDIENTE, CON_CICLO)).toBe(Filtro.PENDIENTE)
+    expect(filtroVigente(Filtro.SIN_TRAMITES, CON_CICLO)).toBe(Filtro.TODO)
+    expect(filtroVigente(Filtro.PENDIENTE, SIN_CICLO)).toBe(Filtro.TODO)
+  })
+})
+
 describe('filtroAlMostrar — los dedos de la mano derecha eligen el filtro (Freddy, 2026-10-18)', () => {
   it('1 = todo, 2 = pendiente, 3 = pendiente sin trámites, 4 = lo que frena; el 5 todavía no elige nada', () => {
-    expect(filtroAlMostrar(1, Filtro.SIN_TRAMITES)).toBe(Filtro.TODO)
-    expect(filtroAlMostrar(2, Filtro.TODO)).toBe(Filtro.PENDIENTE)
-    expect(filtroAlMostrar(3, Filtro.PENDIENTE)).toBe(Filtro.SIN_TRAMITES)
-    expect(filtroAlMostrar(4, Filtro.TODO)).toBe(Filtro.LO_QUE_FRENA)
-    expect([0, 5].map((n) => filtroAlMostrar(n, Filtro.PENDIENTE))).toEqual([null, null])
+    expect(filtroAlMostrar(1, Filtro.SIN_TRAMITES, DEL_METODO)).toBe(Filtro.TODO)
+    expect(filtroAlMostrar(2, Filtro.TODO, DEL_METODO)).toBe(Filtro.PENDIENTE)
+    expect(filtroAlMostrar(3, Filtro.PENDIENTE, DEL_METODO)).toBe(Filtro.SIN_TRAMITES)
+    expect(filtroAlMostrar(4, Filtro.TODO, DEL_METODO)).toBe(Filtro.LO_QUE_FRENA)
+    expect([0, 5].map((n) => filtroAlMostrar(n, Filtro.PENDIENTE, DEL_METODO))).toEqual([
+      null,
+      null,
+    ])
   })
 
   it('el número del filtro puesto lo apaga: vuelve a ver todo', () => {
-    expect(filtroAlMostrar(2, Filtro.PENDIENTE)).toBe(Filtro.TODO)
-    expect(filtroAlMostrar(3, Filtro.SIN_TRAMITES)).toBe(Filtro.TODO)
+    expect(filtroAlMostrar(2, Filtro.PENDIENTE, DEL_METODO)).toBe(Filtro.TODO)
+    expect(filtroAlMostrar(3, Filtro.SIN_TRAMITES, DEL_METODO)).toBe(Filtro.TODO)
   })
 
-  it('el botón B recorre todo → pendiente → sin trámites → lo que frena → todo; `?filtro=` acepta los mismos nombres', () => {
-    expect(siguienteFiltro(Filtro.TODO)).toBe(Filtro.PENDIENTE)
-    expect(siguienteFiltro(Filtro.PENDIENTE)).toBe(Filtro.SIN_TRAMITES)
-    expect(siguienteFiltro(Filtro.SIN_TRAMITES)).toBe(Filtro.LO_QUE_FRENA)
-    expect(siguienteFiltro(Filtro.LO_QUE_FRENA)).toBe(Filtro.TODO)
+  it('un número cuyo filtro el espacio no tiene no hace nada (FASE 26)', () => {
+    expect(filtroAlMostrar(3, Filtro.TODO, CON_CICLO)).toBeNull()
+    expect(filtroAlMostrar(4, Filtro.TODO, CON_CICLO)).toBe(Filtro.LO_QUE_FRENA)
+    expect([1, 2, 3, 4].map((n) => filtroAlMostrar(n, Filtro.TODO, SIN_CICLO))).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ])
+  })
+})
+
+describe('siguienteFiltro — el botón B recorre los filtros del espacio', () => {
+  it('con método: todo → pendiente → sin trámites → lo que frena → todo; `?filtro=` acepta los mismos nombres', () => {
+    expect(siguienteFiltro(Filtro.TODO, DEL_METODO)).toBe(Filtro.PENDIENTE)
+    expect(siguienteFiltro(Filtro.PENDIENTE, DEL_METODO)).toBe(Filtro.SIN_TRAMITES)
+    expect(siguienteFiltro(Filtro.SIN_TRAMITES, DEL_METODO)).toBe(Filtro.LO_QUE_FRENA)
+    expect(siguienteFiltro(Filtro.LO_QUE_FRENA, DEL_METODO)).toBe(Filtro.TODO)
     expect(filtroDeTexto('sin-tramites')).toBe(Filtro.SIN_TRAMITES)
     expect(filtroDeTexto('lo-que-frena')).toBe(Filtro.LO_QUE_FRENA)
     expect(filtroDeTexto('cualquiera')).toBe(Filtro.TODO)
     expect(filtroDeTexto(null)).toBe(Filtro.TODO)
+  })
+
+  it('sin método se salta el 3; con uno que el espacio no tiene puesto, sigue como desde «todo» (FASE 26)', () => {
+    expect(siguienteFiltro(Filtro.PENDIENTE, CON_CICLO)).toBe(Filtro.LO_QUE_FRENA)
+    expect(siguienteFiltro(Filtro.LO_QUE_FRENA, CON_CICLO)).toBe(Filtro.TODO)
+    expect(siguienteFiltro(Filtro.SIN_TRAMITES, CON_CICLO)).toBe(Filtro.PENDIENTE)
+  })
+
+  it('sin filtros (Mis máquinas), el botón B no hace nada: queda en «todo»', () => {
+    expect(siguienteFiltro(Filtro.TODO, SIN_CICLO)).toBe(Filtro.TODO)
   })
 })
 

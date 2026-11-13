@@ -40,7 +40,7 @@ interface EstadoVr {
   readonly cara: Cara
   /** El lente de la página (FASE 17): todo, o lo pendiente con lo resuelto apagado. Sigue al cambiar de HU. */
   readonly filtro: Filtro
-  /** La pestaña (FASE 24): el espacio y su proyecto; `null` = «Todo» / «Todo el espacio». */
+  /** La pestaña pedida (FASE 24): el espacio y su proyecto; `null` = sin elegir, se ve el primero (`resolverAlcance`). */
   readonly espacioId: string | null
   readonly proyectoId: string | null
   /** El nodo bajo el rayo, sin tocarlo (FASE 15): su texto se amplía. */
@@ -57,10 +57,10 @@ interface EstadoVr {
   verCara: (cara: Cara) => void
   /** Los dedos de la mano derecha (`filtroAlMostrar`). */
   verFiltro: (filtro: Filtro) => void
-  /** El botón B del control derecho: el filtro siguiente, dando la vuelta (`siguienteFiltro`). */
-  alternarFiltro: () => void
+  /** El botón B del control derecho: el filtro siguiente entre los del espacio, dando la vuelta (`siguienteFiltro`). */
+  alternarFiltro: (filtros: readonly Filtro[]) => void
   apuntar: (id: string | null) => void
-  /** Otra pestaña de espacio: vuelve a «Todo el espacio» y a la primera HU (FASE 24). */
+  /** Otra pestaña de espacio: suelta el proyecto (se ve el primero, FASE 26) y vuelve a la primera HU (FASE 24). */
   verEspacio: (id: string | null) => void
   verProyecto: (id: string | null) => void
 }
@@ -119,7 +119,7 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   irALibro: (indice) => set({ libro: indice, cara: Cara.REAL, ...SIN_SELECCION }),
   verCara: (cara) => set({ cara, ...SIN_SELECCION }),
   verFiltro: (filtro) => set({ filtro }),
-  alternarFiltro: () => set({ filtro: siguienteFiltro(get().filtro) }),
+  alternarFiltro: (filtros) => set({ filtro: siguienteFiltro(get().filtro, filtros) }),
   apuntar: (id) => set({ apuntado: id }),
   verEspacio: (id) =>
     set({ espacioId: id, proyectoId: null, libro: 0, cara: Cara.REAL, ...SIN_SELECCION }),

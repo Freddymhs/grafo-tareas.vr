@@ -13,7 +13,7 @@ import { Cara, type Grafo as GrafoDominio, type Posicion } from './lib/dominio'
 import { ALTURA_OJOS, RADIO_PANORAMA } from './lib/layout'
 import { FuenteGrafo, leerParametros, type ParametrosPrueba } from './lib/parametros'
 import { useEstadoVr } from './lib/estado-vr'
-import { filtroAlMostrar } from './lib/filtro'
+import { type Filtro, filtroAlMostrar } from './lib/filtro'
 import { guardarUltimaVista, leerUltimaVista } from './lib/ultima-vista'
 import { registrarError } from './lib/registro'
 import { generarGrafo } from './lib/sintetico'
@@ -27,6 +27,7 @@ import { GestoVoltear } from './escena/GestoVoltear'
 import { Grafo } from './escena/Grafo'
 import { Movimiento } from './escena/Movimiento'
 import { useLayout } from './escena/useLayout'
+import { useFiltroVr } from './escena/useFiltroVr'
 import { useMapaApi } from './escena/useMapaApi'
 import { VoltearConControl } from './escena/VoltearConControl'
 import type { MarcaDelPlan } from './lib/plan'
@@ -53,7 +54,8 @@ const parametros = leerParametros(window.location.search)
 // `?pagina=` (FASE 15) abre esa HU por su cara real; sin él, la última HU y cara que se vieron en este visor (Freddy,
 // 2026-10-18: «conservar el estado en lo último que abrió»). Se guarda solo cuando cambian.
 const ultimaVista = parametros.pagina === null ? leerUltimaVista(window.localStorage) : null
-// La pestaña (FASE 24): `?espacio=&proyecto=` > la última vista > «Todo». Un id que ya no existe lo descarta `useMapaApi`.
+// La pestaña (FASE 24): `?espacio=&proyecto=` > la última vista > el primer espacio (FASE 26). Un id que ya no existe lo
+// descarta `useMapaApi`.
 const alcanceDeLaUrl = parametros.espacio !== null
 const espacioInicial = alcanceDeLaUrl ? parametros.espacio : (ultimaVista?.espacioId ?? null)
 const proyectoInicial = alcanceDeLaUrl ? parametros.proyecto : (ultimaVista?.proyectoId ?? null)
@@ -103,6 +105,7 @@ interface PropsVista {
   readonly frenan?: ReadonlySet<string> | null
   /** En la cara plan: el número de cada pieza y los carriles que espera. */
   readonly marcas?: ReadonlyMap<string, MarcaDelPlan>
+  readonly filtro: Filtro
   /** Lo que va fijo en la escena además del grafo: la fila de páginas y leyenda (FASE 15). */
   readonly fijo?: ReactNode
   /** Lo que se le dice al usuario mientras no hay mapa, o si algo falló. */
@@ -118,6 +121,7 @@ function Vista({
   conFecha = NINGUNO,
   frenan = null,
   marcas = SIN_MARCAS,
+  filtro,
   fijo,
   mensaje,
 }: PropsVista) {
@@ -172,6 +176,7 @@ function Vista({
             conFecha={conFecha}
             frenan={frenan}
             marcas={marcas}
+            filtro={filtro}
           />
           {fijo}
           <Movimiento objetivoOrbita={OBJETIVO_ORBITA} />
@@ -186,8 +191,16 @@ function VistaSintetica({ prueba }: { readonly prueba: ParametrosPrueba }) {
   const grafo = useMemo(() => generarGrafo(prueba), [prueba])
   const posiciones = useLayout(grafo)
   const colores = useMemo(() => coloresPorNodo(grafo), [grafo])
+  const filtro = useEstadoVr((estado) => estado.filtro)
   return (
-    <Vista grafo={grafo} posiciones={posiciones} conApi={false} colores={colores} mensaje={null} />
+    <Vista
+      grafo={grafo}
+      posiciones={posiciones}
+      conApi={false}
+      colores={colores}
+      filtro={filtro}
+      mensaje={null}
+    />
   )
 }
 
@@ -196,7 +209,7 @@ function VistaApi() {
   const mapa = useMapaApi(parametros.reordenar, parametros.radio)
   const verCara = useEstadoVr((estado) => estado.verCara)
   const verFiltro = useEstadoVr((estado) => estado.verFiltro)
-  const filtroPuesto = useEstadoVr((estado) => estado.filtro)
+  const { filtro, filtros } = useFiltroVr()
   if (mapa.estado !== 'listo') {
     return (
       <Vista
@@ -204,6 +217,7 @@ function VistaApi() {
         posiciones={null}
         conApi
         colores={SIN_COLORES}
+        filtro={filtro}
         mensaje={{ texto: mapa.mensaje, esError: mapa.estado === 'error' }}
       />
     )
@@ -213,10 +227,11 @@ function VistaApi() {
   const voltear = () => {
     if (otra) verCara(otra)
   }
-  // Los dedos de la mano derecha (FASE 17): 2 = pendiente, 3 = sin trámites; el mismo número otra vez, todo.
+  // Los dedos de la mano derecha (FASE 17): 2 = pendiente, 3 = sin trámites; el mismo número otra vez, todo. Solo los
+  // filtros del espacio (FASE 26): en uno sin filtros, nada.
   const elegirFiltro = (numero: number) => {
-    const filtro = filtroAlMostrar(numero, filtroPuesto)
-    if (filtro) verFiltro(filtro)
+    const pedido = filtroAlMostrar(numero, filtro, filtros)
+    if (pedido) verFiltro(pedido)
   }
   return (
     <Vista
@@ -228,6 +243,7 @@ function VistaApi() {
       conFecha={mapa.conFecha}
       frenan={mapa.frenan}
       marcas={mapa.marcas}
+      filtro={filtro}
       fijo={
         <>
           <BarraAlcance />

@@ -1,5 +1,5 @@
-// Las pestañas de espacio y proyecto (FASE 24): dos filas de botones encima de la fila de HU. Tocar una elige el alcance
-// de todo lo que se ve; «Todo» es el grafo entero. Crear espacios y proyectos es de la web.
+// Las pestañas de espacio y proyecto (FASE 24): filas de botones encima de la fila de HU. Tocar una elige el alcance de
+// todo lo que se ve. La de proyectos sale solo con dos o más (FASE 26, D2). Crear espacios y proyectos es de la web.
 import { SEPARACION_FILAS } from '../lib/constants/alcance'
 import { useEstadoVr } from '../lib/estado-vr'
 import { type Pestana, filasDeAlcance } from '../lib/filas-de-alcance'
@@ -17,7 +17,7 @@ function Fila({
 }: {
   readonly pestanas: readonly Pestana[]
   readonly altura: number
-  readonly elegir: (id: string | null) => void
+  readonly elegir: (id: string) => void
 }) {
   const ancho = pestanas.length * (ANCHO_BOTON + SEPARACION_PESTANAS) - SEPARACION_PESTANAS
   const x = (lugar: number) =>
@@ -26,7 +26,7 @@ function Fila({
     <group position={[0, altura, 0]}>
       {pestanas.map(({ id, texto, activa, color }, i) => (
         <Boton3D
-          key={id ?? texto}
+          key={id}
           texto={texto}
           posicion={[x(i), 0, 0]}
           onTocar={() => elegir(id)}

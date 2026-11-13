@@ -11,27 +11,15 @@ import {
   COLOR_PERSONA,
   COLOR_SIN_RAMA,
 } from './constants/grafo'
+import type { TipoNodoResponseDto } from './api/generado/modelos'
 import { Pbi, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
 import { esPbiIncompleto } from './pbi'
 
 const TIPOS_DEL_METODO: ReadonlySet<string> = new Set(Object.values(TipoNodo))
 
-/** Un tipo que el método de trabajo no conoce (HERRAMIENTA, MAQUINA…) toma el color de su tipo, si lo tiene (D11). */
-function colorDelTipo(nodo: Nodo, colorPorTipo: ReadonlyMap<string, string> | undefined) {
-  return TIPOS_DEL_METODO.has(nodo.tipo) ? undefined : colorPorTipo?.get(nodo.tipo)
-}
-
-function colorDe(
-  nodo: Nodo,
-  primeraRama: ReadonlyMap<string, string>,
-  colorPorTipo: ReadonlyMap<string, string> | undefined,
-): string {
-  // Un PBI es morado aunque su tarjeta esté en un carril: «es un PBI» pesa más que la zona de código.
-  if (esPbiIncompleto(nodo.pbi)) return COLOR_PBI_A_MEDIAS
-  if (nodo.pbi === Pbi.ENTERO) return COLOR_FASE
-  switch (nodo.tipo) {
-    case TipoNodo.RAMA:
-      return nodo.color ?? COLOR_SIN_RAMA
+/** El color fijo de un tipo del método; `undefined` para los que se pintan por su rama (TAREA) o por su color (RAMA). */
+function colorDelMetodo(tipo: string): string | undefined {
+  switch (tipo) {
     case TipoNodo.PERSONA:
       return COLOR_PERSONA
     case TipoNodo.DUDA:
@@ -43,8 +31,37 @@ function colorDe(
     case TipoNodo.DAILY_ITEM:
       return COLOR_PARA_DECIR
     default:
-      return colorDelTipo(nodo, colorPorTipo) ?? primeraRama.get(nodo.id) ?? COLOR_SIN_RAMA
+      return undefined
   }
+}
+
+/** Un tipo del método, su color fijo; uno que el método no conoce (HERRAMIENTA, MAQUINA…), el de su tipo (D11). */
+function colorDelTipo(tipo: string, colorPropio: string | null | undefined): string | undefined {
+  return TIPOS_DEL_METODO.has(tipo) ? colorDelMetodo(tipo) : (colorPropio ?? undefined)
+}
+
+function colorDe(
+  nodo: Nodo,
+  primeraRama: ReadonlyMap<string, string>,
+  colorPorTipo: ReadonlyMap<string, string> | undefined,
+): string {
+  // Un PBI es morado aunque su tarjeta esté en un carril: «es un PBI» pesa más que la zona de código.
+  if (esPbiIncompleto(nodo.pbi)) return COLOR_PBI_A_MEDIAS
+  if (nodo.pbi === Pbi.ENTERO) return COLOR_FASE
+  if (nodo.tipo === TipoNodo.RAMA) return nodo.color ?? COLOR_SIN_RAMA
+  return (
+    colorDelTipo(nodo.tipo, colorPorTipo?.get(nodo.tipo)) ??
+    primeraRama.get(nodo.id) ??
+    COLOR_SIN_RAMA
+  )
+}
+
+/** El punto de un tipo en la leyenda de un espacio sin método (FASE 26, D3): el color de un nodo suyo sin rama. */
+export function colorDeTipo({
+  nombre,
+  color,
+}: Pick<TipoNodoResponseDto, 'nombre' | 'color'>): string {
+  return colorDelTipo(nombre, color) ?? COLOR_SIN_RAMA
 }
 
 export function coloresPorNodo(
