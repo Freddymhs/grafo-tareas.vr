@@ -55,7 +55,8 @@ export interface Posicion {
 
 export interface Nodo {
   readonly id: string
-  readonly tipo: TipoNodo
+  /** El nombre del tipo del espacio (FASE 22: son datos). `TipoNodo` queda para comparar con los del método de trabajo. */
+  readonly tipo: string
   readonly titulo: string
   readonly estado: EstadoNodo
   /** Solo los nodos RAMA: el color de la rama (hex). */
@@ -76,13 +77,17 @@ export interface Nodo {
   readonly tomada?: boolean
   /** De qué trata, en una línea con las palabras del humano (2026-10-26): se lee al seleccionarlo. */
   readonly resumen?: string
+  /** El proyecto del nodo (FASE 24); el sintético no lo tiene. */
+  readonly proyectoId?: string
+  /** Un nodo de otro proyecto que se ve porque está conectado (FASE 24, D8): su rótulo «proyecto · espacio». */
+  readonly fantasma?: string
 }
 
 export interface Conexion {
   readonly id: string
   readonly origenId: string
   readonly destinoId: string
-  readonly tipo: TipoConexion
+  readonly tipo: string
 }
 
 export interface Grafo {

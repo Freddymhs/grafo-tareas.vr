@@ -40,6 +40,9 @@ interface EstadoVr {
   readonly cara: Cara
   /** El lente de la página (FASE 17): todo, o lo pendiente con lo resuelto apagado. Sigue al cambiar de HU. */
   readonly filtro: Filtro
+  /** La pestaña (FASE 24): el espacio y su proyecto; `null` = «Todo» / «Todo el espacio». */
+  readonly espacioId: string | null
+  readonly proyectoId: string | null
   /** El nodo bajo el rayo, sin tocarlo (FASE 15): su texto se amplía. */
   readonly apuntado: string | null
   tocar: (id: string) => Toque
@@ -57,6 +60,9 @@ interface EstadoVr {
   /** El botón B del control derecho: el filtro siguiente, dando la vuelta (`siguienteFiltro`). */
   alternarFiltro: () => void
   apuntar: (id: string | null) => void
+  /** Otra pestaña de espacio: vuelve a «Todo el espacio» y a la primera HU (FASE 24). */
+  verEspacio: (id: string | null) => void
+  verProyecto: (id: string | null) => void
 }
 
 const NORMAL: Modo = { tipo: 'normal' }
@@ -87,6 +93,8 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   libro: 0,
   cara: Cara.REAL,
   filtro: Filtro.TODO,
+  espacioId: null,
+  proyectoId: null,
   apuntado: null,
   tocar: (id) => {
     const toque = decidirToque(get(), id)
@@ -113,4 +121,7 @@ export const useEstadoVr = create<EstadoVr>()((set, get) => ({
   verFiltro: (filtro) => set({ filtro }),
   alternarFiltro: () => set({ filtro: siguienteFiltro(get().filtro) }),
   apuntar: (id) => set({ apuntado: id }),
+  verEspacio: (id) =>
+    set({ espacioId: id, proyectoId: null, libro: 0, cara: Cara.REAL, ...SIN_SELECCION }),
+  verProyecto: (id) => set({ proyectoId: id, libro: 0, cara: Cara.REAL, ...SIN_SELECCION }),
 }))

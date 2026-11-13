@@ -22,12 +22,15 @@ import type {
   BloqueadoResponseDto,
   CarrilDto,
   DerivadoControllerDiaParams,
+  DerivadoControllerHoyPuedoParams,
+  DerivadoControllerPaginasParams,
   DerivadoControllerPlanParams,
   DerivadoControllerUltimoCambioParams,
   DiaResponseDto,
   ErrorResponseDto,
   FamiliaResponseDto,
   LiberaResponseDto,
+  NodoResponseDto,
   NodoResumenDto,
   PaginaDto,
   UltimoCambioResponseDto,
@@ -52,42 +55,60 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result
 }
 
-export const getDerivadoControllerHoyPuedoUrl = () => {
-  return `/api/v1/derivado/hoy-puedo`
+export const getDerivadoControllerHoyPuedoUrl = (params?: DerivadoControllerHoyPuedoParams) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/derivado/hoy-puedo?${stringifiedParams}`
+    : `/api/v1/derivado/hoy-puedo`
 }
 
 /**
- * @summary Hoy puedo…: trabajo ABIERTO que nada bloquea
+ * @summary Hoy puedo…: trabajo ABIERTO que nada bloquea, sin lo archivado (?proyecto= / ?espacio=)
  */
 export const derivadoControllerHoyPuedo = async (
+  params?: DerivadoControllerHoyPuedoParams,
   options?: Parameters<typeof cliente>[1],
 ): Promise<NodoResumenDto[]> => {
-  return cliente<NodoResumenDto[]>(getDerivadoControllerHoyPuedoUrl(), {
+  return cliente<NodoResumenDto[]>(getDerivadoControllerHoyPuedoUrl(params), {
     ...options,
     method: 'GET',
   })
 }
 
-export const getDerivadoControllerHoyPuedoQueryKey = () => {
-  return [`/api/v1/derivado/hoy-puedo`] as const
+export const getDerivadoControllerHoyPuedoQueryKey = (
+  params?: DerivadoControllerHoyPuedoParams,
+) => {
+  return [`/api/v1/derivado/hoy-puedo`, ...(params ? [params] : [])] as const
 }
 
 export const getDerivadoControllerHoyPuedoQueryOptions = <
   TData = Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>,
   TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>, TError, TData>
-  >
-  request?: SecondParameter<typeof cliente>
-}) => {
+>(
+  params?: DerivadoControllerHoyPuedoParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey = queryOptions?.queryKey ?? getDerivadoControllerHoyPuedoQueryKey()
+  const queryKey = queryOptions?.queryKey ?? getDerivadoControllerHoyPuedoQueryKey(params)
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>> = ({
     signal,
-  }) => derivadoControllerHoyPuedo({ signal, ...requestOptions })
+  }) => derivadoControllerHoyPuedo(params, { signal, ...requestOptions })
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>,
@@ -105,6 +126,7 @@ export function useDerivadoControllerHoyPuedo<
   TData = Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>,
   TError = unknown,
 >(
+  params: undefined | DerivadoControllerHoyPuedoParams,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>, TError, TData>
@@ -125,6 +147,7 @@ export function useDerivadoControllerHoyPuedo<
   TData = Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>,
   TError = unknown,
 >(
+  params?: DerivadoControllerHoyPuedoParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>, TError, TData>
@@ -145,6 +168,7 @@ export function useDerivadoControllerHoyPuedo<
   TData = Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>,
   TError = unknown,
 >(
+  params?: DerivadoControllerHoyPuedoParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>, TError, TData>
@@ -154,13 +178,14 @@ export function useDerivadoControllerHoyPuedo<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Hoy puedo…: trabajo ABIERTO que nada bloquea
+ * @summary Hoy puedo…: trabajo ABIERTO que nada bloquea, sin lo archivado (?proyecto= / ?espacio=)
  */
 
 export function useDerivadoControllerHoyPuedo<
   TData = Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>,
   TError = unknown,
 >(
+  params?: DerivadoControllerHoyPuedoParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerHoyPuedo>>, TError, TData>
@@ -169,7 +194,144 @@ export function useDerivadoControllerHoyPuedo<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getDerivadoControllerHoyPuedoQueryOptions(options)
+  const queryOptions = getDerivadoControllerHoyPuedoQueryOptions(params, options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+
+  return withQueryKey(query, queryOptions.queryKey)
+}
+
+export const getDerivadoControllerVecinosUrl = (id: string) => {
+  return `/api/v1/proyectos/${id}/vecinos`
+}
+
+/**
+ * @summary Los nodos de otros proyectos conectados con algo de éste (los «fantasmas» de la vista de un proyecto)
+ */
+export const derivadoControllerVecinos = async (
+  id: string,
+  options?: Parameters<typeof cliente>[1],
+): Promise<NodoResponseDto[]> => {
+  return cliente<NodoResponseDto[]>(getDerivadoControllerVecinosUrl(id), {
+    ...options,
+    method: 'GET',
+  })
+}
+
+export const getDerivadoControllerVecinosQueryKey = (id: string) => {
+  return [`/api/v1/proyectos/${id}/vecinos`] as const
+}
+
+export const getDerivadoControllerVecinosQueryOptions = <
+  TData = Awaited<ReturnType<typeof derivadoControllerVecinos>>,
+  TError = ErrorResponseDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerVecinos>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = queryOptions?.queryKey ?? getDerivadoControllerVecinosQueryKey(id)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof derivadoControllerVecinos>>> = ({
+    signal,
+  }) => derivadoControllerVecinos(id, { signal, ...requestOptions })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerVecinos>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>
+  }
+}
+
+export type DerivadoControllerVecinosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof derivadoControllerVecinos>>
+>
+export type DerivadoControllerVecinosQueryError = ErrorResponseDto
+
+export function useDerivadoControllerVecinos<
+  TData = Awaited<ReturnType<typeof derivadoControllerVecinos>>,
+  TError = ErrorResponseDto,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerVecinos>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof derivadoControllerVecinos>>,
+          TError,
+          Awaited<ReturnType<typeof derivadoControllerVecinos>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDerivadoControllerVecinos<
+  TData = Awaited<ReturnType<typeof derivadoControllerVecinos>>,
+  TError = ErrorResponseDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerVecinos>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof derivadoControllerVecinos>>,
+          TError,
+          Awaited<ReturnType<typeof derivadoControllerVecinos>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDerivadoControllerVecinos<
+  TData = Awaited<ReturnType<typeof derivadoControllerVecinos>>,
+  TError = ErrorResponseDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerVecinos>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Los nodos de otros proyectos conectados con algo de éste (los «fantasmas» de la vista de un proyecto)
+ */
+
+export function useDerivadoControllerVecinos<
+  TData = Awaited<ReturnType<typeof derivadoControllerVecinos>>,
+  TError = ErrorResponseDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerVecinos>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getDerivadoControllerVecinosQueryOptions(id, options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>
@@ -473,42 +635,58 @@ export function useDerivadoControllerUltimoCambio<
   return withQueryKey(query, queryOptions.queryKey)
 }
 
-export const getDerivadoControllerPaginasUrl = () => {
-  return `/api/v1/derivado/paginas`
+export const getDerivadoControllerPaginasUrl = (params?: DerivadoControllerPaginasParams) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/derivado/paginas?${stringifiedParams}`
+    : `/api/v1/derivado/paginas`
 }
 
 /**
  * @summary Las páginas de la VR: una por HU (su árbol y lo que la bloquea) y «Sin HU» al final
  */
 export const derivadoControllerPaginas = async (
+  params?: DerivadoControllerPaginasParams,
   options?: Parameters<typeof cliente>[1],
 ): Promise<PaginaDto[]> => {
-  return cliente<PaginaDto[]>(getDerivadoControllerPaginasUrl(), {
+  return cliente<PaginaDto[]>(getDerivadoControllerPaginasUrl(params), {
     ...options,
     method: 'GET',
   })
 }
 
-export const getDerivadoControllerPaginasQueryKey = () => {
-  return [`/api/v1/derivado/paginas`] as const
+export const getDerivadoControllerPaginasQueryKey = (params?: DerivadoControllerPaginasParams) => {
+  return [`/api/v1/derivado/paginas`, ...(params ? [params] : [])] as const
 }
 
 export const getDerivadoControllerPaginasQueryOptions = <
   TData = Awaited<ReturnType<typeof derivadoControllerPaginas>>,
   TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerPaginas>>, TError, TData>
-  >
-  request?: SecondParameter<typeof cliente>
-}) => {
+>(
+  params?: DerivadoControllerPaginasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerPaginas>>, TError, TData>
+    >
+    request?: SecondParameter<typeof cliente>
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {}
 
-  const queryKey = queryOptions?.queryKey ?? getDerivadoControllerPaginasQueryKey()
+  const queryKey = queryOptions?.queryKey ?? getDerivadoControllerPaginasQueryKey(params)
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof derivadoControllerPaginas>>> = ({
     signal,
-  }) => derivadoControllerPaginas({ signal, ...requestOptions })
+  }) => derivadoControllerPaginas(params, { signal, ...requestOptions })
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof derivadoControllerPaginas>>,
@@ -526,6 +704,7 @@ export function useDerivadoControllerPaginas<
   TData = Awaited<ReturnType<typeof derivadoControllerPaginas>>,
   TError = unknown,
 >(
+  params: undefined | DerivadoControllerPaginasParams,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerPaginas>>, TError, TData>
@@ -546,6 +725,7 @@ export function useDerivadoControllerPaginas<
   TData = Awaited<ReturnType<typeof derivadoControllerPaginas>>,
   TError = unknown,
 >(
+  params?: DerivadoControllerPaginasParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerPaginas>>, TError, TData>
@@ -566,6 +746,7 @@ export function useDerivadoControllerPaginas<
   TData = Awaited<ReturnType<typeof derivadoControllerPaginas>>,
   TError = unknown,
 >(
+  params?: DerivadoControllerPaginasParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerPaginas>>, TError, TData>
@@ -582,6 +763,7 @@ export function useDerivadoControllerPaginas<
   TData = Awaited<ReturnType<typeof derivadoControllerPaginas>>,
   TError = unknown,
 >(
+  params?: DerivadoControllerPaginasParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof derivadoControllerPaginas>>, TError, TData>
@@ -590,7 +772,7 @@ export function useDerivadoControllerPaginas<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getDerivadoControllerPaginasQueryOptions(options)
+  const queryOptions = getDerivadoControllerPaginasQueryOptions(params, options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>

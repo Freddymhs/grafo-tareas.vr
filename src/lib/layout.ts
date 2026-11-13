@@ -64,7 +64,7 @@ function conConexion(grafo: Grafo): ReadonlySet<string> {
   return new Set(grafo.conexiones.flatMap(({ origenId, destinoId }) => [origenId, destinoId]))
 }
 
-const radioDeCelda = (tipo: TipoNodo | undefined, celda: Medidas) =>
+const radioDeCelda = (tipo: string | undefined, celda: Medidas) =>
   (tipo === TipoNodo.HISTORIA ? CELDA_HU.ancho : celda.ancho) / 2
 
 /**

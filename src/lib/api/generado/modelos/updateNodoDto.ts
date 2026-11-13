@@ -27,6 +27,8 @@ export interface UpdateNodoDto {
   vence?: string
   /** Solo para nodos RAMA */
   color?: string
+  /** El proyecto del nodo. Sin él cae en el proyecto por defecto y la respuesta lo avisa (header X-Aviso-Proyecto) */
+  proyectoId?: string
   /**
    * Columna del tablero: una de GET /etapas. null = vuelve a la entrada
    * @nullable

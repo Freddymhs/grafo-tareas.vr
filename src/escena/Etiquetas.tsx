@@ -19,6 +19,7 @@ import {
   medidasEtiqueta,
 } from '../lib/constants/etiquetas'
 import { conMarca, esDudaContestada } from '../lib/cierre'
+import { conRotulo } from '../lib/directorio'
 import { TipoNodo, type Nodo, type Posicion } from '../lib/dominio'
 import { textoConFecha } from '../lib/paginas'
 import { LARGO_APUNTADO, sinRonda, textoVisible } from '../lib/texto-visible'
@@ -93,7 +94,7 @@ export function Etiquetas({
     if (!nodo) return id
     const titulo = conNumero.has(id) ? sinRonda(nodo.titulo) : nodo.titulo
     const texto = nodo.fecha && conFecha.has(id) ? textoConFecha(titulo, nodo.fecha) : titulo
-    return conMarca(nodo, texto)
+    return conRotulo(conMarca(nodo, texto), nodo.fantasma)
   }
   const historias = nodos
     .filter(({ tipo, id }) => tipo === TipoNodo.HISTORIA && id !== excluir)

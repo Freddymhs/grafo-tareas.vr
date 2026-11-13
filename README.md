@@ -22,6 +22,8 @@ WebXR exige contexto seguro: `adb reverse` deja el servidor del PC en el `localh
 Sin query la escena lee la API (`VITE_API_URL`, default `http://localhost:3000`); `?nodos=` (30 a 2000) o
 `?sintetico` usan el generador de la FASE 1 y `?semilla=` lo cambia. El medidor de FPS va pegado a la vista
 (abajo a la izquierda): verde ≥ 72, rojo por debajo.
+`?espacio=` y `?proyecto=` (FASE 24) abren esa pestaña; sin ellos manda la última vista, y la barra de alcance cambia de
+espacio o proyecto dentro del visor. Lo conectado desde otro proyecto entra como fantasma y no guarda posición.
 
 **Con la API (FASE 6 y 7):** la primera vez el layout de fuerzas reparte los nodos y guarda las posiciones en la
 API; después el mapa es siempre el mismo y cada nodo nuevo cae junto a sus vecinos. Gatillo sobre un nodo = su

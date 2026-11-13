@@ -5,22 +5,27 @@
 // Un nodo que también está en otra página (una persona que bloquea en dos HU) se guarda en la primera («hogar») y en las
 // demás se ubica junto a sus vecinos sin pisarla. Los colores salen del grafo entero: las ramas no son contenido de página.
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useConexionesControllerFindAll } from '../lib/api/generado/conexiones/conexiones'
 import {
   useDerivadoControllerPaginas,
   useDerivadoControllerPlan,
   useDerivadoControllerUltimoCambio,
+  useDerivadoControllerVecinos,
 } from '../lib/api/generado/derivado/derivado'
 import {
   useNodosControllerFindAll,
   useNodosControllerGuardarPosiciones,
 } from '../lib/api/generado/nodos/nodos'
+import { paginaUnica } from '../lib/alcance'
+import { useTiposControllerListarNodo } from '../lib/api/generado/tipos/tipos'
 import { abrirHaciaLosBordes, centrarEn } from '../lib/centrar'
 import { coloresPorNodo } from '../lib/colores'
 import { textoDelUltimoCambio } from '../lib/ultimo-cambio'
 import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
+import { rotuloFantasma } from '../lib/directorio'
+import { posicionesAGuardar } from '../lib/posiciones-a-guardar'
 import { Cara, TipoNodo, type Grafo, type Nodo, type Posicion } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import {
@@ -41,6 +46,8 @@ import {
 } from '../lib/paginas'
 import { marcasDelPlan, vistaDelPlan, type MarcaDelPlan } from '../lib/plan'
 import { ubicarFaltantes } from '../lib/ubicar'
+import { useAlcanceVr } from './useAlcanceVr'
+import { useDirectorioVr } from './useDirectorioVr'
 import { useLayout } from './useLayout'
 
 export interface PaginaVisible {
@@ -81,16 +88,42 @@ export type EstadoMapa =
       readonly aviso: string | null
     }
 
+const SIN_ID = ''
 const SIN_GUARDADAS: ReadonlyMap<string, Posicion> = new Map()
 const NINGUNO: ReadonlySet<string> = new Set()
 const SIN_MARCAS: ReadonlyMap<string, MarcaDelPlan> = new Map()
 
 export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMapa {
-  const nodos = useNodosControllerFindAll({ limit: LIMITE_GRAFO })
-  const conexiones = useConexionesControllerFindAll()
-  const paginas = useDerivadoControllerPaginas()
   const indicePedido = useEstadoVr((estado) => estado.libro)
   const caraPedida = useEstadoVr((estado) => estado.cara)
+  const espacioPedido = useEstadoVr((estado) => estado.espacioId)
+  const verEspacio = useEstadoVr((estado) => estado.verEspacio)
+  const verProyecto = useEstadoVr((estado) => estado.verProyecto)
+  const avisar = useEstadoVr((estado) => estado.avisar)
+  const {
+    alcance,
+    aviso: avisoDeAlcance,
+    params: paramsAlcance,
+    espacio,
+    proyecto,
+    verificado: alcanceVerificado,
+    conMetodo,
+  } = useAlcanceVr()
+  useEffect(() => {
+    if (!avisoDeAlcance) return
+    if (alcance.espacioId !== espacioPedido) verEspacio(alcance.espacioId)
+    else verProyecto(alcance.proyectoId)
+    avisar(avisoDeAlcance)
+  }, [avisoDeAlcance, alcance, espacioPedido, verEspacio, verProyecto, avisar])
+  const nodos = useNodosControllerFindAll(
+    { limit: LIMITE_GRAFO, ...paramsAlcance },
+    { query: { enabled: alcanceVerificado } },
+  )
+  const conexiones = useConexionesControllerFindAll()
+  const paginasDelMetodo = useDerivadoControllerPaginas(
+    alcance.espacioId ? { espacio: alcance.espacioId } : undefined,
+    { query: { enabled: alcanceVerificado && conMetodo } },
+  )
   const guardar = useNodosControllerGuardarPosiciones()
   // Se refresca al mirar algo nuevo (26-10) —otra HU, la otra cara—, no con un reloj: casi
   // nunca cambia nada mientras se mira, y así no se gasta (Freddy). Entrar a la VR también refresca (App.tsx).
@@ -100,9 +133,40 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   }, [indicePedido, caraPedida, queryClient])
   const guardadoPara = useRef<string | null>(null)
 
+  // Con un proyecto elegido, lo conectado con él desde otros proyectos entra como fantasma (FASE 24, D8).
+  const proyectoActivo = alcance.proyectoId
+  const vecinos = useDerivadoControllerVecinos(proyectoActivo ?? SIN_ID, {
+    query: { enabled: alcanceVerificado && proyectoActivo !== null },
+  })
+  const directorio = useDirectorioVr()
+  const rotulo = useCallback(
+    (proyectoId: string) =>
+      rotuloFantasma(proyectoId, proyectoActivo ?? undefined, directorio) ?? '',
+    [proyectoActivo, directorio],
+  )
+  const tipos = useTiposControllerListarNodo(alcance.espacioId ?? SIN_ID, {
+    query: { enabled: alcanceVerificado && alcance.espacioId !== null },
+  })
+  const colorPorTipo = useMemo(
+    () =>
+      new Map(
+        (tipos.data ?? []).flatMap(({ nombre, color }) =>
+          color ? [[nombre, color] as const] : [],
+        ),
+      ),
+    [tipos.data],
+  )
+
   const grafo = useMemo(
-    () => (nodos.data && conexiones.data ? aGrafo(nodos.data.data, conexiones.data) : null),
-    [nodos.data, conexiones.data],
+    () =>
+      nodos.data && conexiones.data
+        ? aGrafo(nodos.data.data, conexiones.data, vecinos.data, rotulo)
+        : null,
+    [nodos.data, conexiones.data, vecinos.data, rotulo],
+  )
+  const fantasmas = useMemo(
+    () => new Set((grafo?.nodos ?? []).filter(({ fantasma }) => fantasma).map(({ id }) => id)),
+    [grafo],
   )
   // Solo las TAREAS: la HU se reconoce por su nombre, y lo que viene de los archivos FASE (una duda) no tiene fecha
   // de origen real (la suya es la de la importación) y mostrarla engañaría.
@@ -115,7 +179,20 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
         .map(({ id }) => id),
     )
   }, [grafo])
-  const lista = paginas.data
+  const lista = useMemo(
+    () =>
+      conMetodo
+        ? paginasDelMetodo.data
+        : grafo
+          ? [
+              paginaUnica(
+                grafo.nodos.filter(({ fantasma }) => !fantasma),
+                proyecto?.nombre ?? espacio?.nombre ?? '',
+              ),
+            ]
+          : undefined,
+    [conMetodo, paginasDelMetodo.data, grafo, proyecto, espacio],
+  )
   const libros = useMemo(() => librosDe(lista ?? []), [lista])
   const total = libros.length
   const indice = total > 0 ? indicePedido % total : 0
@@ -123,9 +200,12 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const pagina = libro ? caraVisible(libro, caraPedida) : null
   const otra = libro ? otraCara(libro, caraPedida) : null
   const enPlan = pagina?.cara === Cara.PLAN
-  const plan = useDerivadoControllerPlan(enPlan ? { libro: pagina.libro } : undefined, {
-    query: { enabled: enPlan },
-  })
+  const plan = useDerivadoControllerPlan(
+    enPlan
+      ? { libro: pagina.libro, ...(alcance.espacioId ? { espacio: alcance.espacioId } : {}) }
+      : undefined,
+    { query: { enabled: enPlan } },
+  )
   // Una API anterior al número del plan no manda `orden`: entonces no se dibuja nada encima de las piezas.
   const marcas = useMemo(
     () =>
@@ -141,10 +221,15 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   )
   // En el plan se lee la línea: las piezas con el color de su carril, sin el aviso de PBI a medias; lo tomado, marcado.
   const grafoVista = useMemo(() => (grafo ? vistaDelPlan(grafo, marcas) : null), [grafo, marcas])
-  const colores = useMemo(() => (grafoVista ? coloresPorNodo(grafoVista) : null), [grafoVista])
+  const colores = useMemo(
+    () => (grafoVista ? coloresPorNodo(grafoVista, colorPorTipo) : null),
+    [grafoVista, colorPorTipo],
+  )
+  // Los fantasmas no son de ninguna página: se suman a lo que se ve, y como no tienen hogar no se guardan (D9).
   const grafoPagina = useMemo(
-    () => (grafoVista && pagina ? grafoDePagina(grafoVista, pagina.nodos) : null),
-    [grafoVista, pagina],
+    () =>
+      grafoVista && pagina ? grafoDePagina(grafoVista, [...pagina.nodos, ...fantasmas]) : null,
+    [grafoVista, pagina, fantasmas],
   )
   // La leyenda, por página: solo las ramas que colorean lo que se ve.
   const ramas = useMemo(() => {
@@ -185,7 +270,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
 
   const cambio = useDerivadoControllerUltimoCambio(
     { pagina: pagina?.id ?? '' },
-    { query: { enabled: pagina !== null } },
+    { query: { enabled: pagina !== null && conMetodo } },
   ).data?.ultimo
   const tituloCambiado = cambio
     ? grafo?.nodos.find(({ id }) => id === cambio.nodoId)?.titulo
@@ -196,18 +281,17 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const { mutate } = guardar
   useEffect(() => {
     if (!ubicacion || !pagina) return
-    // Solo lo de esta página: un nodo de otra página guarda la posición de la suya.
-    const aGuardar = [...ubicacion.nuevas].filter(([id]) => hogar.get(id) === pagina.id)
+    const aGuardar = posicionesAGuardar(ubicacion.nuevas, hogar, pagina.id, fantasmas)
     if (aGuardar.length === 0) return
     // Una sola vez por página y conjunto de nodos: un re-render no vuelve a mandar el mismo lote.
-    const ids = aGuardar.map(([id]) => id).sort()
+    const ids = aGuardar.map(({ id }) => id).sort()
     const clave = `${pagina.id}:${ids.join(',')}`
     if (guardadoPara.current === clave) return
     guardadoPara.current = clave
-    mutate({ data: { posiciones: aGuardar.map(([id, { x, y, z }]) => ({ id, x, y, z })) } })
-  }, [ubicacion, pagina, hogar, mutate])
+    mutate({ data: { posiciones: aGuardar } })
+  }, [ubicacion, pagina, hogar, fantasmas, mutate])
 
-  if (nodos.isError || conexiones.isError || paginas.isError) {
+  if (nodos.isError || conexiones.isError || paginasDelMetodo.isError) {
     return { estado: 'error', mensaje: `No se pudo leer la API en ${API_URL}` }
   }
   if (!grafo || !colores || !lista) return { estado: 'cargando', mensaje: 'Leyendo el grafo…' }

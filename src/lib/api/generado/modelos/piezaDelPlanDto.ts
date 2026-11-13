@@ -8,12 +8,12 @@
 import type { PelotitaDto } from './pelotitaDto'
 import type { PiezaDelPlanDtoCara } from './piezaDelPlanDtoCara'
 import type { PiezaDelPlanDtoEstado } from './piezaDelPlanDtoEstado'
-import type { PiezaDelPlanDtoTipo } from './piezaDelPlanDtoTipo'
 
 export interface PiezaDelPlanDto {
   id: string
-  tipo: PiezaDelPlanDtoTipo
+  tipo: string
   titulo: string
+  /** @nullable */
   estado: PiezaDelPlanDtoEstado
   cara: PiezaDelPlanDtoCara
   /** @nullable */

@@ -47,12 +47,12 @@ export const TEXTO_DEL_FILTRO: Readonly<Record<Filtro, string | null>> = {
  * olvidándonos de nada que sea bloqueante?»). Siempre se ven además la HU, el ancla, y lo «para decir». Sus hilos hacia
  * lo que bloquean siguen encendidos (`hilosDelFiltro`): se ve qué destraba.
  */
-const SIEMPRE_EN_LO_QUE_FRENA: ReadonlySet<TipoNodo> = new Set([
+const SIEMPRE_EN_LO_QUE_FRENA: ReadonlySet<string> = new Set([
   TipoNodo.DAILY_ITEM,
   TipoNodo.HISTORIA,
 ])
 /** Sin `frenan` (una API anterior, o el grafo sintético): las dudas y las personas, por tipo. */
-const FRENAN_POR_TIPO: ReadonlySet<TipoNodo> = new Set([TipoNodo.DUDA, TipoNodo.PERSONA])
+const FRENAN_POR_TIPO: ReadonlySet<string> = new Set([TipoNodo.DUDA, TipoNodo.PERSONA])
 
 /** El filtro que pide mostrar `numero` con el filtro `actual` puesto: el mismo número lo apaga; `null`, ninguno. */
 export function filtroAlMostrar(numero: number, actual: Filtro): Filtro | null {
@@ -117,7 +117,7 @@ interface Hilo {
   readonly id: string
   readonly origenId: string
   readonly destinoId: string
-  readonly tipo: TipoConexion
+  readonly tipo: string
 }
 
 /**

@@ -14,7 +14,18 @@ import {
 import { Pbi, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
 import { esPbiIncompleto } from './pbi'
 
-function colorDe(nodo: Nodo, primeraRama: ReadonlyMap<string, string>): string {
+const TIPOS_DEL_METODO: ReadonlySet<string> = new Set(Object.values(TipoNodo))
+
+/** Un tipo que el método de trabajo no conoce (HERRAMIENTA, MAQUINA…) toma el color de su tipo, si lo tiene (D11). */
+function colorDelTipo(nodo: Nodo, colorPorTipo: ReadonlyMap<string, string> | undefined) {
+  return TIPOS_DEL_METODO.has(nodo.tipo) ? undefined : colorPorTipo?.get(nodo.tipo)
+}
+
+function colorDe(
+  nodo: Nodo,
+  primeraRama: ReadonlyMap<string, string>,
+  colorPorTipo: ReadonlyMap<string, string> | undefined,
+): string {
   // Un PBI es morado aunque su tarjeta esté en un carril: «es un PBI» pesa más que la zona de código.
   if (esPbiIncompleto(nodo.pbi)) return COLOR_PBI_A_MEDIAS
   if (nodo.pbi === Pbi.ENTERO) return COLOR_FASE
@@ -32,11 +43,14 @@ function colorDe(nodo: Nodo, primeraRama: ReadonlyMap<string, string>): string {
     case TipoNodo.DAILY_ITEM:
       return COLOR_PARA_DECIR
     default:
-      return primeraRama.get(nodo.id) ?? COLOR_SIN_RAMA
+      return colorDelTipo(nodo, colorPorTipo) ?? primeraRama.get(nodo.id) ?? COLOR_SIN_RAMA
   }
 }
 
-export function coloresPorNodo(grafo: Grafo): ReadonlyMap<string, string> {
+export function coloresPorNodo(
+  grafo: Grafo,
+  colorPorTipo?: ReadonlyMap<string, string>,
+): ReadonlyMap<string, string> {
   const colorRama = new Map(
     grafo.nodos.filter((n) => n.color !== undefined).map((n) => [n.id, n.color ?? '']),
   )
@@ -51,7 +65,7 @@ export function coloresPorNodo(grafo: Grafo): ReadonlyMap<string, string> {
       .toReversed()
       .map(({ origenId, destinoId }) => [origenId, colorRama.get(destinoId) ?? COLOR_SIN_RAMA]),
   )
-  return new Map(grafo.nodos.map((nodo) => [nodo.id, colorDe(nodo, primeraRama)]))
+  return new Map(grafo.nodos.map((nodo) => [nodo.id, colorDe(nodo, primeraRama, colorPorTipo)]))
 }
 
 /** Cuánto se acerca al fondo lo que queda fuera de la selección: se ve que está, pero no compite. */

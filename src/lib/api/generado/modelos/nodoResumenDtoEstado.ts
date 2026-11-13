@@ -6,7 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export type NodoResumenDtoEstado = (typeof NodoResumenDtoEstado)[keyof typeof NodoResumenDtoEstado]
+/**
+ * @nullable
+ */
+export type NodoResumenDtoEstado =
+  (typeof NodoResumenDtoEstado)[keyof typeof NodoResumenDtoEstado] | null
 
 export const NodoResumenDtoEstado = {
   ABIERTO: 'ABIERTO',

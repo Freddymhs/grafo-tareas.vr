@@ -9,7 +9,7 @@ import {
 } from './constants/grafo'
 import { EstadoNodo, Pbi, TipoConexion, TipoNodo, type Grafo, type Nodo } from './dominio'
 
-const nodo = (id: string, tipo: TipoNodo, color?: string): Nodo => ({
+const nodo = (id: string, tipo: string, color?: string): Nodo => ({
   id,
   tipo,
   titulo: id,
@@ -93,5 +93,32 @@ describe('colorDeTextoSobre — el número del plan se lee en el color de cualqu
   it('sobre un color oscuro va blanco', () => {
     expect(colorDeTextoSobre('#1e3a8a')).toBe('#ffffff')
     expect(colorDeTextoSobre('#020617')).toBe('#ffffff')
+  })
+})
+
+describe('coloresPorNodo con el color de cada tipo (FASE 24, D11)', () => {
+  const grafo: Grafo = {
+    nodos: [nodo('h', 'HERRAMIENTA'), nodo('t', TipoNodo.TAREA), nodo('p', TipoNodo.PERSONA)],
+    conexiones: [],
+  }
+  const colorPorTipo = new Map([
+    ['HERRAMIENTA', '#22c55e'],
+    ['TAREA', '#ff0000'],
+    ['PERSONA', '#0000ff'],
+  ])
+
+  it('un tipo que el método no conoce toma el color de su tipo', () => {
+    expect(coloresPorNodo(grafo, colorPorTipo).get('h')).toBe('#22c55e')
+  })
+
+  it('sin mapa, o sin color para ese tipo, es el de hoy', () => {
+    expect(coloresPorNodo(grafo).get('h')).toBe(COLOR_SIN_RAMA)
+    expect(coloresPorNodo(grafo, new Map()).get('h')).toBe(COLOR_SIN_RAMA)
+  })
+
+  it('los tipos del método conservan su color de siempre', () => {
+    const colores = coloresPorNodo(grafo, colorPorTipo)
+    expect(colores.get('t')).toBe(COLOR_SIN_RAMA)
+    expect(colores.get('p')).toBe(coloresPorNodo(grafo).get('p'))
   })
 })

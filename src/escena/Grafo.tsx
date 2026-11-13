@@ -84,7 +84,7 @@ export function Grafo({
   }, [grafo])
   // El peso de la línea (idea de Freddy, 26-10). La que sale de algo que se puede hacer ya —lo abierto que
   // nada bloquea, según la API— es el comienzo del camino: clara y fuerte; las demás, tenues.
-  const hoyPuedo = useDerivadoControllerHoyPuedo({ query: { enabled: conApi } }).data
+  const hoyPuedo = useDerivadoControllerHoyPuedo(undefined, { query: { enabled: conApi } }).data
   const { relacionesDelComienzo, relacionesTenues } = useMemo(() => {
     const libres = new Set((hoyPuedo ?? []).map(({ id }) => id))
     const esComienzo = ({ destinoId }: { destinoId: string }) =>
@@ -118,17 +118,25 @@ export function Grafo({
     }
     return porFiltro ? delFiltro : null
   }, [porSeleccion, porFiltro, filtro, familia.data, grafo, frenan, seleccionado])
+  // Un fantasma (FASE 24, D8) va siempre apagado, con el mismo color que lo que queda fuera de una selección: mismo draw
+  // call, sin material transparente.
+  const fantasmas = useMemo(
+    () => new Set(grafo.nodos.filter(({ fantasma }) => fantasma).map(({ id }) => id)),
+    [grafo],
+  )
   const coloresVisibles = useMemo(
     () =>
-      iluminados
+      iluminados || fantasmas.size > 0
         ? new Map(
             [...colores].map(([id, color]) => [
               id,
-              iluminados.has(id) ? color : colorApagado(color),
+              fantasmas.has(id) || (iluminados !== null && !iluminados.has(id))
+                ? colorApagado(color)
+                : color,
             ]),
           )
         : colores,
-    [colores, iluminados],
+    [colores, iluminados, fantasmas],
   )
   const { deLaFamilia, fueraDeLaFamilia } = useMemo(() => {
     // Con una selección, las dos puntas en su familia; con el filtro, los hilos que llevan a algo pendiente.

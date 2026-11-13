@@ -6,42 +6,72 @@ import {
   ETIQUETA_POR_CREAR,
   ETIQUETA_TRAMITE,
 } from './constants/grafo'
-import type { Grafo, Posicion } from './dominio'
+import { EstadoNodo, type Grafo, type Posicion } from './dominio'
 import { pbisDe } from './pbi'
 
+// Un tipo sin ciclo (Mis máquinas) llega sin estado: se dibuja como abierto.
+const comoEstado = (estado: EstadoNodo | null): EstadoNodo => estado ?? EstadoNodo.ABIERTO
+
+/**
+ * Los vecinos (FASE 24) son nodos de otros proyectos conectados con algo de la vista: entran como fantasmas, con el
+ * rótulo de su proyecto, y así sus conexiones dejan de filtrarse. Uno que ya vino entre los nodos no se duplica.
+ */
 export function aGrafo(
-  nodos: readonly NodoResponseDto[],
+  nodosPropios: readonly NodoResponseDto[],
   conexiones: readonly ConexionResponseDto[],
+  vecinos: readonly NodoResponseDto[] = [],
+  rotulo: (proyectoId: string) => string = () => '',
 ): Grafo {
+  const idsPropios = new Set(nodosPropios.map(({ id }) => id))
+  const fantasmas = vecinos.filter(({ id }) => !idsPropios.has(id))
+  const nodos = [...nodosPropios, ...fantasmas]
   const ids = new Set(nodos.map(({ id }) => id))
+  const rotuloDeFantasma = new Map(fantasmas.map(({ id, proyectoId }) => [id, rotulo(proyectoId)]))
   // Sobre todos los nodos, no sobre una página: la FASE de una tarjeta puede estar en otra.
-  const pbis = pbisDe(nodos)
+  const pbis = pbisDe(
+    nodos.map(({ id, tipo, titulo, estado }) => ({
+      id,
+      tipo,
+      titulo,
+      estado: comoEstado(estado),
+    })),
+  )
   return {
-    nodos: nodos.map(({ id, tipo, titulo, estado, color, fechaOrigen, etiquetas, resumen }) => {
-      const mergeada = (etiquetas ?? []).includes(ETIQUETA_MERGEADA)
-      const tramite = (etiquetas ?? []).includes(ETIQUETA_TRAMITE)
-      const porCrear = (etiquetas ?? []).includes(ETIQUETA_POR_CREAR)
-      const espera = (etiquetas ?? []).includes(ETIQUETA_ESPERA)
-      const pbi = pbis.get(id)
-      return {
-        id,
-        tipo,
-        titulo,
-        estado,
-        ...(color ? { color } : {}),
-        fecha: fechaOrigen,
-        ...(mergeada ? { mergeada } : {}),
-        ...(tramite ? { tramite } : {}),
-        ...(pbi ? { pbi } : {}),
-        ...(porCrear ? { porCrear } : {}),
-        ...(espera ? { espera } : {}),
-        ...(resumen ? { resumen } : {}),
-      }
-    }),
+    nodos: nodos.map(
+      ({ id, tipo, titulo, estado, color, fechaOrigen, etiquetas, resumen, proyectoId }) => {
+        const mergeada = (etiquetas ?? []).includes(ETIQUETA_MERGEADA)
+        const tramite = (etiquetas ?? []).includes(ETIQUETA_TRAMITE)
+        const porCrear = (etiquetas ?? []).includes(ETIQUETA_POR_CREAR)
+        const espera = (etiquetas ?? []).includes(ETIQUETA_ESPERA)
+        const pbi = pbis.get(id)
+        const fantasma = rotuloDeFantasma.get(id)
+        return {
+          id,
+          tipo,
+          titulo,
+          estado: comoEstado(estado),
+          ...(color ? { color } : {}),
+          fecha: fechaOrigen,
+          ...(mergeada ? { mergeada } : {}),
+          ...(tramite ? { tramite } : {}),
+          ...(pbi ? { pbi } : {}),
+          ...(porCrear ? { porCrear } : {}),
+          ...(espera ? { espera } : {}),
+          ...(resumen ? { resumen } : {}),
+          ...(proyectoId ? { proyectoId } : {}),
+          ...(fantasma ? { fantasma } : {}),
+        }
+      },
+    ),
     // Una conexión hacia un nodo que no vino (otra página, o borrado entre las dos lecturas) no se dibuja.
     conexiones: conexiones
       .filter(({ origenId, destinoId }) => ids.has(origenId) && ids.has(destinoId))
-      .map(({ id, origenId, destinoId, tipo }) => ({ id, origenId, destinoId, tipo })),
+      .map(({ id, origenId, destinoId, tipo }) => ({
+        id,
+        origenId,
+        destinoId,
+        tipo,
+      })),
   }
 }
 

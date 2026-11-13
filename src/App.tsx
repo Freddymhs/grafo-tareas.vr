@@ -17,6 +17,7 @@ import { filtroAlMostrar } from './lib/filtro'
 import { guardarUltimaVista, leerUltimaVista } from './lib/ultima-vista'
 import { registrarError } from './lib/registro'
 import { generarGrafo } from './lib/sintetico'
+import { BarraAlcance } from './escena/BarraAlcance'
 import { BarraSuperior } from './escena/BarraSuperior'
 import { CambioDePagina } from './escena/CambioDePagina'
 import { FiltroConControl } from './escena/FiltroConControl'
@@ -52,14 +53,30 @@ const parametros = leerParametros(window.location.search)
 // `?pagina=` (FASE 15) abre esa HU por su cara real; sin él, la última HU y cara que se vieron en este visor (Freddy,
 // 2026-10-18: «conservar el estado en lo último que abrió»). Se guarda solo cuando cambian.
 const ultimaVista = parametros.pagina === null ? leerUltimaVista(window.localStorage) : null
+// La pestaña (FASE 24): `?espacio=&proyecto=` > la última vista > «Todo». Un id que ya no existe lo descarta `useMapaApi`.
+const alcanceDeLaUrl = parametros.espacio !== null
+const espacioInicial = alcanceDeLaUrl ? parametros.espacio : (ultimaVista?.espacioId ?? null)
+const proyectoInicial = alcanceDeLaUrl ? parametros.proyecto : (ultimaVista?.proyectoId ?? null)
 useEstadoVr.setState({
-  libro: parametros.pagina ?? ultimaVista?.libro ?? 0,
+  libro: parametros.pagina ?? (alcanceDeLaUrl ? 0 : (ultimaVista?.libro ?? 0)),
   cara: ultimaVista?.cara ?? Cara.REAL,
   filtro: parametros.filtro,
+  espacioId: espacioInicial,
+  proyectoId: espacioInicial === null ? null : proyectoInicial,
 })
-useEstadoVr.subscribe(({ libro, cara }, anterior) => {
-  if (libro !== anterior.libro || cara !== anterior.cara) {
-    guardarUltimaVista(window.localStorage, { libro, cara })
+useEstadoVr.subscribe(({ libro, cara, espacioId, proyectoId }, anterior) => {
+  const cambio =
+    libro !== anterior.libro ||
+    cara !== anterior.cara ||
+    espacioId !== anterior.espacioId ||
+    proyectoId !== anterior.proyectoId
+  if (cambio) {
+    guardarUltimaVista(window.localStorage, {
+      libro,
+      cara,
+      ...(espacioId ? { espacioId } : {}),
+      ...(proyectoId ? { proyectoId } : {}),
+    })
   }
 })
 
@@ -213,6 +230,7 @@ function VistaApi() {
       marcas={mapa.marcas}
       fijo={
         <>
+          <BarraAlcance />
           <BarraSuperior
             ramas={mapa.ramas}
             indice={mapa.pagina.indice}

@@ -28,6 +28,38 @@ const conexion = (id: string, origenId: string, destinoId: string): ConexionResp
   createdAt: '2026-10-17T00:00:00.000Z',
 })
 
+describe('aGrafo con vecinos de otros proyectos (FASE 24, D8)', () => {
+  const rotulo = (proyectoId: string) =>
+    proyectoId === 'p-tp' ? 'ThinkPad · Mis máquinas' : 'otro proyecto'
+
+  it('un vecino de otro proyecto entra como nodo fantasma y su conexión se conserva', () => {
+    const grafo = aGrafo(
+      [nodo('tarea', { proyectoId: 'p-sag' })],
+      [conexion('c', 'herramienta', 'tarea')],
+      [nodo('herramienta', { tipo: 'HERRAMIENTA', proyectoId: 'p-tp' })],
+      rotulo,
+    )
+    expect(grafo.nodos.map(({ id }) => id)).toEqual(['tarea', 'herramienta'])
+    expect(grafo.nodos.find(({ id }) => id === 'herramienta')).toMatchObject({
+      tipo: 'HERRAMIENTA',
+      proyectoId: 'p-tp',
+      fantasma: 'ThinkPad · Mis máquinas',
+    })
+    expect(grafo.nodos.find(({ id }) => id === 'tarea')?.fantasma).toBeUndefined()
+    expect(grafo.conexiones).toHaveLength(1)
+  })
+
+  it('un vecino que ya vino entre los nodos no se duplica ni se vuelve fantasma', () => {
+    const grafo = aGrafo([nodo('a'), nodo('b')], [], [nodo('b')], rotulo)
+    expect(grafo.nodos.map(({ id }) => id)).toEqual(['a', 'b'])
+    expect(grafo.nodos.find(({ id }) => id === 'b')?.fantasma).toBeUndefined()
+  })
+
+  it('sin vecinos es lo de siempre', () => {
+    expect(aGrafo([nodo('a')], [])).toEqual(aGrafo([nodo('a')], [], [], rotulo))
+  })
+})
+
 describe('aGrafo', () => {
   it('lleva nodos y conexiones; el color solo si la rama lo tiene', () => {
     const grafo = aGrafo(

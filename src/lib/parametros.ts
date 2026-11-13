@@ -41,6 +41,9 @@ export interface ParametrosPrueba {
   readonly filtro: Filtro
   /** `?depurar`: el gesto de la pelota deja lo que mide de la mano en `window.__gestoPelota` (calibrarlo con Freddy). */
   readonly depurar: boolean
+  /** `?espacio=` y `?proyecto=` (FASE 24): arranca en esa pestaña; `null` = no se pidió y manda la última vista. */
+  readonly espacio: string | null
+  readonly proyecto: string | null
 }
 
 function entero(valor: string | null, porDefecto: number): number {
@@ -84,5 +87,7 @@ export function leerParametros(busqueda: string): ParametrosPrueba {
     pagina: query.has('pagina') ? Math.max(0, entero(query.get('pagina'), 0)) : null,
     filtro: filtroDeTexto(query.get('filtro')),
     depurar: query.has('depurar'),
+    espacio: query.get('espacio') || null,
+    proyecto: query.get('proyecto') || null,
   }
 }

@@ -16,6 +16,8 @@ describe('leerParametros', () => {
       pagina: null,
       filtro: Filtro.TODO,
       depurar: false,
+      espacio: null,
+      proyecto: null,
     })
   })
 
@@ -30,6 +32,8 @@ describe('leerParametros', () => {
       pagina: null,
       filtro: Filtro.TODO,
       depurar: false,
+      espacio: null,
+      proyecto: null,
     })
     expect(leerParametros('?sintetico').fuente).toBe(FuenteGrafo.SINTETICO)
   })
@@ -62,6 +66,15 @@ describe('leerParametros', () => {
     expect(leerParametros('?filtro=pendiente').filtro).toBe(Filtro.PENDIENTE)
     expect(leerParametros('?filtro=sin-tramites').filtro).toBe(Filtro.SIN_TRAMITES)
     expect(leerParametros('?filtro=cualquiera').filtro).toBe(Filtro.TODO)
+  })
+
+  it('`?espacio=` y `?proyecto=` abren con esa pestaña (FASE 24); sin ellos, «Todo»', () => {
+    expect(leerParametros('?espacio=e1&proyecto=p1')).toMatchObject({
+      espacio: 'e1',
+      proyecto: 'p1',
+    })
+    expect(leerParametros('?espacio=e1')).toMatchObject({ espacio: 'e1', proyecto: null })
+    expect(leerParametros('')).toMatchObject({ espacio: null, proyecto: null })
   })
 
   it('`?pagina=` abre directo en esa página (FASE 15); si no es un número válido, la primera', () => {

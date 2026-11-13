@@ -1,0 +1,10 @@
+export const ID_PAGINA_UNICA = 'pagina-unica'
+export const TEXTO_TODO = 'Todo'
+export const TEXTO_TODO_EL_ESPACIO = 'Todo el espacio'
+export const AVISO_ESPACIO_INEXISTENTE = 'Ese espacio ya no existe: se muestra Todo'
+export const AVISO_PROYECTO_INEXISTENTE = 'Ese proyecto ya no existe: se muestra todo el espacio'
+export const MAX_PESTANAS_FILA = 12
+export const LARGO_PESTANA = 18
+export const SEPARACION_FILAS = 0.04
+export const NOMBRE_OTRO_PROYECTO = 'otro proyecto'
+export const SUFIJO_ARCHIVADO = 'archivado'

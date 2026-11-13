@@ -23,14 +23,11 @@ import { Cara, type Nodo } from '../lib/dominio'
 import { useEstadoVr } from '../lib/estado-vr'
 import { type Filtro, TEXTO_DEL_FILTRO } from '../lib/filtro'
 import { librosDe } from '../lib/paginas'
-import { ALTO_MEDIO, ALTURA_OJOS, RADIO_PANORAMA } from '../lib/layout'
 import { textoVisible } from '../lib/texto-visible'
 import { ALTO_BOTON, ANCHO_BOTON, Boton3D } from './Boton3D'
+import { ALTURA_BARRA, DISTANCIA_BARRA } from './medidas-barra'
+import { useAlcanceVr } from './useAlcanceVr'
 
-/** Delante de la pantalla (no la atraviesa) y justo encima de su banda. */
-const DISTANCIA = RADIO_PANORAMA - 0.5
-/** 35 cm sobre la banda: con 10 cm, en la banda alta los nodos de arriba la tapaban (26-10). */
-const ALTURA = ALTURA_OJOS + ALTO_MEDIO + 0.35
 const SEPARACION_PESTANAS = 0.03
 const BAJO_LAS_PESTANAS = ALTO_BOTON + 0.035
 const TAMANO_LEYENDA = 0.026
@@ -161,7 +158,11 @@ export function BarraSuperior({
   piezasSinTask,
   ultimoCambio = null,
 }: Props) {
-  const paginas = useDerivadoControllerPaginas().data
+  const { alcance, verificado, conMetodo } = useAlcanceVr()
+  const paginas = useDerivadoControllerPaginas(
+    alcance.espacioId ? { espacio: alcance.espacioId } : undefined,
+    { query: { enabled: verificado && conMetodo } },
+  ).data
   const libros = useMemo(() => librosDe(paginas ?? []), [paginas])
   const irALibro = useEstadoVr((estado) => estado.irALibro)
   const verCara = useEstadoVr((estado) => estado.verCara)
@@ -170,7 +171,7 @@ export function BarraSuperior({
   const x = (lugar: number) =>
     -anchoPestanas / 2 + ANCHO_BOTON / 2 + lugar * (ANCHO_BOTON + SEPARACION_PESTANAS)
   return (
-    <group position={[0, ALTURA, -DISTANCIA]}>
+    <group position={[0, ALTURA_BARRA, -DISTANCIA_BARRA]}>
       {libros.map(({ id, real, plan }, i) => {
         const portada = real ?? plan
         if (!portada) return null

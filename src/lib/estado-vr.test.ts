@@ -43,6 +43,8 @@ describe('useEstadoVr', () => {
       resaltados: new Set(),
       aviso: null,
       libro: 0,
+      espacioId: null,
+      proyectoId: null,
       cara: Cara.REAL,
       filtro: Filtro.TODO,
       apuntado: null,
@@ -78,6 +80,23 @@ describe('useEstadoVr', () => {
     expect(useEstadoVr.getState().libro).toBe(0)
     useEstadoVr.getState().irALibro(1)
     expect(useEstadoVr.getState().libro).toBe(1)
+  })
+
+  it('elegir espacio o proyecto vuelve a la primera HU y suelta la selección (FASE 24)', () => {
+    useEstadoVr.getState().tocar('a')
+    useEstadoVr.getState().irALibro(2)
+    useEstadoVr.getState().verEspacio('e1')
+    expect(useEstadoVr.getState()).toMatchObject({
+      espacioId: 'e1',
+      proyectoId: null,
+      libro: 0,
+      seleccionado: null,
+    })
+    useEstadoVr.getState().irALibro(1)
+    useEstadoVr.getState().verProyecto('p1')
+    expect(useEstadoVr.getState()).toMatchObject({ espacioId: 'e1', proyectoId: 'p1', libro: 0 })
+    useEstadoVr.getState().verEspacio(null)
+    expect(useEstadoVr.getState()).toMatchObject({ espacioId: null, proyectoId: null })
   })
 
   it('dar vuelta la hoja cambia de cara y suelta la selección; cambiar de HU vuelve siempre a lo real (FASE 17)', () => {
