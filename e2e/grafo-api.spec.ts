@@ -49,6 +49,19 @@ const CONEXIONES = [
     createdAt: '2026-10-17T00:00:00.000Z',
   },
 ]
+/** Sin «Todo» (FASE 26): la VR no pide nodos sin saber el espacio que se ve y sus proyectos. Con uno solo no hay fila. */
+const ESPACIO_ID = 'sigsa'
+const ESPACIOS = [
+  {
+    id: ESPACIO_ID,
+    nombre: 'SIGSA',
+    orden: 0,
+    archivado: false,
+    metodo: 'trabajo-hu',
+    etapas: [],
+  },
+]
+const PROYECTOS = [{ id: 'sag', espacioId: ESPACIO_ID, nombre: 'SAG', orden: 0, archivado: false }]
 const responder = (route: Route, data: unknown) =>
   route.fulfill({ json: sobre(data), headers: { 'access-control-allow-origin': '*' } })
 
@@ -61,7 +74,12 @@ test('sin posiciones guardadas: arma la cara real de la HU y guarda sus nodos en
     responder(route, { data: NODOS, total: NODOS.length }),
   )
   await page.route(`${API}/conexiones`, (route) => responder(route, CONEXIONES))
-  await page.route(`${API}/derivado/paginas`, (route) => responder(route, PAGINAS))
+  await page.route(`${API}/espacios*`, (route) => responder(route, ESPACIOS))
+  await page.route(`${API}/espacios/${ESPACIO_ID}/proyectos*`, (route) =>
+    responder(route, PROYECTOS),
+  )
+  await page.route(`${API}/espacios/${ESPACIO_ID}/tipos-nodo`, (route) => responder(route, []))
+  await page.route(`${API}/derivado/paginas*`, (route) => responder(route, PAGINAS))
   const guardado = page.waitForRequest(
     (request) => request.method() === 'PUT' && request.url().includes('/nodos/posiciones'),
   )
