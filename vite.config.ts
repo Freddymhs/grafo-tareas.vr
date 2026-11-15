@@ -43,6 +43,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    testTimeout: 20000, // grafo.test.ts «el radio se puede calibrar» tarda ~5.5 s: con 5 s por defecto falló al azar en CI
     exclude: ['**/node_modules/**', '**/dist/**', './e2e/**'],
   },
 })
