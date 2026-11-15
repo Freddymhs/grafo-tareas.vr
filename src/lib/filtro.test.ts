@@ -22,17 +22,17 @@ const nodo = (id: string, extra: Partial<Nodo> = {}): Nodo => ({
 })
 
 describe('familiaFiltrada — una selección con filtro enciende su familia, pero solo lo que el filtro deja (Freddy, 2026-10-19)', () => {
-  const familia = ['thomas', 'duda-abierta', 'duda-contestada']
+  const familia = ['persona-b', 'duda-abierta', 'duda-contestada']
 
-  it('con el 3, elegir a Thomas no enciende la duda que ya contestó: solo lo abierto y él', () => {
+  it('con el 3, elegir a Persona B no enciende la duda que ya contestó: solo lo abierto y él', () => {
     const encendidos = new Set(['duda-abierta'])
-    expect(familiaFiltrada(familia, encendidos, 'thomas')).toEqual(
-      new Set(['thomas', 'duda-abierta']),
+    expect(familiaFiltrada(familia, encendidos, 'persona-b')).toEqual(
+      new Set(['persona-b', 'duda-abierta']),
     )
   })
 
   it('con el 1 (todo) se ve la familia entera: ahí está el histórico', () => {
-    expect(familiaFiltrada(familia, null, 'thomas')).toEqual(new Set(familia))
+    expect(familiaFiltrada(familia, null, 'persona-b')).toEqual(new Set(familia))
   })
 })
 
@@ -142,16 +142,16 @@ describe('encendidosPor — el filtro 4 deja solo lo que frena (Freddy, 2026-10-
       nodo('hu', { tipo: TipoNodo.HISTORIA }),
       nodo('duda', { tipo: TipoNodo.DUDA }),
       nodo('duda-cerrada', { tipo: TipoNodo.DUDA, estado: EstadoNodo.CERRADO }),
-      nodo('carabantes', { tipo: TipoNodo.PERSONA }),
+      nodo('persona-a', { tipo: TipoNodo.PERSONA }),
       nodo('para-decir', { tipo: TipoNodo.DAILY_ITEM }),
       nodo('pieza'),
       nodo('fase', { tipo: TipoNodo.FASE }),
     ]
     expect([...(encendidosPor(Filtro.LO_QUE_FRENA, nodos) ?? [])].sort()).toEqual([
-      'carabantes',
       'duda',
       'hu',
       'para-decir',
+      'persona-a',
     ])
   })
 

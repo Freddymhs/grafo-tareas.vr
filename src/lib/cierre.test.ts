@@ -43,11 +43,11 @@ describe('conMarca — lo ya pedido que espera a otro (Freddy, 2026-10-19: «aho
 describe('resumenDeCierre — lo que dice la selección de algo cerrado: cuándo y la respuesta', () => {
   it('una duda: «Contestada el <fecha>» y el motivo del cierre más reciente', () => {
     const bitacora = [
-      cierre('Thomas: «el 1 y el 2 todavía no»', '2026-10-19T15:43:00.000Z'),
+      cierre('Persona B: «el 1 y el 2 todavía no»', '2026-10-19T15:43:00.000Z'),
       cierre('uno anterior', '2026-10-10T09:00:00.000Z'),
     ]
     expect(resumenDeCierre(dudaCerrada, bitacora)).toBe(
-      'Contestada el 19-oct: Thomas: «el 1 y el 2 todavía no»',
+      'Contestada el 19-oct: Persona B: «el 1 y el 2 todavía no»',
     )
   })
 

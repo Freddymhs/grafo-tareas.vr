@@ -28,14 +28,14 @@ describe('quienesEsperan — a una persona la esperan; no la frena nada (Freddy,
     estado,
   })
   const espera = (origenId: string) => ({
-    id: `${origenId}->carabantes`,
+    id: `${origenId}->persona-a`,
     origenId,
-    destinoId: 'carabantes',
+    destinoId: 'persona-a',
     tipo: TipoConexion.ESPERA_RESPUESTA_DE,
   })
   const grafo = {
     nodos: [
-      nodo('carabantes', TipoNodo.PERSONA),
+      nodo('persona-a', TipoNodo.PERSONA),
       nodo('¿En Validación es estado de qué?', TipoNodo.DUDA),
       nodo('¿5 días hábiles o corridos?', TipoNodo.DUDA),
       nodo('BLOQUEO A2, ya contestado', TipoNodo.TAREA, EstadoNodo.CERRADO),
@@ -48,7 +48,7 @@ describe('quienesEsperan — a una persona la esperan; no la frena nada (Freddy,
   }
 
   it('cuenta solo lo abierto, y lo dice al revés que a una tarea', () => {
-    const esperan = quienesEsperan('carabantes', grafo)
+    const esperan = quienesEsperan('persona-a', grafo)
     expect(esperan).toHaveLength(2)
     expect(resumenDeQuienEspera(esperan)).toBe('La esperan 2 — se iluminan alrededor')
     expect(resumenDeQuienEspera(['¿5 días?'])).toBe('La espera: ¿5 días?')
