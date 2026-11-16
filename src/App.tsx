@@ -8,7 +8,7 @@ import { contarPiezasSinTask } from './lib/piezas'
 import { coloresPorNodo } from './lib/colores'
 import { LINEAS_MINIMAS } from './lib/constants/etiquetas'
 import { COLOR_FONDO } from './lib/constants/grafo'
-import { VIGENCIA_CONSULTA_MS } from './lib/constants/api'
+import { ERROR_LAYOUT, VIGENCIA_CONSULTA_MS } from './lib/constants/api'
 import { Cara, type Grafo as GrafoDominio, type Posicion } from './lib/dominio'
 import { ALTURA_OJOS, RADIO_PANORAMA } from './lib/layout'
 import { FuenteGrafo, leerParametros, type ParametrosPrueba } from './lib/parametros'
@@ -189,7 +189,7 @@ function Vista({
 /** La prueba de la FASE 1: nodos sintéticos, layout en el Worker, sin API. */
 function VistaSintetica({ prueba }: { readonly prueba: ParametrosPrueba }) {
   const grafo = useMemo(() => generarGrafo(prueba), [prueba])
-  const posiciones = useLayout(grafo)
+  const { posiciones, error } = useLayout(grafo)
   const colores = useMemo(() => coloresPorNodo(grafo), [grafo])
   const filtro = useEstadoVr((estado) => estado.filtro)
   return (
@@ -199,7 +199,7 @@ function VistaSintetica({ prueba }: { readonly prueba: ParametrosPrueba }) {
       conApi={false}
       colores={colores}
       filtro={filtro}
-      mensaje={null}
+      mensaje={error ? { texto: `${ERROR_LAYOUT}: ${error}`, esError: true } : null}
     />
   )
 }

@@ -21,7 +21,8 @@ import { paginaUnica } from '../lib/alcance'
 import { abrirHaciaLosBordes, centrarEn } from '../lib/centrar'
 import { coloresPorNodo } from '../lib/colores'
 import { textoDelUltimoCambio } from '../lib/ultimo-cambio'
-import { API_URL, LIMITE_GRAFO } from '../lib/constants/api'
+import { API_URL, ERROR_LAYOUT, LIMITE_GRAFO } from '../lib/constants/api'
+import { avisoDelMapa } from '../lib/avisos-del-mapa'
 import { aGrafo, posicionesGuardadas } from '../lib/desde-api'
 import { rotuloFantasma } from '../lib/directorio'
 import { posicionesAGuardar } from '../lib/posiciones-a-guardar'
@@ -83,7 +84,7 @@ export type EstadoMapa =
       readonly marcas: ReadonlyMap<string, MarcaDelPlan>
       /** Lo último que cambió en la página (`GET /derivado/ultimo-cambio`), para leer bajo las pestañas. */
       readonly ultimoCambio: string | null
-      /** Si guardar las posiciones nuevas falló: el mapa se ve igual, pero la próxima vez se recalcula. */
+      /** Lo que falló sin tumbar el mapa (guardar posiciones, vecinos, plan, último cambio): se ve igual, pero falta eso. */
       readonly aviso: string | null
     }
 
@@ -243,7 +244,12 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   const sinAcomodo =
     grafoPagina !== null && grafoPagina.nodos.length > 0 && (guardadas.size === 0 || reordenar)
   const lineasPorEspacio = lineasPara(grafoPagina?.nodos.length ?? 0, radio, abertura)
-  const layout = useLayout(sinAcomodo ? grafoPagina : null, radio, abertura, lineasPorEspacio)
+  const { posiciones: layout, error: falloDeLayout } = useLayout(
+    sinAcomodo ? grafoPagina : null,
+    radio,
+    abertura,
+    lineasPorEspacio,
+  )
   const ubicacion = useMemo(() => {
     if (!grafoPagina) return null
     // Un acomodo nuevo usa las líneas que da el espacio.
@@ -264,10 +270,11 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     [ubicacion, historia],
   )
 
-  const cambio = useDerivadoControllerUltimoCambio(
+  const ultimoCambio = useDerivadoControllerUltimoCambio(
     { pagina: pagina?.id ?? '' },
     { query: { enabled: pagina !== null && conMetodo } },
-  ).data?.ultimo
+  )
+  const cambio = ultimoCambio.data?.ultimo
   const tituloCambiado = cambio
     ? grafo?.nodos.find(({ id }) => id === cambio.nodoId)?.titulo
     : undefined
@@ -290,6 +297,7 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
   if (falloDeAlcance || nodos.isError || conexiones.isError || paginasDelMetodo.isError) {
     return { estado: 'error', mensaje: `No se pudo leer la API en ${API_URL}` }
   }
+  if (falloDeLayout) return { estado: 'error', mensaje: `${ERROR_LAYOUT}: ${falloDeLayout}` }
   if (!grafo || !colores || !lista) return { estado: 'cargando', mensaje: 'Leyendo el grafo…' }
   if (!pagina || !grafoPagina) return { estado: 'error', mensaje: 'El grafo no tiene páginas' }
   if (!ubicacion || !posicionesVista)
@@ -306,6 +314,11 @@ export function useMapaApi(reordenar = false, radio = RADIO_PANORAMA): EstadoMap
     frenan,
     marcas,
     ultimoCambio: textoDeLaPagina,
-    aviso: guardar.isError ? 'No se pudieron guardar las posiciones nuevas' : null,
+    aviso: avisoDelMapa({
+      guardar: guardar.isError,
+      vecinos: vecinos.isError,
+      plan: plan.isError,
+      ultimoCambio: ultimoCambio.isError,
+    }),
   }
 }
